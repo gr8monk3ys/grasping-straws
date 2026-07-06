@@ -1,0 +1,45 @@
+---
+import Base from "../layouts/Base.astro";
+import { DECK_NAME, PHYSICAL_DECK_URL } from "../config";
+
+const description =
+  "An original deck of lateral-thinking prompts for breaking creative deadlocks. Tap to draw a card.";
+const physicalHref = PHYSICAL_DECK_URL || "/about/#physical";
+---
+
+<Base title={DECK_NAME} description={description}>
+  <main class="stage">
+    <button id="card" class="card" aria-describedby="draw-desc">
+      <span class="card-inner" id="card-inner">
+        <span class="card-mark" id="card-mark">
+          <span class="glyph"></span>
+          <span class="card-wordmark">{DECK_NAME}</span>
+        </span>
+        <span class="card-text" id="card-text" hidden></span>
+      </span>
+    </button>
+    <span id="draw-desc" class="sr-only">Draws the next card from the deck.</span>
+    <p class="hint" id="hint" aria-hidden="true">
+      <span class="hint-touch">tap to draw</span>
+      <span class="hint-pointer">press space, or click</span>
+    </p>
+    <p class="sr-only" aria-live="polite" id="live"></p>
+    <noscript>
+      <p class="hint">
+        The deck needs JavaScript to shuffle — the cards themselves are just
+        <a href="/cards.json">a JSON file</a>.
+      </p>
+    </noscript>
+  </main>
+  <footer class="chrome">
+    <span class="deck-name">{DECK_NAME}</span>
+    <nav>
+      <a href="/about/">About</a>
+      <a href={physicalHref} class="cta">Get the physical deck</a>
+    </nav>
+  </footer>
+</Base>
+
+<script>
+  import "../scripts/app";
+</script>

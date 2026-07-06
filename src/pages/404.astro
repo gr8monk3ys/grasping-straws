@@ -1,0 +1,34 @@
+---
+import Base from "../layouts/Base.astro";
+import { DECK_NAME } from "../config";
+---
+
+<Base title={`Not found — ${DECK_NAME}`} description="This page doesn't exist.">
+  <main>
+    <span class="glyph"></span>
+    <p>Nothing here. Not every reach finds a straw.</p>
+    <a href="/">&larr; Back to the deck</a>
+  </main>
+</Base>
+
+<style>
+  main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1.25rem;
+    padding: 1.5rem 1rem;
+    text-align: center;
+  }
+  .glyph {
+    width: 56px;
+    color: var(--muted);
+  }
+  p {
+    color: var(--muted);
+    font-style: italic;
+    font-size: 1.15rem;
+  }
+</style>

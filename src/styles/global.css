@@ -1,0 +1,329 @@
+/* Grasping Straws? — one stylesheet for the whole site. */
+
+/* ---------- fonts (self-hosted, SIL OFL — see fonts/OFL.txt) ---------- */
+
+@font-face {
+  font-family: "EB Garamond";
+  font-style: normal;
+  font-weight: 400 800;
+  font-display: swap;
+  src: url("/fonts/EBGaramond-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6,
+    U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122,
+    U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "EB Garamond";
+  font-style: italic;
+  font-weight: 400 800;
+  font-display: swap;
+  src: url("/fonts/EBGaramond-Italic-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6,
+    U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122,
+    U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* ---------- themes ---------- */
+
+:root {
+  color-scheme: light dark;
+  /* paper-warm light theme */
+  --bg: #f5efe3;
+  --card: #fdfaf3;
+  --ink: #241e16;
+  --muted: #6e6455;
+  --accent: #8c3b22;
+  --line: #dcd2be;
+  --shadow: 0 1px 2px rgb(36 30 22 / 0.08), 0 14px 36px -14px rgb(36 30 22 / 0.28);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* near-black, still warm */
+    --bg: #171310;
+    --card: #201b16;
+    --ink: #eae3d4;
+    --muted: #a79c8a;
+    --accent: #d99668;
+    --line: #3a322a;
+    --shadow: 0 1px 2px rgb(0 0 0 / 0.4), 0 16px 40px -14px rgb(0 0 0 / 0.6);
+  }
+}
+
+/* ---------- base ---------- */
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+html {
+  height: 100%;
+}
+
+body {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: "EB Garamond", "Iowan Old Style", Georgia, "Times New Roman", serif;
+  font-size: 1.125rem;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: var(--accent);
+  color: var(--bg);
+}
+
+a {
+  color: var(--accent);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.18em;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* The mark. favicon.svg is the single vector source of the glyph; both
+   pages render it from there via CSS mask, colored by currentColor. */
+.glyph {
+  display: block;
+  aspect-ratio: 1;
+  background-color: currentColor;
+  -webkit-mask: url("/favicon.svg") center / contain no-repeat;
+  mask: url("/favicon.svg") center / contain no-repeat;
+}
+
+/* ---------- draw screen ---------- */
+
+.stage {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem 1rem;
+  perspective: 1400px;
+}
+
+.card {
+  /* the whole card is the hit target */
+  width: min(82vw, 340px, calc(66dvh * 5 / 7));
+  aspect-ratio: 5 / 7;
+  padding: clamp(1.25rem, 6vw, 2rem);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--card);
+  color: inherit;
+  font: inherit;
+  box-shadow: var(--shadow);
+  cursor: pointer;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.card:focus-visible {
+  border-radius: 14px;
+}
+
+.card-inner {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  transform-style: preserve-3d;
+}
+
+.card-text {
+  font-size: clamp(1.5rem, 1.05rem + 1.9vw, 2.25rem);
+  line-height: 1.35;
+  text-align: center;
+  text-wrap: balance;
+}
+
+/* face-down state: the mark */
+.card-mark {
+  display: grid;
+  justify-items: center;
+  gap: 1.4rem;
+  color: var(--muted);
+}
+
+.card-mark .glyph {
+  width: clamp(56px, 26%, 84px);
+}
+
+.card-wordmark {
+  font-size: 0.8rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.hint {
+  margin-top: 1.75rem;
+  min-height: 1.5em; /* reserve the line so the card never shifts */
+  color: var(--muted);
+  font-style: italic;
+  font-size: 1rem;
+  text-align: center;
+}
+
+/* The fade only exists once the page has settled (class added one frame
+   after load). Without the gate, a returning visitor whose hint should be
+   hidden already can catch the transition mid-flight on load. */
+.settled .hint {
+  transition: opacity 0.8s ease;
+}
+
+.has-drawn .hint {
+  opacity: 0;
+}
+
+.hint-pointer {
+  display: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .hint-touch {
+    display: none;
+  }
+
+  .hint-pointer {
+    display: inline;
+  }
+}
+
+/* ---------- chrome ---------- */
+
+.chrome {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1.25rem;
+  padding: 0.9rem 1.25rem calc(0.9rem + env(safe-area-inset-bottom));
+  font-size: 0.85rem;
+  letter-spacing: 0.02em;
+  color: var(--muted);
+}
+
+.chrome .deck-name {
+  letter-spacing: 0.08em;
+}
+
+.chrome nav {
+  display: flex;
+  gap: 1.4rem;
+}
+
+.chrome a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.chrome a:hover {
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+/* the one call to action */
+.chrome a.cta {
+  color: var(--accent);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.2em;
+}
+
+/* ---------- about page ---------- */
+
+.about main {
+  width: 100%;
+  max-width: 34rem;
+  margin-inline: auto;
+  padding: 3.5rem 1.35rem 4rem;
+}
+
+.about .backlink {
+  display: inline-block;
+  margin-bottom: 3rem;
+  font-size: 0.95rem;
+  color: var(--muted);
+  text-decoration: none;
+}
+
+.about .backlink:hover {
+  text-decoration: underline;
+}
+
+.about .page-mark {
+  width: 44px;
+  color: var(--muted);
+  margin-bottom: 1.25rem;
+}
+
+.about h1 {
+  font-size: clamp(2.1rem, 4.5vw + 1rem, 2.9rem);
+  font-weight: 600;
+  line-height: 1.1;
+  margin-bottom: 1.5rem;
+}
+
+.about h2 {
+  margin-top: 2.6em;
+  margin-bottom: 0.7em;
+  font-size: 0.95rem;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.about p {
+  margin-bottom: 0.9em;
+  line-height: 1.6;
+}
+
+.about .lede {
+  font-size: 1.3rem;
+  line-height: 1.5;
+}
+
+.about .credit {
+  margin-top: 4rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--line);
+  font-size: 0.95rem;
+  color: var(--muted);
+}
+
+/* ---------- motion ---------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .settled .hint {
+    transition: none;
+  }
+}

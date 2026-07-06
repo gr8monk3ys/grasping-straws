@@ -1,0 +1,37 @@
+---
+import "../styles/global.css";
+import { DECK_NAME } from "../config";
+
+interface Props {
+  title: string;
+  description: string;
+  bodyClass?: string;
+}
+const { title, description, bodyClass } = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={DECK_NAME} />
+    {Astro.site && <meta property="og:image" content={new URL("/og.png", Astro.site).href} />}
+    {Astro.site && <meta name="twitter:card" content="summary_large_image" />}
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f5efe3" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#171310" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="preload" href="/fonts/EBGaramond-latin.woff2" as="font" type="font/woff2" crossorigin />
+  </head>
+  <body class={bodyClass}>
+    <slot />
+  </body>
+</html>
