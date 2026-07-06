@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Grasping Straws? — a bundle of straws; one stalk is not a straw. -->
+  <style>
+    .stroke { stroke: #241E16; }
+    .fill { fill: #241E16; }
+    @media (prefers-color-scheme: dark) {
+      .stroke { stroke: #EAE3D4; }
+      .fill { fill: #EAE3D4; }
+    }
+  </style>
+  <g class="stroke" fill="none" stroke-width="3.5" stroke-linecap="round">
+    <path d="M14 15v38"/>
+    <path d="M23 11v42"/>
+    <path d="M32 16v37"/>
+    <path d="M50 13v40"/>
+    <path d="M42.5 53 41 25"/>
+  </g>
+  <path class="fill" d="M40.6 8.5 44.7 15.1 41.2 22.3 37.1 15.7Z"/>
+</svg>
