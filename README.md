@@ -6,9 +6,13 @@ Peter Schmidt's Oblique Strategies. All card text here is original.
 
 Tap, get a card, tap again.
 
+Built with [Astro](https://astro.build) as a fully static site. The built
+output ships **zero framework JavaScript** — just the ~2 KB draw script,
+inlined into the page.
+
 ## Editing the deck
 
-Edit **`cards.json`** and nothing else. It's an array of
+Edit **`public/cards.json`** and nothing else. It's an array of
 `{ "id": 1, "text": "…", "suit": "lateral" }` objects:
 
 - `id` must be unique and stable — it's what `#17`-style share links point at.
@@ -17,70 +21,69 @@ Edit **`cards.json`** and nothing else. It's an array of
   shown to visitors.
 
 Removed cards vanish from visitors' in-progress decks automatically; added
-cards join at their next reshuffle.
+cards join at their next reshuffle. When an editing pass lands, bump
+`DECK_VERSION` in `src/config.ts` so the site and the printed deck stay in
+lockstep.
 
 ## Configuration
 
-`config.js` holds the two site constants:
+`src/config.ts` holds the site constants, baked in at build time:
 
 - `DECK_NAME` — the display name. The `?` is part of the mark; designed
   contexts (masthead, card back, titles) keep it, running prose drops it, and
   technical identifiers use `grasping-straws`.
 - `PHYSICAL_DECK_URL` — leave `""` for the built-in "coming soon" state;
   set it to the product page URL once the physical deck exists.
-- `DECK_VERSION` — bump when a card-editing pass lands, so the site and the
-  printed deck stay in lockstep; shown discreetly on the About page.
+- `DECK_VERSION` — shown discreetly on the About page.
 
-The mark (straw bundle) has a single vector source: `favicon.svg`. Both
-pages render it from there via CSS `mask`, so editing the glyph means
+The mark (straw bundle) has a single vector source: `public/favicon.svg`.
+Both pages render it from there via CSS `mask`, so editing the glyph means
 editing one file.
 
-## Running locally
-
-It's a static site — serve the directory over HTTP (the deck is fetched, so
-`file://` won't work):
+## Developing
 
 ```sh
-python3 -m http.server 8000
-# or: npx serve
+npm install
+npm run dev        # dev server with live reload
+npm run build      # static build into dist/
+npm run preview    # serve the built site
+npm run check      # typecheck the client script
+npm run validate   # lint public/cards.json
+npm run verify     # drive the built site end to end (build + serve first)
 ```
 
 ## Deploying
 
-Push to Vercel as a zero-config static deploy. No build step, no `vercel.json`,
-no `package.json` — the site has zero dependencies.
-
-After changing any asset, bump `VERSION` in `sw.js` so returning offline
-visitors pick up the new files. CI fails a PR that forgets.
-
-## CI
-
-`.github/workflows/ci.yml` runs on every PR:
-
-- `scripts/validate-cards.js` — cards.json parses, ids unique, text non-empty.
-- `scripts/check-sw-version.js` — precached assets changed ⇒ `sw.js` VERSION
-  must be bumped.
-- `scripts/verify.js` — drives the real site in headless Chromium: full-cycle
-  no-repeat guarantee, reshuffle rule, persistence, deep links, themes,
-  reduced motion, and the no-third-party-requests rule.
+Vercel auto-detects Astro; zero further config. Every push to `main`
+rebuilds and deploys.
 
 ## How it works
 
-- **The bag** (`app.js`): the full deck is shuffled (Fisher–Yates, backed by
-  `crypto.getRandomValues`) into a queue and dealt until empty — no repeats
-  within a cycle, like a physical deck. The reshuffle guarantees the first
-  card of a new bag differs from the last card dealt. Bag state persists in
-  `localStorage`.
+- **The bag** (`src/scripts/app.ts`): the full deck is shuffled
+  (Fisher–Yates, backed by `crypto.getRandomValues`) into a queue and dealt
+  until empty — no repeats within a cycle, like a physical deck. The
+  reshuffle guarantees the first card of a new bag differs from the last
+  card dealt. Bag state persists in `localStorage`.
 - **Share links**: every draw sets `location.hash` to the card id; loading
   `/#17` shows card 17 face up, then rejoins the normal bag.
 - **Themes**: light (paper-warm) and dark (near-black) via
   `prefers-color-scheme`, both AA contrast.
 - **Motion**: the card flip is the only animation; `prefers-reduced-motion`
   swaps it for a fast crossfade.
-- **Offline**: a small service worker (`sw.js`) caches everything after the
-  first visit. No third-party requests, no analytics, no backend.
+- **Offline**: a small service worker (`public/sw.js`) precaches the stable
+  URLs and caches everything else as it streams through; Astro's hashed
+  asset names mean bundles can never go stale. No third-party requests, no
+  analytics, no backend.
+
+## CI
+
+`.github/workflows/ci.yml` runs on every PR: validates `public/cards.json`,
+typechecks, builds, then drives the built site in headless Chromium
+(`scripts/verify.js`) — full-cycle no-repeat guarantee, reshuffle rule,
+persistence, deep links, themes, reduced motion, and the
+no-third-party-requests rule.
 
 ## Licenses
 
-Code is GPL-3.0 (see `LICENSE`). The EB Garamond fonts in `fonts/` are under
-the SIL Open Font License (see `fonts/OFL.txt`).
+Code is GPL-3.0 (see `LICENSE`). The EB Garamond fonts in `public/fonts/`
+are under the SIL Open Font License (see `public/fonts/OFL.txt`).

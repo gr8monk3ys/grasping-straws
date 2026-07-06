@@ -1,14 +1,15 @@
 /*
- * Validates cards.json so a hand-editing slip (trailing comma, duplicate id,
- * empty text) is caught in CI instead of breaking the deck at runtime.
+ * Validates public/cards.json so a hand-editing slip (trailing comma,
+ * duplicate id, empty text) is caught in CI instead of breaking the deck
+ * at runtime.
  * Usage: node scripts/validate-cards.js
  */
-"use strict";
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
-const fs = require("fs");
-const path = require("path");
-
-const file = path.join(__dirname, "..", "cards.json");
+const here = path.dirname(fileURLToPath(import.meta.url));
+const file = path.join(here, "..", "public", "cards.json");
 const errors = [];
 const warnings = [];
 

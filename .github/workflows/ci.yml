@@ -6,33 +6,25 @@ on:
   pull_request:
 
 jobs:
-  validate:
+  ci:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+          cache: npm
+      - run: npm ci
       - name: Validate cards.json
-        run: node scripts/validate-cards.js
-      - name: Check sw.js VERSION was bumped alongside asset changes
-        run: node scripts/check-sw-version.js
-
-  verify:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-      - name: Install Playwright
+        run: npm run validate
+      - name: Typecheck
+        run: npm run check
+      - name: Build
+        run: npm run build
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+      - name: Drive the built site end to end
         run: |
-          npm install --no-save playwright@1.56.1
-          npx playwright install --with-deps chromium
-      - name: Drive the site end to end
-        run: |
-          python3 -m http.server 8317 --bind 127.0.0.1 &> /dev/null &
+          python3 -m http.server 8317 --bind 127.0.0.1 --directory dist &> /dev/null &
           sleep 1
           node scripts/verify.js

@@ -1,17 +1,20 @@
 ---
 name: verify
-description: Build/launch/drive recipe for verifying the Grasping Straws? static site end-to-end in a browser.
+description: Build/launch/drive recipe for verifying the Grasping Straws? Astro site end-to-end in a browser.
 ---
 
 # Verifying Grasping Straws?
 
-Static site, no build step. The deck is fetched, so it must be served over
-HTTP (`file://` won't work).
+Astro static site. Always verify the **built** output, not the dev server
+(the dev server injects Astro's toolbar and skews request/size checks).
 
 ## Launch
 
 ```sh
-npx http-server -p 8317 -a 127.0.0.1 --silent &   # or python3 -m http.server
+npm install          # first time; playwright is pinned to match the
+                     # preinstalled browsers (PLAYWRIGHT_BROWSERS_PATH)
+npm run build
+python3 -m http.server 8317 --bind 127.0.0.1 --directory dist &
 ```
 
 ## Drive
@@ -19,12 +22,10 @@ npx http-server -p 8317 -a 127.0.0.1 --silent &   # or python3 -m http.server
 The full end-to-end suite is checked in — run that first:
 
 ```sh
-NODE_PATH=/opt/node22/lib/node_modules node scripts/verify.js
+node scripts/verify.js        # BASE_URL / SHOTS_DIR env vars optional
 ```
 
-(Playwright 1.56 is installed globally in this environment; Chromium is
-preinstalled and `PLAYWRIGHT_BROWSERS_PATH` is already set. CI runs the same
-script via `.github/workflows/ci.yml`.)
+CI runs the same script via `.github/workflows/ci.yml`.
 
 Flows it covers — extend it rather than scripting ad hoc:
 
@@ -39,8 +40,8 @@ Flows it covers — extend it rather than scripting ad hoc:
   up instantly.
 - Emulate `colorScheme: "dark"` and `reducedMotion: "reduce"` contexts —
   both are separately designed paths.
-- About page: `data-physical-link` degrades to "coming soon" text while
-  `PHYSICAL_DECK_URL` in `config.js` is `""`.
+- About page (`/about/`): the physical-deck link degrades to "coming soon"
+  text while `PHYSICAL_DECK_URL` in `src/config.ts` is `""`.
 - Collect `page.on("request")` URLs → nothing off-origin is allowed.
 
 ## Gotchas
@@ -48,6 +49,10 @@ Flows it covers — extend it rather than scripting ad hoc:
 - Draw inputs are swallowed during the 400 ms flip (busy guard — that's by
   design). When scripting consecutive draws, wait for `location.hash` to
   change and pad ~450 ms, or retry the keypress.
-- The hint fade transition is 0.8 s — sample its opacity after ~900 ms.
+- The hint fade transition is 0.8 s and only armed after the `settled` class
+  lands (one rAF after load) — sample opacity after ~900 ms.
 - The service worker registers on 127.0.0.1/localhost; use a fresh browser
   context when you need an uncached first-visit.
+- Don't run `npx playwright install` here — browsers are preinstalled; if
+  versions drift, keep `playwright` pinned to the version matching
+  `/opt/pw-browsers` (currently 1.56.1).
