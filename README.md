@@ -6,6 +6,12 @@ Peter Schmidt's Oblique Strategies. All card text here is original.
 
 Tap, get a card, tap again.
 
+<p align="center">
+  <img src="docs/screenshot-light.png" alt="The face-down card showing the straw-bundle mark, paper-warm light theme" width="42%">
+  &nbsp;&nbsp;
+  <img src="docs/screenshot-dark.png" alt="A drawn card reading &quot;Solve the wrong problem beautifully.&quot;, near-black dark theme" width="42%">
+</p>
+
 Built with [Astro](https://astro.build) as a fully static site. The built
 output ships **zero framework JavaScript** — just the ~2 KB draw script,
 inlined into the page.
