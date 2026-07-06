@@ -36,6 +36,7 @@
   // after the deck fetch resolves.
   const saved = loadState();
   if (saved && saved.drawn) document.body.classList.add("has-drawn");
+  requestAnimationFrame(() => document.body.classList.add("settled"));
 
   function saveState() {
     try {

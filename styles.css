@@ -191,6 +191,12 @@ a {
   font-style: italic;
   font-size: 1rem;
   text-align: center;
+}
+
+/* The fade only exists once the page has settled (class added one frame
+   after load). Without the gate, a returning visitor whose hint should be
+   hidden already can catch the transition mid-flight on load. */
+.settled .hint {
   transition: opacity 0.8s ease;
 }
 
@@ -317,7 +323,7 @@ a {
 /* ---------- motion ---------- */
 
 @media (prefers-reduced-motion: reduce) {
-  .hint {
+  .settled .hint {
     transition: none;
   }
 }
