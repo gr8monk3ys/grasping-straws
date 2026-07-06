@@ -28,6 +28,12 @@ cards join at their next reshuffle.
   technical identifiers use `grasping-straws`.
 - `PHYSICAL_DECK_URL` — leave `""` for the built-in "coming soon" state;
   set it to the product page URL once the physical deck exists.
+- `DECK_VERSION` — bump when a card-editing pass lands, so the site and the
+  printed deck stay in lockstep; shown discreetly on the About page.
+
+The mark (straw bundle) has a single vector source: `favicon.svg`. Both
+pages render it from there via CSS `mask`, so editing the glyph means
+editing one file.
 
 ## Running locally
 
@@ -41,10 +47,22 @@ python3 -m http.server 8000
 
 ## Deploying
 
-Push to Vercel as a zero-config static deploy. No build step, no `vercel.json`.
+Push to Vercel as a zero-config static deploy. No build step, no `vercel.json`,
+no `package.json` — the site has zero dependencies.
 
 After changing any asset, bump `VERSION` in `sw.js` so returning offline
-visitors pick up the new files.
+visitors pick up the new files. CI fails a PR that forgets.
+
+## CI
+
+`.github/workflows/ci.yml` runs on every PR:
+
+- `scripts/validate-cards.js` — cards.json parses, ids unique, text non-empty.
+- `scripts/check-sw-version.js` — precached assets changed ⇒ `sw.js` VERSION
+  must be bumped.
+- `scripts/verify.js` — drives the real site in headless Chromium: full-cycle
+  no-repeat guarantee, reshuffle rule, persistence, deep links, themes,
+  reduced motion, and the no-third-party-requests rule.
 
 ## How it works
 

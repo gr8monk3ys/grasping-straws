@@ -106,6 +106,16 @@ a {
   white-space: nowrap;
 }
 
+/* The mark. favicon.svg is the single vector source of the glyph; both
+   pages render it from there via CSS mask, colored by currentColor. */
+.glyph {
+  display: block;
+  aspect-ratio: 1;
+  background-color: currentColor;
+  -webkit-mask: url("favicon.svg") center / contain no-repeat;
+  mask: url("favicon.svg") center / contain no-repeat;
+}
+
 /* ---------- draw screen ---------- */
 
 .stage {
@@ -163,9 +173,8 @@ a {
   color: var(--muted);
 }
 
-.card-mark svg {
+.card-mark .glyph {
   width: clamp(56px, 26%, 84px);
-  height: auto;
 }
 
 .card-wordmark {
@@ -265,9 +274,7 @@ a {
 }
 
 .about .page-mark {
-  display: block;
   width: 44px;
-  height: auto;
   color: var(--muted);
   margin-bottom: 1.25rem;
 }

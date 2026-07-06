@@ -16,14 +16,17 @@ npx http-server -p 8317 -a 127.0.0.1 --silent &   # or python3 -m http.server
 
 ## Drive
 
-Playwright 1.56 is installed globally; Chromium is preinstalled
-(`PLAYWRIGHT_BROWSERS_PATH` is already set). Run scripts with:
+The full end-to-end suite is checked in — run that first:
 
 ```sh
-NODE_PATH=/opt/node22/lib/node_modules node <script>.js
+NODE_PATH=/opt/node22/lib/node_modules node scripts/verify.js
 ```
 
-Flows worth driving after a change:
+(Playwright 1.56 is installed globally in this environment; Chromium is
+preinstalled and `PLAYWRIGHT_BROWSERS_PATH` is already set. CI runs the same
+script via `.github/workflows/ci.yml`.)
+
+Flows it covers — extend it rather than scripting ad hoc:
 
 - Fresh visitor: face-down card + hint visible; click/space/Enter flips to a
   card, `location.hash` becomes `#<id>`, hint fades permanently.

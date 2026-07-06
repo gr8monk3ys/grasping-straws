@@ -1,0 +1,4 @@
+# CI installs playwright ad hoc; the site itself has no dependencies.
+node_modules/
+package.json
+package-lock.json
