@@ -7,7 +7,7 @@
  * so deck edits propagate promptly.
  */
 const CACHE = "grasping-straws-v1";
-const STABLE = ["/", "/about/", "/cards.json", "/favicon.svg"];
+const STABLE = ["/", "/about/", "/cards.json", "/favicon.svg", "/manifest.webmanifest"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(

@@ -8,7 +8,9 @@
     "preview": "astro preview",
     "check": "tsc --noEmit",
     "validate": "node scripts/validate-cards.js",
-    "verify": "node scripts/verify.js"
+    "verify": "node scripts/verify.js",
+    "assets": "node scripts/make-assets.js",
+    "print": "node scripts/print-cards.js"
   },
   "devDependencies": {
     "astro": "^5.0.0",

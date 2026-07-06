@@ -51,6 +51,8 @@ page.on("request", (r) => requests.push(r.url()));
 await page.goto(BASE + "/", { waitUntil: "networkidle" });
 
 check("face-down mark visible on load", await page.locator("#card-mark").isVisible());
+check("PWA manifest linked", (await page.locator('link[rel="manifest"]').count()) === 1);
+check("og:image is an absolute URL", /^https:\/\//.test((await page.locator('meta[property="og:image"]').getAttribute("content")) || ""));
 check("glyph mask resolves to favicon.svg", await page
   .locator("#card-mark .glyph")
   .evaluate((el) => getComputedStyle(el).maskImage.includes("favicon.svg") || getComputedStyle(el).webkitMaskImage.includes("favicon.svg")));
@@ -144,6 +146,11 @@ check("deck version shown discreetly", (await pa.textContent(".credit")).include
 const pad = await ctxDark.newPage();
 await pad.goto(BASE + "/about/", { waitUntil: "networkidle" });
 await pad.screenshot({ path: path.join(SHOTS, "shot-7-about-dark.png"), fullPage: true });
+
+// ---- 404 page ------------------------------------------------------------
+const p404 = await ctx.newPage();
+await p404.goto(BASE + "/404.html", { waitUntil: "networkidle" });
+check("404 page renders on brand", (await p404.textContent("main")).includes("Back to the deck"));
 
 // ---- no third-party requests -------------------------------------------
 const offsite = requests.filter((u) => !u.startsWith(BASE));

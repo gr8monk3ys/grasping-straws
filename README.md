@@ -50,12 +50,24 @@ npm run preview    # serve the built site
 npm run check      # typecheck the client script
 npm run validate   # lint public/cards.json
 npm run verify     # drive the built site end to end (build + serve first)
+npm run assets     # regenerate og.png + PWA icons from favicon.svg
+npm run print      # render 300 DPI card faces into print/ (see below)
 ```
+
+## Print files (physical deck)
+
+`npm run print` renders every card, the card back, and a title card as
+300 DPI PNGs into `print/` for MakePlayingCards / The Game Crafter. The
+bleed and safe-margin numbers in `scripts/print-cards.js` are
+**placeholders** — download the printer's own template files and copy their
+exact dimensions in before ordering (run with `GUIDES=1` to overlay the
+bleed/safe outlines while checking).
 
 ## Deploying
 
 Vercel auto-detects Astro; zero further config. Every push to `main`
-rebuilds and deploys.
+rebuilds and deploys. When the real domain goes live, update `site` in
+`astro.config.mjs` so `og:image` URLs point at it.
 
 ## How it works
 
