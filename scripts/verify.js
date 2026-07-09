@@ -95,6 +95,7 @@ const page2 = await ctx2.newPage();
 await page2.goto(BASE + "/#17", { waitUntil: "networkidle" });
 check("deep link #17 shows card 17 face up", (await page2.textContent("#card-text")) === byIdText(17));
 check("deep link keeps hint visible", (await page2.locator("#hint").evaluate((el) => getComputedStyle(el).opacity)) === "1");
+check("deep link keeps share hidden until a draw", (await page2.locator("#share").evaluate((el) => getComputedStyle(el).visibility)) === "hidden");
 await page2.screenshot({ path: path.join(SHOTS, "shot-3-deeplink.png") });
 const afterDeep = await drawOnce(page2, false);
 check("draw after deep link differs from linked card", afterDeep !== 17, `next=${afterDeep}`);
@@ -118,6 +119,39 @@ await page3.keyboard.press("Enter");
 await page3.waitForTimeout(650);
 const e2 = await page3.evaluate(() => JSON.parse(localStorage.getItem("grasping-straws.v1")).bag.length);
 check("probe: Enter on focused card draws exactly once", e1 - e2 === 1, `bag ${e1}->${e2}`);
+
+// ---- share: hidden pre-draw, appears with a card, clipboard fallback ---
+// navigator.share is stubbed out so the test exercises the clipboard path
+// deterministically regardless of what the host platform supports.
+const ctxShare = await browser.newContext({
+  viewport: { width: 390, height: 844 },
+  permissions: ["clipboard-read", "clipboard-write"],
+});
+await ctxShare.addInitScript(() => Object.defineProperty(navigator, "share", { value: undefined }));
+const psh = await ctxShare.newPage();
+await psh.goto(BASE + "/", { waitUntil: "networkidle" });
+check("share control hidden pre-draw", (await psh.locator("#share").evaluate((el) => getComputedStyle(el).visibility)) === "hidden");
+const shareId = await drawOnce(psh, false);
+await psh.waitForTimeout(900); // share fades in alongside the hint fade-out
+check("share control appears once a card is up", (await psh.locator("#share").evaluate((el) => getComputedStyle(el).visibility)) === "visible");
+await psh.click("#share");
+check("share fallback copies the card link", (await psh.evaluate(() => navigator.clipboard.readText())) === BASE + "/c/" + shareId + "/");
+check("share label confirms the copy", (await psh.textContent("#share")) === "link copied");
+await psh.waitForTimeout(2100);
+check("share label reverts after the copy", (await psh.textContent("#share")) === "share this card");
+await psh.screenshot({ path: path.join(SHOTS, "shot-8-share.png") });
+
+// ---- per-card share pages ----------------------------------------------
+const pcard = await ctx.newPage();
+await pcard.goto(BASE + "/c/17/", { waitUntil: "networkidle" });
+check("card page shows the card face up", (await pcard.textContent(".card-text")) === byIdText(17));
+check("card page title carries the card text", (await pcard.title()).includes(byIdText(17)));
+check("card page og:title carries the card text", ((await pcard.locator('meta[property="og:title"]').getAttribute("content")) || "").includes(byIdText(17)));
+check("card page invites a draw of your own", await pcard.locator('main a[href="/"]').isVisible());
+await pcard.screenshot({ path: path.join(SHOTS, "shot-9-card-page.png") });
+const lastId = cards[cards.length - 1].id;
+const resLast = await pcard.request.get(BASE + "/c/" + lastId + "/");
+check("every card gets a page (spot-check last id)", resLast.ok(), `/c/${lastId}/ -> ${resLast.status()}`);
 
 // ---- dark theme, desktop ----------------------------------------------
 const ctxDark = await browser.newContext({ colorScheme: "dark", viewport: { width: 1280, height: 800 } });

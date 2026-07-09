@@ -5,6 +5,8 @@
  * localStorage so a returning visitor continues their deck.
  */
 
+import { DECK_NAME } from "../config";
+
 type Card = { id: number; text: string; suit?: string };
 type SavedState = { bag?: unknown; last?: unknown; drawn?: unknown };
 
@@ -16,6 +18,7 @@ const inner = document.getElementById("card-inner") as HTMLElement;
 const markEl = document.getElementById("card-mark") as HTMLElement;
 const textEl = document.getElementById("card-text") as HTMLElement;
 const liveEl = document.getElementById("live") as HTMLElement;
+const shareBtn = document.getElementById("share") as HTMLButtonElement;
 const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
 
 let deck: Card[] = [];
@@ -89,6 +92,9 @@ function setFace(id: number): void {
   markEl.hidden = true;
   textEl.hidden = false;
   textEl.textContent = byId.get(id)!.text;
+  // A card face is up, so there is something to share. The share control
+  // itself waits for has-drawn too — a deep-link visitor keeps the hint.
+  document.body.classList.add("has-card");
 }
 
 function show(id: number, { instant = false, keepHint = false } = {}): void {
@@ -135,6 +141,40 @@ function draw(): void {
   saveState();
 }
 
+/*
+ * Share the face-up card as its /c/<id>/ page (real pages unfurl with the
+ * card text; #-fragments never reach scrapers). Native share sheet where
+ * the platform has one, clipboard otherwise.
+ */
+const shareLabel = shareBtn.textContent;
+let shareLabelTimer: ReturnType<typeof setTimeout> | undefined;
+
+async function shareCard(): Promise<void> {
+  const card = last === null ? undefined : byId.get(last);
+  if (!card) return;
+  const url = location.origin + "/c/" + card.id + "/";
+  if (navigator.share) {
+    try {
+      await navigator.share({ title: DECK_NAME, text: card.text, url });
+      return;
+    } catch (err) {
+      // Closing the share sheet is not an error; anything else falls
+      // through to the clipboard.
+      if (err instanceof DOMException && err.name === "AbortError") return;
+    }
+  }
+  try {
+    await navigator.clipboard.writeText(url);
+    shareBtn.textContent = "link copied";
+    clearTimeout(shareLabelTimer);
+    shareLabelTimer = setTimeout(() => {
+      shareBtn.textContent = shareLabel;
+    }, 1800);
+  } catch {
+    /* no clipboard either (e.g. insecure context) — leave the label be */
+  }
+}
+
 async function init(): Promise<void> {
   try {
     const res = await fetch("/cards.json");
@@ -175,6 +215,7 @@ async function init(): Promise<void> {
   });
 
   cardBtn.addEventListener("click", draw);
+  shareBtn.addEventListener("click", shareCard);
   document.addEventListener("keydown", (e) => {
     if (e.defaultPrevented) return;
     if (e.key !== " " && e.key !== "Enter") return;
