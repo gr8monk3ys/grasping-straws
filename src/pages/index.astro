@@ -19,10 +19,13 @@ const physicalHref = PHYSICAL_DECK_URL || "/about/#physical";
       </span>
     </button>
     <span id="draw-desc" class="sr-only">Draws the next card from the deck.</span>
-    <p class="hint" id="hint" aria-hidden="true">
-      <span class="hint-touch">tap to draw</span>
-      <span class="hint-pointer">press space, or click</span>
-    </p>
+    <div class="hint-slot">
+      <p class="hint" id="hint" aria-hidden="true">
+        <span class="hint-touch">tap to draw</span>
+        <span class="hint-pointer">press space, or click</span>
+      </p>
+      <button id="share" class="share">share this card</button>
+    </div>
     <p class="sr-only" aria-live="polite" id="live"></p>
     <noscript>
       <p class="hint">

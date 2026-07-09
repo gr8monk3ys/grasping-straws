@@ -37,7 +37,14 @@ Flows it covers — extend it rather than scripting ad hoc:
   unchanged; hint stays hidden without re-fading.
 - Deep link: `/#17` in a **fresh browser context** (storage is shared within
   a context — a used context legitimately hides the hint) shows card 17 face
-  up instantly.
+  up instantly; the share control stays hidden until the visitor draws.
+- Share: `#share` hidden pre-draw, visible after a draw (it swaps into the
+  hint's line). With `navigator.share` stubbed to `undefined` (init script)
+  and `clipboard-read`/`clipboard-write` context permissions, clicking
+  copies `/c/<id>/` and flips the label to "link copied" (~1.8 s revert).
+- Per-card pages: `/c/17/` renders the card face up, carries the card text
+  in `<title>`/`og:title`, and links back to `/`; every id in `cards.json`
+  gets a page.
 - Emulate `colorScheme: "dark"` and `reducedMotion: "reduce"` contexts —
   both are separately designed paths.
 - About page (`/about/`): the physical-deck link degrades to "coming soon"

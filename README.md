@@ -21,7 +21,8 @@ inlined into the page.
 Edit **`public/cards.json`** and nothing else. It's an array of
 `{ "id": 1, "text": "…", "suit": "lateral" }` objects:
 
-- `id` must be unique and stable — it's what `#17`-style share links point at.
+- `id` must be unique and stable — it's what `#17`-style deep links and the
+  `/c/17/` share pages point at.
 - `text` is the card.
 - `suit` is optional metadata for your own editing convenience; it is never
   shown to visitors.
@@ -84,6 +85,13 @@ rebuilds and deploys. When the real domain goes live, update `site` in
   card dealt. Bag state persists in `localStorage`.
 - **Share links**: every draw sets `location.hash` to the card id; loading
   `/#17` shows card 17 face up, then rejoins the normal bag.
+- **Sharing**: once a card is face up, a quiet "share this card" control
+  appears in the hint's line — the native share sheet where the platform
+  has one, copy-to-clipboard otherwise. It hands out `/c/17/`-style URLs:
+  one static page per card, built from `cards.json` at build time, with the
+  card text in the title and OG tags so shared links preview the card
+  itself (`#`-fragments never reach link scrapers). Each page invites the
+  visitor to draw their own.
 - **Themes**: light (paper-warm) and dark (near-black) via
   `prefers-color-scheme`, both AA contrast.
 - **Motion**: the card flip is the only animation; `prefers-reduced-motion`
@@ -98,8 +106,8 @@ rebuilds and deploys. When the real domain goes live, update `site` in
 `.github/workflows/ci.yml` runs on every PR: validates `public/cards.json`,
 typechecks, builds, then drives the built site in headless Chromium
 (`scripts/verify.js`) — full-cycle no-repeat guarantee, reshuffle rule,
-persistence, deep links, themes, reduced motion, and the
-no-third-party-requests rule.
+persistence, deep links, the share flow and per-card pages, themes,
+reduced motion, and the no-third-party-requests rule.
 
 ## Licenses
 

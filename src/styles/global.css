@@ -184,6 +184,19 @@ a {
   white-space: nowrap;
 }
 
+/* The hint and the share control share one reserved line below the card:
+   grid-stacked so swapping them never shifts the layout. The share button
+   is last in source order, so it paints on top and receives the clicks
+   once the (faded, but still stacked) hint is out of the way. */
+.hint-slot {
+  display: grid;
+  justify-items: center;
+}
+
+.hint-slot > * {
+  grid-area: 1 / 1;
+}
+
 .hint {
   margin-top: 1.75rem;
   min-height: 1.5em; /* reserve the line so the card never shifts */
@@ -191,6 +204,45 @@ a {
   font-style: italic;
   font-size: 1rem;
   text-align: center;
+}
+
+.hint-slot .hint {
+  pointer-events: none; /* never mask the share button underneath */
+}
+
+/* share: visible only when a card is face up (has-card) and this visitor
+   has drawn for themselves (has-drawn) — a deep-link visitor keeps the
+   hint, which occupies the same line. */
+.share {
+  margin-top: 1.75rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--muted);
+  font: inherit;
+  font-style: italic;
+  font-size: 1rem;
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.18em;
+  opacity: 0;
+  visibility: hidden;
+}
+
+.share:hover {
+  color: var(--accent);
+}
+
+.settled .share {
+  /* fade in step with the hint's fade-out; visibility flips after it */
+  transition: opacity 0.8s ease, visibility 0s linear 0.8s;
+}
+
+.has-card.has-drawn .share {
+  opacity: 1;
+  visibility: visible;
+  transition-delay: 0s;
 }
 
 /* The fade only exists once the page has settled (class added one frame
@@ -216,6 +268,14 @@ a {
   .hint-pointer {
     display: inline;
   }
+}
+
+/* ---------- per-card share pages (/c/<id>/) ---------- */
+
+.card-static {
+  cursor: default;
+  user-select: text; /* a shared card's text is there to be copied */
+  -webkit-user-select: text;
 }
 
 /* ---------- chrome ---------- */
@@ -323,7 +383,8 @@ a {
 /* ---------- motion ---------- */
 
 @media (prefers-reduced-motion: reduce) {
-  .settled .hint {
+  .settled .hint,
+  .settled .share {
     transition: none;
   }
 }
