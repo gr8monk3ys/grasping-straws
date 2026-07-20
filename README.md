@@ -4,7 +4,9 @@ A single-purpose, mobile-first web app that deals one card at a time from an
 original deck of lateral-thinking prompts, in the spirit of Brian Eno and
 Peter Schmidt's Oblique Strategies. All card text here is original.
 
-Tap, get a card, tap again.
+Tap, get a card, tap again. When the deadlock has a known shape, deal from a
+single suit; when you'd rather be dealt to, there's [one card a day](/today/);
+when there's more than one of you, the deck is [a game](/play/).
 
 <p align="center">
   <img src="docs/screenshot-light.png" alt="The face-down card showing the straw-bundle mark, paper-warm light theme" width="42%">
@@ -24,8 +26,10 @@ Edit **`public/cards.json`** and nothing else. It's an array of
 - `id` must be unique and stable — it's what `#17`-style deep links and the
   `/c/17/` share pages point at.
 - `text` is the card.
-- `suit` is optional metadata for your own editing convenience; it is never
-  shown to visitors.
+- `suit` groups cards by the shape of the deadlock (`lateral`, `sound`,
+  `image`, `language`, `threshold`). The draw screen offers the suits as a
+  quiet filter once a visitor has drawn; cards without a suit only appear
+  when drawing from everything.
 
 Removed cards vanish from visitors' in-progress decks automatically; added
 cards join at their next reshuffle. When an editing pass lands, bump
@@ -59,16 +63,22 @@ npm run validate   # lint public/cards.json
 npm run verify     # drive the built site end to end (build + serve first)
 npm run assets     # regenerate og.png + PWA icons from favicon.svg
 npm run print      # render 300 DPI card faces into print/ (see below)
+npm run pnp        # regenerate public/print-and-play.pdf
 ```
 
 ## Print files (physical deck)
 
-`npm run print` renders every card, the card back, and a title card as
-300 DPI PNGs into `print/` for MakePlayingCards / The Game Crafter. The
-bleed and safe-margin numbers in `scripts/print-cards.js` are
-**placeholders** — download the printer's own template files and copy their
-exact dimensions in before ordering (run with `GUIDES=1` to overlay the
-bleed/safe outlines while checking).
+`npm run print` renders all 54 faces — 48 prompts, the 5 rules cards from
+`/play/`, a title card — plus the shared back as 300 DPI PNGs into
+`print/`, sized to the published tarot-card templates of both
+MakePlayingCards and The Game Crafter (2.75″×4.75″ cut on a 900×1500 px
+canvas; sources cited in `scripts/print-cards.js`). Run with `GUIDES=1` to
+overlay the cut/safe outlines while proofing. **`docs/physical-deck.md` is
+the ordering playbook** — printer routes, proof QA, and the go-live steps.
+
+`npm run pnp` builds the free print-and-play edition:
+`public/print-and-play.pdf`, the whole deck four-to-a-page with cut lines,
+linked from the About page. Regenerate it whenever the deck changes.
 
 ## Deploying
 
@@ -83,6 +93,14 @@ rebuilds and deploys. When the real domain goes live, update `site` in
   until empty — no repeats within a cycle, like a physical deck. The
   reshuffle guarantees the first card of a new bag differs from the last
   card dealt. Bag state persists in `localStorage`.
+- **Suit decks**: a quiet row under the hint (visible after the first
+  draw) rebuilds the bag from a single suit; the no-repeat cycle and the
+  fresh-top rule apply inside the suit. The choice persists with the bag.
+- **The daily card** (`/today/`): one deterministic card per calendar day —
+  an FNV-1a hash of the visitor's local `YYYY-MM-DD` picks from the deck
+  sorted by id. Same card for everyone sharing a date, no backend.
+- **Ways to play** (`/play/`): five original games — solo rituals, a duet,
+  studio games. Condensed versions ship as the deck's printed rules cards.
 - **Share links**: every draw sets `location.hash` to the card id; loading
   `/#17` shows card 17 face up, then rejoins the normal bag.
 - **Sharing**: once a card is face up, a quiet "share this card" control
