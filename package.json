@@ -10,7 +10,8 @@
     "validate": "node scripts/validate-cards.js",
     "verify": "node scripts/verify.js",
     "assets": "node scripts/make-assets.js",
-    "print": "node scripts/print-cards.js"
+    "print": "node scripts/print-cards.js",
+    "pnp": "node scripts/print-and-play.js"
   },
   "devDependencies": {
     "astro": "^7.0.6",

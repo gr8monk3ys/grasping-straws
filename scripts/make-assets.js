@@ -57,7 +57,10 @@ const iconHtml = (size) => `<!doctype html><style>${baseCss}
   svg { width: ${Math.round(size * 0.58)}px; height: ${Math.round(size * 0.58)}px; color: ${INK}; }
 </style><body>${svg}</body>`;
 
-const browser = await chromium.launch();
+const browser = await chromium.launch(
+  // PW_CHANNEL=chrome runs against system Chrome when the pinned download is unavailable
+  process.env.PW_CHANNEL ? { channel: process.env.PW_CHANNEL } : {}
+);
 const shots = [
   { file: "og.png", width: 1200, height: 630, html: ogHtml },
   { file: "icon-512.png", width: 512, height: 512, html: iconHtml(512) },
