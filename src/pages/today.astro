@@ -1,0 +1,53 @@
+---
+/*
+ * The daily card: one card per calendar day, the same for everyone who
+ * shares a date. The pick happens client-side (src/scripts/today.ts) — a
+ * static page can't know the visitor's date, and "today" should mean the
+ * visitor's today.
+ */
+import Base from "../layouts/Base.astro";
+import { DECK_NAME, PHYSICAL_DECK_URL } from "../config";
+
+const description =
+  "One card a day from Grasping Straws, an original deck of lateral-thinking prompts. Same card for everyone, until midnight.";
+const physicalHref = PHYSICAL_DECK_URL || "/about/#physical";
+---
+
+<Base title={`Today's card — ${DECK_NAME}`} description={description}>
+  <main class="stage">
+    <div class="card card-static">
+      <span class="card-inner">
+        <span class="card-mark" id="today-mark">
+          <span class="glyph"></span>
+          <span class="card-wordmark">{DECK_NAME}</span>
+        </span>
+        <span class="card-text" id="today-text" hidden></span>
+      </span>
+    </div>
+    <p class="hint today-line">
+      the card for <span id="today-date">today</span> &middot;
+      <a id="today-share" href="/">share this card</a>
+    </p>
+    <p class="hint card-page-invite">
+      <a href="/">Draw your own card &rarr;</a>
+    </p>
+    <noscript>
+      <p class="hint">
+        Today's card needs JavaScript to know your today — the cards
+        themselves are just <a href="/cards.json">a JSON file</a>.
+      </p>
+    </noscript>
+  </main>
+  <footer class="chrome">
+    <span class="deck-name">{DECK_NAME}</span>
+    <nav>
+      <a href="/about/">About</a>
+      <a href="/play/">Ways to play</a>
+      <a href={physicalHref} class="cta">Get the physical deck</a>
+    </nav>
+  </footer>
+</Base>
+
+<script>
+  import "../scripts/today";
+</script>

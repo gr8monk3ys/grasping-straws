@@ -41,7 +41,10 @@ async function drawOnce(page, viaKey) {
   return Number((await page.evaluate(() => location.hash)).slice(1));
 }
 
-const browser = await chromium.launch();
+const browser = await chromium.launch(
+  // PW_CHANNEL=chrome runs against system Chrome when the pinned download is unavailable
+  process.env.PW_CHANNEL ? { channel: process.env.PW_CHANNEL } : {}
+);
 
 // ---- mobile, light, fresh visitor -----------------------------------
 const ctx = await browser.newContext({ colorScheme: "light", viewport: { width: 390, height: 844 } });
@@ -141,6 +144,36 @@ await psh.waitForTimeout(2100);
 check("share label reverts after the copy", (await psh.textContent("#share")) === "share this card");
 await psh.screenshot({ path: path.join(SHOTS, "shot-8-share.png") });
 
+// ---- suit decks ----------------------------------------------------------
+const ctxSuit = await browser.newContext({ colorScheme: "light", viewport: { width: 390, height: 844 } });
+const psu = await ctxSuit.newPage();
+await psu.goto(BASE + "/", { waitUntil: "networkidle" });
+check("suit row hidden pre-draw", (await psu.locator("#suits").evaluate((el) => getComputedStyle(el).visibility)) === "hidden");
+await drawOnce(psu, false);
+await psu.waitForTimeout(900); // fades in with the hint fade-out
+check("suit row appears after a draw", (await psu.locator("#suits").evaluate((el) => getComputedStyle(el).visibility)) === "visible");
+
+const suitName = "sound";
+const suitIds = cards.filter((c) => c.suit === suitName).map((c) => c.id);
+await psu.click(`#suits [data-suit="${suitName}"]`);
+check(`choosing ${suitName} rebuilds the bag from that suit`, (await psu.evaluate(() => JSON.parse(localStorage.getItem("grasping-straws.v1")).bag.length)) === suitIds.length);
+check("chosen suit reads as pressed", (await psu.locator(`#suits [data-suit="${suitName}"]`).getAttribute("aria-pressed")) === "true");
+
+// Draw by clicking the card: Space would land on the still-focused suit
+// button (a native no-op click), not the global draw shortcut.
+const suitDraws = [];
+for (let i = 0; i < suitIds.length; i++) suitDraws.push(await drawOnce(psu, false));
+check("suit cycle stays inside the suit", suitDraws.every((id) => suitIds.includes(id)));
+check("suit cycle has no repeats", new Set(suitDraws).size === suitIds.length, `${new Set(suitDraws).size}/${suitIds.length} unique`);
+const suitNext = await drawOnce(psu, false);
+check("suit reshuffle keeps dealing from the suit", suitIds.includes(suitNext), `#${suitNext}`);
+
+await psu.reload({ waitUntil: "networkidle" });
+check("suit choice persists across reload", (await psu.locator(`#suits [data-suit="${suitName}"]`).getAttribute("aria-pressed")) === "true");
+await psu.click('#suits [data-suit=""]');
+check("everything restores the full bag", (await psu.evaluate(() => JSON.parse(localStorage.getItem("grasping-straws.v1")).bag.length)) === cards.length);
+await psu.screenshot({ path: path.join(SHOTS, "shot-10-suits.png") });
+
 // ---- per-card share pages ----------------------------------------------
 const pcard = await ctx.newPage();
 await pcard.goto(BASE + "/c/17/", { waitUntil: "networkidle" });
@@ -152,6 +185,26 @@ await pcard.screenshot({ path: path.join(SHOTS, "shot-9-card-page.png") });
 const lastId = cards[cards.length - 1].id;
 const resLast = await pcard.request.get(BASE + "/c/" + lastId + "/");
 check("every card gets a page (spot-check last id)", resLast.ok(), `/c/${lastId}/ -> ${resLast.status()}`);
+
+// ---- ways to play ---------------------------------------------------------
+const pplay = await ctx.newPage();
+await pplay.goto(BASE + "/play/", { waitUntil: "networkidle" });
+check("play page lists the five games", (await pplay.locator("main h2").count()) >= 5, `${await pplay.locator("main h2").count()} headings`);
+check("play page links back to the deck", await pplay.locator('a[href="/"]').first().isVisible());
+await pplay.screenshot({ path: path.join(SHOTS, "shot-11-play.png"), fullPage: true });
+check("draw screen chrome links to ways to play", (await page.locator('.chrome a[href="/play/"]').count()) === 1);
+
+// ---- daily card ------------------------------------------------------------
+const ptoday = await ctx.newPage();
+await ptoday.goto(BASE + "/today/", { waitUntil: "networkidle" });
+const todayText = await ptoday.textContent("#today-text");
+check("today page shows a card from the deck", cards.some((c) => c.text === todayText), `“${todayText}”`);
+const todayCard = cards.find((c) => c.text === todayText);
+check("today share link points at the card's page", todayCard && (await ptoday.locator("#today-share").getAttribute("href")) === `/c/${todayCard.id}/`);
+const ptoday2 = await ctxSuit.newPage(); // different context, same day
+await ptoday2.goto(BASE + "/today/", { waitUntil: "networkidle" });
+check("today's card is the same for everyone", (await ptoday2.textContent("#today-text")) === todayText);
+await ptoday.screenshot({ path: path.join(SHOTS, "shot-12-today.png") });
 
 // ---- dark theme, desktop ----------------------------------------------
 const ctxDark = await browser.newContext({ colorScheme: "dark", viewport: { width: 1280, height: 800 } });
@@ -176,6 +229,11 @@ await pa.screenshot({ path: path.join(SHOTS, "shot-6-about-light.png"), fullPage
 check("about headline keeps the ?", (await pa.textContent("h1")).trim() === "Grasping Straws?");
 check("wikipedia lineage link present", (await pa.locator('a[href*="wikipedia.org/wiki/Oblique_Strategies"]').count()) === 1);
 check("physical link degrades to coming-soon (empty config URL)", (await pa.textContent("main")).includes("coming soon"));
+check("about links the print-and-play PDF", (await pa.locator('a[href="/print-and-play.pdf"]').count()) === 1);
+const resPdf = await pa.request.get(BASE + "/print-and-play.pdf");
+check("print-and-play PDF is served", resPdf.ok() && (resPdf.headers()["content-type"] || "").includes("pdf"), `status ${resPdf.status()}`);
+check("about links ways to play", (await pa.locator('a[href="/play/"]').count()) >= 1);
+check("about links the daily card", (await pa.locator('a[href="/today/"]').count()) >= 1);
 check("deck version shown discreetly", (await pa.textContent(".credit")).includes("Deck v"));
 const pad = await ctxDark.newPage();
 await pad.goto(BASE + "/about/", { waitUntil: "networkidle" });

@@ -1,0 +1,89 @@
+---
+/*
+ * Ways to play: the rules that turn a prompt deck into a card game. The
+ * five games here also exist as printed instruction cards — condensed
+ * versions live in scripts/print-cards.js (RULES_CARDS); keep the two in
+ * step when a game changes.
+ */
+import Base from "../layouts/Base.astro";
+import { DECK_NAME, PHYSICAL_DECK_URL } from "../config";
+
+const description =
+  "Five ways to play Grasping Straws — solo rituals, a duet, and studio games for working artists.";
+const physicalHref = PHYSICAL_DECK_URL || "/about/#physical";
+---
+
+<Base title={`Ways to play — ${DECK_NAME}`} description={description} bodyClass="about">
+  <main>
+    <a class="backlink" href="/">&larr; Back to the deck</a>
+
+    <span class="glyph page-mark"></span>
+
+    <h1>Ways to play</h1>
+
+    <p class="lede">
+      A card on its own is a nudge. A rule about when you draw, what you owe the card, and who
+      else is holding one turns the deck into a game. Five games, tested against real deadlocks.
+      The only rule they share: the deck doesn't negotiate.
+    </p>
+
+    <h2>Ten Minutes <span class="players">solo</span></h2>
+    <p>
+      The basic ritual. When the work stalls, draw one card and obey it — literally, not
+      approximately — for ten minutes. No second draw, no interpreting your way back to what you
+      were already doing. If the card seems to make no sense for your medium, that gap is the
+      exercise: a drummer holding <em>&ldquo;Mute the loudest layer&rdquo;</em> has more to decide
+      than a mixer does. After ten minutes you may keep what happened or throw it away, but you
+      have to look at it first.
+    </p>
+
+    <h2>Three Straws <span class="players">solo</span></h2>
+    <p>
+      A spread, for when you don't know why you're stuck. Deal three cards face down. Turn them
+      one at a time: the first names what is actually wrong &mdash; read it as a diagnosis, not an
+      instruction. The second is how to work on it. The third is your stopping rule: the condition
+      under which the piece is finished whether you agree or not. Write the third one down where
+      you can see it. Most deadlocks are a finishing problem wearing a starting problem's clothes.
+    </p>
+
+    <h2>First &amp; Last <span class="players">solo, one session</span></h2>
+    <p>
+      Draw a card before you begin and let it set the session's terms. Work as long as you like.
+      When you believe you're done, draw exactly one more and let it edit the ending &mdash; it may
+      cost you the last hour or save the whole day. You agreed to this before you started; that's
+      why it works. The first card opens the session, the last one closes it, and neither is your
+      taste.
+    </p>
+
+    <h2>Blind Jury <span class="players">3 or more</span></h2>
+    <p>
+      One card, read aloud, for everyone. No one says how they intend to read it. Twenty minutes
+      of work in whatever medium each person brought, then show the results side by side and only
+      then say what you each thought the card meant. The game is the divergence: the same sentence
+      sent five people five directions, and at least one of those directions is better than yours.
+      Steal it. Rotate who draws.
+    </p>
+
+    <h2>Exquisite Relay <span class="players">2, over days or weeks</span></h2>
+    <p>
+      Two artists, one piece, passed back and forth. Each time the piece changes hands, the
+      receiver draws a card in secret and works under it; the sender must not know which
+      instruction shaped the pass. Keep the drawn cards in order, face down, like a growing spine.
+      When the piece is finished, reveal the sequence and read it as the piece's secret history.
+      Title the work with one of the cards.
+    </p>
+
+    <h2>House rules</h2>
+    <p>
+      These five are openings, not the whole book. The deck holds five suits &mdash; on the
+      <a href="/">draw screen</a> you can deal from just one &mdash; and any of these games can be
+      played inside a single suit when the deadlock has a known shape. If you invent a game worth
+      keeping, it's yours: the deck is the instrument, not the score.
+    </p>
+
+    <p class="credit">
+      <a href="/about/">About the deck</a> &middot;
+      <a href={physicalHref}>Get the physical deck</a>
+    </p>
+  </main>
+</Base>

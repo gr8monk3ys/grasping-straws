@@ -245,6 +245,53 @@ a {
   transition-delay: 0s;
 }
 
+/* Suit decks: draw from one straw. The row stays in flow but invisible
+   until the visitor has drawn — the first-run screen keeps its single
+   card and hint, and nothing shifts when the row appears. */
+.suits {
+  margin-top: 1.1rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 1.15rem;
+  justify-content: center;
+  max-width: min(88vw, 420px);
+  font-size: 0.85rem;
+  letter-spacing: 0.04em;
+  opacity: 0;
+  visibility: hidden;
+}
+
+.settled .suits {
+  transition: opacity 0.8s ease, visibility 0s linear 0.8s;
+}
+
+.has-drawn .suits {
+  opacity: 1;
+  visibility: visible;
+  transition-delay: 0s;
+}
+
+.suits button {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--muted);
+  font: inherit;
+  font-size: inherit;
+  cursor: pointer;
+}
+
+.suits button:hover {
+  color: var(--accent);
+}
+
+.suits button[aria-pressed="true"] {
+  color: var(--accent);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.18em;
+}
+
 /* The fade only exists once the page has settled (class added one frame
    after load). Without the gate, a returning visitor whose hint should be
    hidden already can catch the transition mid-flight on load. */
@@ -270,6 +317,13 @@ a {
   }
 }
 
+/* ---------- daily card (/today/) ---------- */
+
+/* two quiet lines under the card, not two full hint gaps apart */
+.today-line + .card-page-invite {
+  margin-top: 0.4rem;
+}
+
 /* ---------- per-card share pages (/c/<id>/) ---------- */
 
 .card-static {
@@ -282,9 +336,10 @@ a {
 
 .chrome {
   display: flex;
+  flex-wrap: wrap; /* three nav links now — let them drop below the name on narrow screens */
   justify-content: space-between;
   align-items: baseline;
-  gap: 1.25rem;
+  gap: 0.35rem 1.25rem;
   padding: 0.9rem 1.25rem calc(0.9rem + env(safe-area-inset-bottom));
   font-size: 0.85rem;
   letter-spacing: 0.02em;
@@ -362,6 +417,15 @@ a {
   color: var(--muted);
 }
 
+/* player-count tag on the /play/ game headings */
+.about h2 .players {
+  margin-left: 0.7em;
+  letter-spacing: 0.03em;
+  text-transform: lowercase;
+  font-style: italic;
+  font-weight: 400;
+}
+
 .about p {
   margin-bottom: 0.9em;
   line-height: 1.6;
@@ -384,7 +448,8 @@ a {
 
 @media (prefers-reduced-motion: reduce) {
   .settled .hint,
-  .settled .share {
+  .settled .share,
+  .settled .suits {
     transition: none;
   }
 }

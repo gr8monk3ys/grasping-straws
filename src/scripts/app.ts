@@ -8,7 +8,7 @@
 import { DECK_NAME } from "../config";
 
 type Card = { id: number; text: string; suit?: string };
-type SavedState = { bag?: unknown; last?: unknown; drawn?: unknown };
+type SavedState = { bag?: unknown; last?: unknown; drawn?: unknown; suit?: unknown };
 
 const STORAGE_KEY = "grasping-straws.v1";
 const FLIP_MS = 400;
@@ -25,6 +25,7 @@ let deck: Card[] = [];
 let byId = new Map<number, Card>();
 let bag: number[] = []; // ids not yet dealt this cycle; the top of the pile is the end
 let last: number | null = null; // id of the card currently face up
+let suit: string | null = null; // active suit filter; null = the whole deck
 let busy = false;
 
 function loadState(): SavedState | null {
@@ -39,7 +40,7 @@ function saveState(): void {
   try {
     localStorage.setItem(
       STORAGE_KEY,
-      JSON.stringify({ bag, last, drawn: document.body.classList.contains("has-drawn") })
+      JSON.stringify({ bag, last, suit, drawn: document.body.classList.contains("has-drawn") })
     );
   } catch {
     /* storage unavailable (private mode) — the deck just won't remember */
@@ -84,7 +85,9 @@ function keepTopFresh(): void {
 }
 
 function refillBag(): void {
-  bag = shuffled(deck.map((c) => c.id));
+  // A suit whose cards were all edited away falls back to the whole deck.
+  const pool = suit ? deck.filter((c) => c.suit === suit) : deck;
+  bag = shuffled((pool.length ? pool : deck).map((c) => c.id));
   keepTopFresh();
 }
 
@@ -187,13 +190,42 @@ async function init(): Promise<void> {
   }
   byId = new Map(deck.map((c) => [c.id, c]));
 
+  // Suit filter: restore the saved choice if that suit still exists.
+  const suitsInDeck = new Set(deck.map((c) => c.suit).filter((s) => typeof s === "string"));
+  if (saved && typeof saved.suit === "string" && suitsInDeck.has(saved.suit)) suit = saved.suit;
+
   if (saved && Array.isArray(saved.bag)) {
     // Cards removed from cards.json since the last visit simply vanish
-    // from the bag; new cards join at the next reshuffle.
-    bag = saved.bag.filter((id): id is number => typeof id === "number" && byId.has(id));
+    // from the bag; new cards join at the next reshuffle. Under a suit
+    // filter, cards reassigned out of the suit vanish the same way.
+    bag = saved.bag.filter(
+      (id): id is number =>
+        typeof id === "number" && byId.has(id) && (!suit || byId.get(id)!.suit === suit)
+    );
     last = typeof saved.last === "number" && byId.has(saved.last) ? saved.last : null;
   }
   if (bag.length === 0) refillBag();
+
+  // Suit buttons are rendered at build time from the same cards.json.
+  const suitButtons = Array.from(
+    document.querySelectorAll<HTMLButtonElement>("#suits [data-suit]")
+  );
+  const reflectSuit = (): void => {
+    for (const b of suitButtons) {
+      b.setAttribute("aria-pressed", String((b.dataset.suit || null) === suit));
+    }
+  };
+  for (const b of suitButtons) {
+    b.addEventListener("click", () => {
+      const next = b.dataset.suit || null;
+      if (next === suit) return;
+      suit = next;
+      refillBag(); // a new deck: cycle progress restarts inside the suit
+      reflectSuit();
+      saveState();
+    });
+  }
+  reflectSuit();
 
   // #<id> deep link: show that card face up, then rejoin the normal bag.
   const hashId = Number(location.hash.slice(1));

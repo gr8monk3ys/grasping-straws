@@ -1,10 +1,14 @@
 ---
+import cards from "../../public/cards.json";
 import Base from "../layouts/Base.astro";
 import { DECK_NAME, PHYSICAL_DECK_URL } from "../config";
 
 const description =
   "An original deck of lateral-thinking prompts for breaking creative deadlocks. Tap to draw a card.";
 const physicalHref = PHYSICAL_DECK_URL || "/about/#physical";
+// The suit row is built from the same cards.json the app deals from, in
+// order of first appearance. Suits are the deck's own vocabulary.
+const suits = [...new Set(cards.map((c) => c.suit).filter(Boolean))];
 ---
 
 <Base title={DECK_NAME} description={description}>
@@ -26,6 +30,10 @@ const physicalHref = PHYSICAL_DECK_URL || "/about/#physical";
       </p>
       <button id="share" class="share">share this card</button>
     </div>
+    <nav id="suits" class="suits" aria-label="Draw from">
+      <button data-suit="" aria-pressed="true">everything</button>
+      {suits.map((s) => <button data-suit={s} aria-pressed="false">{s}</button>)}
+    </nav>
     <p class="sr-only" aria-live="polite" id="live"></p>
     <noscript>
       <p class="hint">
@@ -38,6 +46,7 @@ const physicalHref = PHYSICAL_DECK_URL || "/about/#physical";
     <span class="deck-name">{DECK_NAME}</span>
     <nav>
       <a href="/about/">About</a>
+      <a href="/play/">Ways to play</a>
       <a href={physicalHref} class="cta">Get the physical deck</a>
     </nav>
   </footer>
