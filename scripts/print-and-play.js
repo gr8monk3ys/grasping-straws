@@ -14,6 +14,7 @@ import { chromium } from "playwright";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { RULES_CARDS } from "./rules-cards.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const pub = path.join(here, "..", "public");
@@ -26,13 +27,6 @@ const fontItalic = fs
   .toString("base64");
 
 // Keep in step with src/pages/play.astro and scripts/print-cards.js.
-const RULES_CARDS = [
-  { title: "Ten Minutes", players: "solo", body: "Draw one card. Obey it — literally, not approximately — for ten minutes. No second draw. Keep the result or throw it away, but look at it first." },
-  { title: "Three Straws", players: "solo", body: "Deal three cards face down. Turn them in order: what is actually wrong; how to work on it; when to stop. Write the third one down." },
-  { title: "First & Last", players: "solo · one session", body: "Draw before you begin and work under the card. When you believe you're done, draw exactly one more and let it edit the ending." },
-  { title: "Blind Jury", players: "3 or more", body: "One card for everyone, read aloud. No one says how they read it. Twenty minutes of work, then show the results side by side. Steal the best direction." },
-  { title: "Exquisite Relay", players: "2 · over days or weeks", body: "One piece, passed back and forth. Each pass begins with a secret draw. When the piece is finished, reveal the cards in order and title it with one." },
-];
 
 const esc = (s) => s.replaceAll("&", "&amp;").replaceAll("<", "&lt;");
 

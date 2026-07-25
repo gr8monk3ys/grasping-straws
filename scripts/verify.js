@@ -25,6 +25,27 @@ const results = [];
 const check = (name, cond, extra = "") =>
   results.push(`${cond ? "PASS" : "FAIL"}  ${name}${extra ? "  [" + extra + "]" : ""}`);
 
+/*
+ * The checks run as one long script, so a selector that has gone missing
+ * throws and takes every later check with it. Printing from an exit
+ * handler means a crash still reports how far the site got — a partial
+ * pass list localises the breakage far better than a bare stack trace.
+ */
+let finished = false;
+let reported = false;
+function report() {
+  if (reported) return;
+  reported = true;
+  const fails = results.filter((r) => r.startsWith("FAIL"));
+  console.log(results.join("\n"));
+  console.log(`\n${results.length - fails.length}/${results.length} checks passed — screenshots in ${SHOTS}`);
+  if (!finished) {
+    console.log("\n!! run aborted before the end — the list above is partial, not a clean sheet");
+  }
+  if (fails.length) process.exitCode = 1;
+}
+process.on("exit", report);
+
 async function drawOnce(page, viaKey) {
   const prev = await page.evaluate(() => location.hash);
   for (let attempt = 0; attempt < 3; attempt++) {
@@ -248,8 +269,6 @@ check("404 page renders on brand", (await p404.textContent("main")).includes("Ba
 const offsite = requests.filter((u) => !u.startsWith(BASE));
 check("no third-party requests at runtime", offsite.length === 0, offsite.join(", "));
 
-console.log(results.join("\n"));
-const fails = results.filter((r) => r.startsWith("FAIL"));
-console.log(`\n${results.length - fails.length}/${results.length} checks passed — screenshots in ${SHOTS}`);
+finished = true;
 await browser.close();
-process.exit(fails.length ? 1 : 0);
+report();

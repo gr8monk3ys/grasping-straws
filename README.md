@@ -58,8 +58,8 @@ npm install
 npm run dev        # dev server with live reload
 npm run build      # static build into dist/
 npm run preview    # serve the built site
-npm run check      # typecheck the client script
-npm run validate   # lint public/cards.json
+npm run check      # typecheck the client scripts and the .astro pages
+npm run validate   # lint public/cards.json and the rules-card guard
 npm run verify     # drive the built site end to end (build + serve first)
 npm run assets     # regenerate og.png + PWA icons from favicon.svg
 npm run print      # render 300 DPI card faces into print/ (see below)
@@ -97,10 +97,16 @@ rebuilds and deploys. When the real domain goes live, update `site` in
   draw) rebuilds the bag from a single suit; the no-repeat cycle and the
   fresh-top rule apply inside the suit. The choice persists with the bag.
 - **The daily card** (`/today/`): one deterministic card per calendar day —
-  an FNV-1a hash of the visitor's local `YYYY-MM-DD` picks from the deck
-  sorted by id. Same card for everyone sharing a date, no backend.
+  the visitor's local `YYYY-MM-DD`, FNV-1a hashed and then run through
+  murmur3's finalizer, picks from the deck sorted by id. Same card for
+  everyone sharing a date, no backend. The finalizer is load-bearing:
+  FNV-1a on its own moves consecutive dates by a fixed stride, which would
+  make tomorrow's card computable from today's.
 - **Ways to play** (`/play/`): five original games — solo rituals, a duet,
-  studio games. Condensed versions ship as the deck's printed rules cards.
+  studio games. Condensed versions ship as the deck's printed rules cards,
+  written once in `scripts/rules-cards.js` and rendered by both print
+  scripts; `npm run validate` fails if that set stops matching the games
+  on `/play/`.
 - **Share links**: every draw sets `location.hash` to the card id; loading
   `/#17` shows card 17 face up, then rejoins the normal bag.
 - **Sharing**: once a card is face up, a quiet "share this card" control
@@ -121,8 +127,9 @@ rebuilds and deploys. When the real domain goes live, update `site` in
 
 ## CI
 
-`.github/workflows/ci.yml` runs on every PR: validates `public/cards.json`,
-typechecks, builds, then drives the built site in headless Chromium
+`.github/workflows/ci.yml` runs on every PR: validates `public/cards.json`
+and the rules cards, typechecks (`astro check` for the pages, `tsc` for the
+client scripts), builds, then drives the built site in headless Chromium
 (`scripts/verify.js`) — full-cycle no-repeat guarantee, reshuffle rule,
 persistence, deep links, the share flow and per-card pages, themes,
 reduced motion, and the no-third-party-requests rule.

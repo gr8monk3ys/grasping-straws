@@ -6,8 +6,8 @@
  */
 
 import { DECK_NAME } from "../config";
+import { type Card, FAILURE_TEXT, loadDeck } from "./deck";
 
-type Card = { id: number; text: string; suit?: string };
 type SavedState = { bag?: unknown; last?: unknown; drawn?: unknown; suit?: unknown };
 
 const STORAGE_KEY = "grasping-straws.v1";
@@ -179,15 +179,14 @@ async function shareCard(): Promise<void> {
 }
 
 async function init(): Promise<void> {
-  try {
-    const res = await fetch("/cards.json");
-    deck = (await res.json()) as Card[];
-  } catch {
+  const loaded = await loadDeck();
+  if (!loaded) {
     markEl.hidden = true;
     textEl.hidden = false;
-    textEl.textContent = "The deck failed to load. Refresh to try again.";
+    textEl.textContent = FAILURE_TEXT;
     return;
   }
+  deck = loaded;
   byId = new Map(deck.map((c) => [c.id, c]));
 
   // Suit filter: restore the saved choice if that suit still exists.

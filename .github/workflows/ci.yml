@@ -26,5 +26,10 @@ jobs:
       - name: Drive the built site end to end
         run: |
           python3 -m http.server 8317 --bind 127.0.0.1 --directory dist &> /dev/null &
-          sleep 1
+          # Poll rather than sleep: a fixed wait is a coin flip on a slow runner.
+          for i in $(seq 1 50); do
+            curl -sf -o /dev/null http://127.0.0.1:8317/ && break
+            if [ "$i" = 50 ]; then echo "server never came up on :8317"; exit 1; fi
+            sleep 0.2
+          done
           node scripts/verify.js
