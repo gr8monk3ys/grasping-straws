@@ -32,7 +32,13 @@ const suits = [...new Set(cards.map((c) => c.suit).filter(Boolean))];
     </div>
     <nav id="suits" class="suits" aria-label="Draw from">
       <button data-suit="" aria-pressed="true">everything</button>
-      {suits.map((s) => <button data-suit={s} aria-pressed="false">{s}</button>)}
+      {
+        suits.map((s) => (
+          <button data-suit={s} aria-pressed="false">
+            {s}
+          </button>
+        ))
+      }
     </nav>
     <p class="sr-only" aria-live="polite" id="live"></p>
     <noscript>

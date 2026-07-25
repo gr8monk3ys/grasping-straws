@@ -71,7 +71,9 @@ const shell = (body) => `<!doctype html><style>
 </style><body>${body}${guides}</body>`;
 
 const face = (text) =>
-  shell(`<div style="font-size:64px; line-height:1.35; text-align:center; text-wrap:balance;">${esc(text)}</div>`);
+  shell(
+    `<div style="font-size:64px; line-height:1.35; text-align:center; text-wrap:balance;">${esc(text)}</div>`,
+  );
 
 const rules = (card) =>
   shell(`<div style="display:grid; justify-items:center; gap:56px; text-align:center;">
@@ -93,7 +95,7 @@ const title = shell(`<div style="display:grid; justify-items:center; gap:90px;">
 
 const browser = await chromium.launch(
   // PW_CHANNEL=chrome runs against system Chrome when the pinned download is unavailable
-  process.env.PW_CHANNEL ? { channel: process.env.PW_CHANNEL } : {}
+  process.env.PW_CHANNEL ? { channel: process.env.PW_CHANNEL } : {},
 );
 const page = await browser.newPage({ viewport: { width: W, height: H } });
 
@@ -117,5 +119,5 @@ await browser.close();
 const faces = cards.length + RULES_CARDS.length + 1; // prompts + rules + title
 console.log(
   `\n${faces} faces + 1 back at ${W}x${H}px (${SPEC.dpi} DPI, tarot 2.75x4.75in cut).` +
-    `\nUpload: faces + back.png. See docs/physical-deck.md for the ordering playbook.`
+    `\nUpload: faces + back.png. See docs/physical-deck.md for the ordering playbook.`,
 );

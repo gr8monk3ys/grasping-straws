@@ -15,8 +15,10 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - name: Validate cards.json
+      - name: Validate cards.json and the rules cards
         run: npm run validate
+      - name: Formatting
+        run: npm run format:check
       - name: Typecheck
         run: npm run check
       - name: Build

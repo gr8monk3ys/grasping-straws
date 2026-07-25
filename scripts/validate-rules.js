@@ -28,7 +28,7 @@ const playPage = path.join(here, "..", "src", "pages", "play.astro");
 // span and drops out of the match.
 const html = fs.readFileSync(playPage, "utf8");
 const pageTitles = [...html.matchAll(/<h2>([^<]+?)\s*<span class="players">/g)].map((m) =>
-  m[1].trim().replaceAll("&amp;", "&")
+  m[1].trim().replaceAll("&amp;", "&"),
 );
 
 const cardTitles = RULES_CARDS.map((c) => c.title);
@@ -36,8 +36,8 @@ const errors = [];
 
 if (pageTitles.length === 0) {
   errors.push(
-    "found no games on /play/ — the <h2>Title <span class=\"players\"> shape this " +
-      "parser depends on has changed, so the guard is no longer guarding anything"
+    'found no games on /play/ — the <h2>Title <span class="players"> shape this ' +
+      "parser depends on has changed, so the guard is no longer guarding anything",
   );
 }
 
@@ -45,16 +45,20 @@ const missingFromCards = pageTitles.filter((t) => !cardTitles.includes(t));
 const missingFromPage = cardTitles.filter((t) => !pageTitles.includes(t));
 
 for (const t of missingFromCards) {
-  errors.push(`"${t}" is on /play/ but has no printed rules card (add it to scripts/rules-cards.js)`);
+  errors.push(
+    `"${t}" is on /play/ but has no printed rules card (add it to scripts/rules-cards.js)`,
+  );
 }
 for (const t of missingFromPage) {
-  errors.push(`"${t}" has a printed rules card but is not on /play/ (add it to src/pages/play.astro)`);
+  errors.push(
+    `"${t}" has a printed rules card but is not on /play/ (add it to src/pages/play.astro)`,
+  );
 }
 
 if (!errors.length && pageTitles.join("|") !== cardTitles.join("|")) {
   errors.push(
     `same games, different order — page: ${pageTitles.join(", ")}; cards: ${cardTitles.join(", ")}. ` +
-      "The printed deck is read in order; keep the two sequences identical."
+      "The printed deck is read in order; keep the two sequences identical.",
   );
 }
 

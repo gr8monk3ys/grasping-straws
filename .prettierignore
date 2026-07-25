@@ -1,0 +1,24 @@
+# Build output and vendored files
+node_modules/
+dist/
+.astro/
+print/
+package-lock.json
+public/fonts/
+
+# Local editor/agent settings — not this project's to format.
+.claude/
+
+# The deck is hand-edited, one card per line, and that grid is the point:
+# it makes the file scannable and gives a card edit a one-line diff.
+# Prettier explodes the longest cards onto five lines each. Structure is
+# enforced by `npm run validate`, which is the check that actually matters.
+public/cards.json
+
+# 61 checks, one per line, deliberately over the print width. Prettier
+# wraps each into a four-line call and takes the file from 274 lines to
+# 435 — the density is what makes a failing run readable at a glance.
+scripts/verify.js
+
+# A dated record of a design session; reformatting it would be noise.
+docs/superpowers/

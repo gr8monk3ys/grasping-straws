@@ -40,7 +40,7 @@ function saveState(): void {
   try {
     localStorage.setItem(
       STORAGE_KEY,
-      JSON.stringify({ bag, last, suit, drawn: document.body.classList.contains("has-drawn") })
+      JSON.stringify({ bag, last, suit, drawn: document.body.classList.contains("has-drawn") }),
     );
   } catch {
     /* storage unavailable (private mode) — the deck just won't remember */
@@ -116,19 +116,20 @@ function show(id: number, { instant = false, keepHint = false } = {}): void {
   const half = FLIP_MS / 2;
   const out = reducedMotion.matches
     ? inner.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 90, easing: "ease-in" })
-    : inner.animate(
-        [{ transform: "rotateY(0deg)" }, { transform: "rotateY(90deg)" }],
-        { duration: half, easing: "cubic-bezier(0.45, 0, 0.85, 0.6)" }
-      );
+    : inner.animate([{ transform: "rotateY(0deg)" }, { transform: "rotateY(90deg)" }], {
+        duration: half,
+        easing: "cubic-bezier(0.45, 0, 0.85, 0.6)",
+      });
   out.finished
     .then(() => {
       setFace(id);
       return reducedMotion.matches
-        ? inner.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 140, easing: "ease-out" }).finished
-        : inner.animate(
-            [{ transform: "rotateY(-90deg)" }, { transform: "rotateY(0deg)" }],
-            { duration: half, easing: "cubic-bezier(0.15, 0.4, 0.35, 1)" }
-          ).finished;
+        ? inner.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 140, easing: "ease-out" })
+            .finished
+        : inner.animate([{ transform: "rotateY(-90deg)" }, { transform: "rotateY(0deg)" }], {
+            duration: half,
+            easing: "cubic-bezier(0.15, 0.4, 0.35, 1)",
+          }).finished;
     })
     .catch(() => setFace(id))
     .finally(() => {
@@ -199,7 +200,7 @@ async function init(): Promise<void> {
     // filter, cards reassigned out of the suit vanish the same way.
     bag = saved.bag.filter(
       (id): id is number =>
-        typeof id === "number" && byId.has(id) && (!suit || byId.get(id)!.suit === suit)
+        typeof id === "number" && byId.has(id) && (!suit || byId.get(id)!.suit === suit),
     );
     last = typeof saved.last === "number" && byId.has(saved.last) ? saved.last : null;
   }
@@ -207,7 +208,7 @@ async function init(): Promise<void> {
 
   // Suit buttons are rendered at build time from the same cards.json.
   const suitButtons = Array.from(
-    document.querySelectorAll<HTMLButtonElement>("#suits [data-suit]")
+    document.querySelectorAll<HTMLButtonElement>("#suits [data-suit]"),
   );
   const reflectSuit = (): void => {
     for (const b of suitButtons) {

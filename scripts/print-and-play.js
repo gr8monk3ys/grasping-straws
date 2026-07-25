@@ -30,8 +30,7 @@ const fontItalic = fs
 
 const esc = (s) => s.replaceAll("&", "&amp;").replaceAll("<", "&lt;");
 
-const promptFace = (text) =>
-  `<div class="cell"><div class="prompt">${esc(text)}</div></div>`;
+const promptFace = (text) => `<div class="cell"><div class="prompt">${esc(text)}</div></div>`;
 
 const rulesFace = (c) =>
   `<div class="cell"><div class="rules">
@@ -108,7 +107,7 @@ ${sheets.map((cells) => `<section class="page">${cells}</section>`).join("\n")}
 
 const browser = await chromium.launch(
   // PW_CHANNEL=chrome runs against system Chrome when the pinned download is unavailable
-  process.env.PW_CHANNEL ? { channel: process.env.PW_CHANNEL } : {}
+  process.env.PW_CHANNEL ? { channel: process.env.PW_CHANNEL } : {},
 );
 const page = await browser.newPage();
 await page.setContent(html, { waitUntil: "networkidle" });
@@ -123,5 +122,5 @@ await browser.close();
 const bytes = fs.statSync(path.join(pub, "print-and-play.pdf")).size;
 console.log(
   `wrote public/print-and-play.pdf — ${faces.length} faces on ${sheets.length} sheets ` +
-    `+ cover + backs page (${(bytes / 1024).toFixed(0)} KB)`
+    `+ cover + backs page (${(bytes / 1024).toFixed(0)} KB)`,
 );

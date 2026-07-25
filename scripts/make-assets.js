@@ -59,7 +59,7 @@ const iconHtml = (size) => `<!doctype html><style>${baseCss}
 
 const browser = await chromium.launch(
   // PW_CHANNEL=chrome runs against system Chrome when the pinned download is unavailable
-  process.env.PW_CHANNEL ? { channel: process.env.PW_CHANNEL } : {}
+  process.env.PW_CHANNEL ? { channel: process.env.PW_CHANNEL } : {},
 );
 const shots = [
   { file: "og.png", width: 1200, height: 630, html: ogHtml },

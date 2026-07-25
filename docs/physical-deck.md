@@ -16,12 +16,12 @@ dimension on the printer's own pages before ordering — they revise.**
 
 ## Template numbers (confirmed 2026-07)
 
-| | The Game Crafter | MakePlayingCards |
-|---|---|---|
-| Canvas @300 DPI | 900×1500 px | min 897×1497 px |
-| Cut line | 1/8in from edge | 36 px bleed per side |
-| Safe zone | 1/4in from edge (75 px) | a further 36 px inside |
-| Source | [TGC templates](https://help.thegamecrafter.com/article/39-templates), [tarot how-to](https://help.thegamecrafter.com/article/399-how-to-make-a-card-game-tarot-deck) | [MPC image FAQ](https://www.makeplayingcards.com/faq-photo.aspx) |
+|                 | The Game Crafter                                                                                                                                                      | MakePlayingCards                                                 |
+| --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| Canvas @300 DPI | 900×1500 px                                                                                                                                                           | min 897×1497 px                                                  |
+| Cut line        | 1/8in from edge                                                                                                                                                       | 36 px bleed per side                                             |
+| Safe zone       | 1/4in from edge (75 px)                                                                                                                                               | a further 36 px inside                                           |
+| Source          | [TGC templates](https://help.thegamecrafter.com/article/39-templates), [tarot how-to](https://help.thegamecrafter.com/article/399-how-to-make-a-card-game-tarot-deck) | [MPC image FAQ](https://www.makeplayingcards.com/faq-photo.aspx) |
 
 The master files satisfy both: TGC exactly; MPC sees 1.5 px extra bleed
 per side, inside tolerance. Content stays inside the 75 px inset (the
@@ -66,7 +66,7 @@ where designers sell decks print-on-demand.
 If the deck finds an audience (say, >250 decks/year through POD), an
 offset run (PrintNinja and similar, ~500+ units) cuts unit cost several
 times over — but you carry inventory and fulfillment. Not before the
-POD routes prove demand. *(Prices unconfirmed; quote when relevant.)*
+POD routes prove demand. _(Prices unconfirmed; quote when relevant.)_
 
 ## Proof QA checklist
 

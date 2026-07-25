@@ -19,7 +19,10 @@ const STABLE = [
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches.open(CACHE).then((cache) => cache.addAll(STABLE)).then(() => self.skipWaiting())
+    caches
+      .open(CACHE)
+      .then((cache) => cache.addAll(STABLE))
+      .then(() => self.skipWaiting()),
   );
 });
 
@@ -28,7 +31,7 @@ self.addEventListener("activate", (event) => {
     caches
       .keys()
       .then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))))
-      .then(() => self.clients.claim())
+      .then(() => self.clients.claim()),
   );
 });
 
@@ -51,8 +54,8 @@ self.addEventListener("fetch", (event) => {
           caches
             .match(request, { ignoreSearch: true })
             .then((hit) => hit || caches.match("/"))
-            .then((hit) => hit || Response.error())
-        )
+            .then((hit) => hit || Response.error()),
+        ),
     );
   } else {
     event.respondWith(
@@ -65,8 +68,8 @@ self.addEventListener("fetch", (event) => {
               caches.open(CACHE).then((cache) => cache.put(request, copy));
             }
             return res;
-          })
-      )
+          }),
+      ),
     );
   }
 });

@@ -59,6 +59,7 @@ npm run dev        # dev server with live reload
 npm run build      # static build into dist/
 npm run preview    # serve the built site
 npm run check      # typecheck the client scripts and the .astro pages
+npm run format     # prettier (see .prettierignore for the two exceptions)
 npm run validate   # lint public/cards.json and the rules-card guard
 npm run verify     # drive the built site end to end (build + serve first)
 npm run assets     # regenerate og.png + PWA icons from favicon.svg
