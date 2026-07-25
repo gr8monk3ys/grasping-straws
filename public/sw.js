@@ -6,10 +6,11 @@
  * stale (a new build means new URLs); HTML and cards.json are network-first
  * so deck edits propagate promptly.
  */
-const CACHE = "grasping-straws-v2";
+const CACHE = "grasping-straws-v3";
 const STABLE = [
   "/",
   "/about/",
+  "/deck/",
   "/play/",
   "/today/",
   "/cards.json",

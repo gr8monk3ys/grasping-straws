@@ -7,7 +7,8 @@
  */
 import cards from "../../../public/cards.json";
 import Base from "../../layouts/Base.astro";
-import { DECK_NAME, PHYSICAL_DECK_URL } from "../../config";
+import Chrome from "../../components/Chrome.astro";
+import { DECK_NAME } from "../../config";
 
 export function getStaticPaths() {
   return cards.map((card) => ({ params: { id: String(card.id) }, props: { card } }));
@@ -17,7 +18,6 @@ const { card } = Astro.props;
 const title = `“${card.text}” — ${DECK_NAME}`;
 const description =
   "A card from Grasping Straws, an original deck of lateral-thinking prompts. Draw your own.";
-const physicalHref = PHYSICAL_DECK_URL || "/about/#physical";
 ---
 
 <Base title={title} description={description}>
@@ -31,12 +31,5 @@ const physicalHref = PHYSICAL_DECK_URL || "/about/#physical";
       <a href="/">Draw your own card &rarr;</a>
     </p>
   </main>
-  <footer class="chrome">
-    <span class="deck-name">{DECK_NAME}</span>
-    <nav>
-      <a href="/about/">About</a>
-      <a href="/play/">Ways to play</a>
-      <a href={physicalHref} class="cta">Get the physical deck</a>
-    </nav>
-  </footer>
+  <Chrome />
 </Base>

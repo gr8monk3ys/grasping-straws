@@ -6,11 +6,11 @@
  * visitor's today.
  */
 import Base from "../layouts/Base.astro";
-import { DECK_NAME, PHYSICAL_DECK_URL } from "../config";
+import Chrome from "../components/Chrome.astro";
+import { DECK_NAME } from "../config";
 
 const description =
   "One card a day from Grasping Straws, an original deck of lateral-thinking prompts. Same card for everyone, until midnight.";
-const physicalHref = PHYSICAL_DECK_URL || "/about/#physical";
 ---
 
 <Base title={`Today's card — ${DECK_NAME}`} description={description}>
@@ -39,14 +39,7 @@ const physicalHref = PHYSICAL_DECK_URL || "/about/#physical";
       </p>
     </noscript>
   </main>
-  <footer class="chrome">
-    <span class="deck-name">{DECK_NAME}</span>
-    <nav>
-      <a href="/about/">About</a>
-      <a href="/play/">Ways to play</a>
-      <a href={physicalHref} class="cta">Get the physical deck</a>
-    </nav>
-  </footer>
+  <Chrome />
 </Base>
 
 <script>

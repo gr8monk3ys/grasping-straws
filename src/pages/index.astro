@@ -1,11 +1,11 @@
 ---
 import cards from "../../public/cards.json";
 import Base from "../layouts/Base.astro";
-import { DECK_NAME, PHYSICAL_DECK_URL } from "../config";
+import Chrome from "../components/Chrome.astro";
+import { DECK_NAME } from "../config";
 
 const description =
   "An original deck of lateral-thinking prompts for breaking creative deadlocks. Tap to draw a card.";
-const physicalHref = PHYSICAL_DECK_URL || "/about/#physical";
 // The suit row is built from the same cards.json the app deals from, in
 // order of first appearance. Suits are the deck's own vocabulary.
 const suits = [...new Set(cards.map((c) => c.suit).filter(Boolean))];
@@ -40,6 +40,16 @@ const suits = [...new Set(cards.map((c) => c.suit).filter(Boolean))];
         ))
       }
     </nav>
+    {
+      /*
+      How far through the deck this visitor is. The bag already behaves
+      like a physical deck — dealt down, then reshuffled — and this is the
+      only place that fact is visible. aria-hidden because the live region
+      below already announces each card; a screen reader does not need a
+      running count read out on every draw.
+    */
+    }
+    <p class="tally" id="tally" aria-hidden="true"></p>
     <p class="sr-only" aria-live="polite" id="live"></p>
     <noscript>
       <p class="hint">
@@ -48,14 +58,7 @@ const suits = [...new Set(cards.map((c) => c.suit).filter(Boolean))];
       </p>
     </noscript>
   </main>
-  <footer class="chrome">
-    <span class="deck-name">{DECK_NAME}</span>
-    <nav>
-      <a href="/about/">About</a>
-      <a href="/play/">Ways to play</a>
-      <a href={physicalHref} class="cta">Get the physical deck</a>
-    </nav>
-  </footer>
+  <Chrome />
 </Base>
 
 <script>

@@ -19,6 +19,7 @@ const markEl = document.getElementById("card-mark") as HTMLElement;
 const textEl = document.getElementById("card-text") as HTMLElement;
 const liveEl = document.getElementById("live") as HTMLElement;
 const shareBtn = document.getElementById("share") as HTMLButtonElement;
+const tallyEl = document.getElementById("tally") as HTMLElement;
 const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
 
 let deck: Card[] = [];
@@ -84,11 +85,27 @@ function keepTopFresh(): void {
   }
 }
 
+function poolSize(): number {
+  const pool = suit ? deck.filter((c) => c.suit === suit) : deck;
+  return pool.length || deck.length;
+}
+
 function refillBag(): void {
   // A suit whose cards were all edited away falls back to the whole deck.
   const pool = suit ? deck.filter((c) => c.suit === suit) : deck;
   bag = shuffled((pool.length ? pool : deck).map((c) => c.id));
   keepTopFresh();
+}
+
+/*
+ * How far into the current deck this visitor is. Counts the bag rather
+ * than the draws, so it stays correct across a reload, a suit change (a
+ * new deck, so the count restarts) and a reshuffle.
+ */
+function showTally(): void {
+  const total = poolSize();
+  const drawn = total - bag.length;
+  tallyEl.textContent = drawn > 0 ? `${drawn} of ${total} drawn` : "";
 }
 
 function setFace(id: number): void {
@@ -143,6 +160,7 @@ function draw(): void {
   last = bag.pop()!;
   show(last);
   saveState();
+  showTally();
 }
 
 /*
@@ -205,6 +223,7 @@ async function init(): Promise<void> {
     last = typeof saved.last === "number" && byId.has(saved.last) ? saved.last : null;
   }
   if (bag.length === 0) refillBag();
+  showTally();
 
   // Suit buttons are rendered at build time from the same cards.json.
   const suitButtons = Array.from(
@@ -223,6 +242,7 @@ async function init(): Promise<void> {
       refillBag(); // a new deck: cycle progress restarts inside the suit
       reflectSuit();
       saveState();
+      showTally();
     });
   }
   reflectSuit();

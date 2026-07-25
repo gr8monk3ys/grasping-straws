@@ -75,6 +75,11 @@ page.on("request", (r) => requests.push(r.url()));
 await page.goto(BASE + "/", { waitUntil: "networkidle" });
 
 check("face-down mark visible on load", await page.locator("#card-mark").isVisible());
+// Face down, the card wears a printed frame; face up it is plain paper.
+// Driven off :has(.card-mark:not([hidden])), so it must flip with the card.
+const framed = (p) => p.locator("#card").evaluate((el) => getComputedStyle(el, "::before").borderTopWidth);
+check("face-down card shows the printed back frame", (await framed(page)) === "1px", await framed(page));
+check("card is cut to the physical deck's tarot ratio", await page.locator("#card").evaluate((el) => Math.abs(el.clientWidth / el.clientHeight - 11 / 19) < 0.01));
 check("PWA manifest linked", (await page.locator('link[rel="manifest"]').count()) === 1);
 check("og:image is an absolute URL", /^https:\/\//.test((await page.locator('meta[property="og:image"]').getAttribute("content")) || ""));
 check("glyph mask resolves to favicon.svg", await page
@@ -89,6 +94,8 @@ check("click draws a card", byIdText(id1) === (await page.textContent("#card-tex
 check("hash set on draw", /#\d+$/.test(page.url()), page.url());
 await page.waitForTimeout(900); // hint fade transition is 0.8s
 check("hint fades after first draw", (await page.locator("#hint").evaluate((el) => getComputedStyle(el).opacity)) === "0");
+check("face-up card drops the back frame", (await framed(page)) === "0px", await framed(page));
+check("tally appears after the first draw", (await page.textContent("#tally")) === `1 of ${cards.length} drawn`, await page.textContent("#tally"));
 await page.screenshot({ path: path.join(SHOTS, "shot-2-faceup-light.png") });
 
 // ---- full cycle: no repeats until the bag is empty -------------------
@@ -235,7 +242,18 @@ check("desktop hint offers space/click", await pd.locator(".hint-pointer").isVis
 await pd.screenshot({ path: path.join(SHOTS, "shot-4-facedown-dark-desktop.png") });
 await drawOnce(pd, true);
 await pd.screenshot({ path: path.join(SHOTS, "shot-5-faceup-dark-desktop.png") });
-check("dark theme applied", (await pd.evaluate(() => getComputedStyle(document.body).backgroundColor)) === "rgb(23, 19, 16)");
+check("dark theme applied", (await pd.evaluate(() => getComputedStyle(document.body).backgroundColor)) === "rgb(13, 21, 20)");
+// The card is the same warm paper in both themes on purpose — the room
+// changes, the card doesn't — and it has to stay well clear of the ground
+// or it reads as a panel rather than an object (the old pair was 1.06:1).
+const cardOnDark = await pd.evaluate(() => getComputedStyle(document.getElementById("card")).backgroundColor);
+check("card keeps its paper colour in dark theme", cardOnDark === "rgb(251, 247, 238)", cardOnDark);
+check("card separates from the ground in dark theme", await pd.evaluate(() => {
+  const lum = (c) => { const [r, g, b] = c.match(/\d+/g).map((n) => { const s = n / 255; return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4; }); return 0.2126 * r + 0.7152 * g + 0.0722 * b; };
+  const a = lum(getComputedStyle(document.getElementById("card")).backgroundColor);
+  const b = lum(getComputedStyle(document.body).backgroundColor);
+  return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05) > 8;
+}));
 
 // ---- reduced motion ----------------------------------------------------
 const ctxRM = await browser.newContext({ reducedMotion: "reduce", viewport: { width: 390, height: 844 } });
@@ -259,6 +277,62 @@ check("deck version shown discreetly", (await pa.textContent(".credit")).include
 const pad = await ctxDark.newPage();
 await pad.goto(BASE + "/about/", { waitUntil: "networkidle" });
 await pad.screenshot({ path: path.join(SHOTS, "shot-7-about-dark.png"), fullPage: true });
+
+// ---- the deck page (/deck/) ----------------------------------------------
+const pdeck = await ctx.newPage();
+await pdeck.goto(BASE + "/deck/", { waitUntil: "networkidle" });
+const deckItems = await pdeck.locator(".deck-list li").count();
+check("deck page lists every card exactly once", deckItems === cards.length, `${deckItems}/${cards.length}`);
+const suitNames = [...new Set(cards.map((c) => c.suit).filter(Boolean))];
+check("deck page groups by suit", (await pdeck.locator(".suit-block").count()) === suitNames.length, `${await pdeck.locator(".suit-block").count()} blocks, ${suitNames.length} suits`);
+check("deck page shows a card's real id, not a decorative index", (await pdeck.locator(".deck-list li").first().locator(".deck-num").textContent()) === String(cards.filter((c) => c.suit === suitNames[0]).sort((a, b) => a.id - b.id)[0].id));
+const deckText = await pdeck.textContent("main");
+check("deck page carries every card's text", cards.every((c) => deckText.includes(c.text)));
+check("deck page ships no JavaScript of its own", (await pdeck.locator("script[src]").count()) <= 1, `${await pdeck.locator("script[src]").count()} script tags`);
+check("draw screen chrome links the deck page", (await page.locator('.chrome a[href="/deck/"]').count()) === 1);
+await pdeck.screenshot({ path: path.join(SHOTS, "shot-13-deck.png"), fullPage: true });
+
+// ---- theme toggle --------------------------------------------------------
+// Fresh context: a stored preference from an earlier section would make
+// "starts on system" meaningless.
+const ctxTheme = await browser.newContext({ colorScheme: "dark", viewport: { width: 390, height: 844 } });
+const pth = await ctxTheme.newPage();
+await pth.goto(BASE + "/", { waitUntil: "networkidle" });
+const themeState = () => pth.evaluate(() => ({
+  attr: document.documentElement.dataset.theme ?? null,
+  bg: getComputedStyle(document.body).backgroundColor,
+  stored: localStorage.getItem("grasping-straws.theme"),
+  meta: document.querySelector('meta[name="theme-color"]').getAttribute("content"),
+}));
+const t0 = await themeState();
+check("theme starts on system (no attribute, nothing stored)", t0.attr === null && t0.stored === null && t0.bg === "rgb(13, 21, 20)");
+await pth.click("#theme-toggle");
+const t1 = await themeState();
+check("first press overrides to light", t1.attr === "light" && t1.bg === "rgb(180, 189, 187)", `${t1.attr} ${t1.bg}`);
+check("override is persisted", t1.stored === "light", String(t1.stored));
+check("theme-color meta follows the override", t1.meta === "#b4bdbb", t1.meta);
+await pth.click("#theme-toggle");
+check("second press goes to dark", (await themeState()).attr === "dark");
+await pth.click("#theme-toggle");
+const t3 = await themeState();
+check("third press returns to system and clears storage", t3.attr === null && t3.stored === null, `${t3.attr} ${t3.stored}`);
+await pth.click("#theme-toggle"); // back to light for the reload test
+await pth.reload({ waitUntil: "networkidle" });
+check("chosen theme survives a reload", (await themeState()).attr === "light");
+// The whole point of the inline head script: the attribute must already be
+// on <html> before the stylesheet paints, not applied by a later module.
+check("theme is applied before first paint (no flash)", await pth.evaluate(() => {
+  const inline = [...document.querySelectorAll("head script:not([src])")].some((s) => s.textContent.includes("grasping-straws.theme"));
+  return inline && document.documentElement.dataset.theme === "light";
+}));
+check("toggle announces its state", /Theme: light/.test(await pth.getAttribute("#theme-toggle", "aria-label")));
+const themedPages = [];
+for (const p of ["/about/", "/play/", "/deck/", "/today/"]) {
+  await pth.goto(BASE + p, { waitUntil: "networkidle" });
+  themedPages.push((await pth.evaluate(() => document.documentElement.dataset.theme)) === "light" && (await pth.locator("#theme-toggle").count()) === 1);
+}
+check("every page carries the toggle and honours the choice", themedPages.every(Boolean));
+await ctxTheme.close();
 
 // ---- 404 page ------------------------------------------------------------
 const p404 = await ctx.newPage();
