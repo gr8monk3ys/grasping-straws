@@ -9,6 +9,7 @@
     "check": "astro check && tsc --noEmit",
     "validate": "node scripts/validate-cards.js && node scripts/validate-rules.js",
     "verify": "node scripts/verify.js",
+    "smoke": "node scripts/smoke-dev.js",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "assets": "node scripts/make-assets.js",

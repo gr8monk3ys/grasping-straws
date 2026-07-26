@@ -23,6 +23,11 @@ jobs:
         run: npm run check
       - name: Build
         run: npm run build
+      # Before the browser download, so a dead dev server fails fast. The
+      # build and the typecheck never touch dev-only config (Vite server
+      # and optimizeDeps settings), so nothing else here would notice.
+      - name: Smoke-test the dev server
+        run: npm run smoke
       - name: Install Playwright browser
         run: npx playwright install --with-deps chromium
       - name: Drive the built site end to end

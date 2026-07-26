@@ -82,6 +82,7 @@ npm run check      # typecheck the client scripts and the .astro pages
 npm run format     # prettier (see .prettierignore for the two exceptions)
 npm run validate   # lint public/cards.json and the rules-card guard
 npm run verify     # drive the built site end to end (build + serve first)
+npm run smoke      # boot the dev server and check it serves every route
 npm run assets     # regenerate og.png + PWA icons from favicon.svg
 npm run print      # render 300 DPI card faces into print/ (see below)
 npm run pnp        # regenerate public/print-and-play.pdf
@@ -163,7 +164,8 @@ rebuilds and deploys. When the real domain goes live, update `site` in
 
 `.github/workflows/ci.yml` runs on every PR: validates `public/cards.json`
 and the rules cards, typechecks (`astro check` for the pages, `tsc` for the
-client scripts), builds, then drives the built site in headless Chromium
+client scripts), builds, smoke-tests the dev server, then drives the built
+site in headless Chromium
 (`scripts/verify.js`) — 83 checks covering the full-cycle no-repeat
 guarantee, the reshuffle rule, persistence, deep links, the share flow,
 per-card pages, the deck page, the tally, the theme toggle's full cycle
@@ -171,6 +173,17 @@ per-card pages, the deck page, the tally, the theme toggle's full cycle
 motion, and the no-third-party-requests rule. It also asserts the card
 stays well clear of the ground in contrast, so the object can't quietly
 flatten back into a panel.
+
+`scripts/smoke-dev.js` covers the one thing that suite structurally
+cannot. Everything else tests the _built_ output, which is correct — the
+dev server injects the Astro toolbar and skews the request and size
+checks — but it means dev-only configuration goes unexercised. A bad
+Vite `optimizeDeps` entry, for instance, leaves `npm run build` and
+`npm run check` both green while `npm run dev` is dead. The smoke test
+boots the real dev server, asks it for every route, and fails on anything
+it logs as a resolution failure. If you already have `npm run dev` open
+it tests that server and leaves it running, rather than fighting Astro's
+one-server-per-project rule.
 
 ## Licenses
 
