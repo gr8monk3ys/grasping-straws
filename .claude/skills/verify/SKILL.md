@@ -53,13 +53,29 @@ Flows it covers — extend it rather than scripting ad hoc:
 
 ## Gotchas
 
-- Draw inputs are swallowed during the 400 ms flip (busy guard — that's by
-  design). When scripting consecutive draws, wait for `location.hash` to
-  change and pad ~450 ms, or retry the keypress.
+- Draw inputs are swallowed for the whole flip (busy guard — that's by
+  design). `FLIP_MS` in `src/scripts/app.ts` is currently 460 ms; when
+  scripting consecutive draws, wait for `location.hash` to change and pad
+  above that, or retry the keypress. `verify.js` keeps this as
+  `FLIP_SETTLE_MS` — if the flip duration changes, that constant moves with
+  it, or the 48-card cycle test starts flaking instead of failing honestly.
 - The hint fade transition is 0.8 s and only armed after the `settled` class
   lands (one rAF after load) — sample opacity after ~900 ms.
 - The service worker registers on 127.0.0.1/localhost; use a fresh browser
   context when you need an uncached first-visit.
-- Don't run `npx playwright install` here — browsers are preinstalled; if
-  versions drift, keep `playwright` pinned to the version matching
-  `/opt/pw-browsers` (currently 1.56.1).
+- **The shared browser cache is not safe here.** `@playwright/mcp` runs a
+  newer Playwright against `~/Library/Caches/ms-playwright` and *prunes* the
+  build this repo's pinned 1.56.1 needs (Chromium 1194) — an install appears
+  to succeed, then the revision vanishes and `chromium.launch()` fails on a
+  missing `chromium_headless_shell-1194`. Give this repo its own path instead
+  of fighting it:
+
+      export PLAYWRIGHT_BROWSERS_PATH="$HOME/Library/Caches/gs-playwright"
+      npx playwright install chromium-headless-shell
+
+  Use the same env var when running `verify.js`. If the installer wedges
+  (it holds a `__dirlock` and stalls at a few hundred KB), the CDN itself is
+  fine — fetch the zip directly and unzip it to
+  `$PLAYWRIGHT_BROWSERS_PATH/chromium_headless_shell-1194/`:
+
+      https://cdn.playwright.dev/dbazure/download/playwright/builds/chromium/1194/chromium-headless-shell-mac-arm64.zip
