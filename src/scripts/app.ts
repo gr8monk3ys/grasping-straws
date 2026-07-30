@@ -3,6 +3,12 @@
  * The bag: shuffle the whole deck, deal until empty, reshuffle so the first
  * card of the new bag never repeats the last card dealt. State persists in
  * localStorage so a returning visitor continues their deck.
+ *
+ * The card is a real two-faced object. .face-a sits at rotateY(0) and
+ * .face-b at rotateY(180deg) — they are geometric SLOTS, not fixed roles.
+ * Rotation accumulates (0 -> 180 -> 360 -> ...) and never reverses, so the
+ * slot facing the viewer alternates. Each draw writes the new card into the
+ * INCOMING slot before the rotation starts.
  */
 
 import { DECK_NAME } from "../config";
@@ -11,12 +17,21 @@ type Card = { id: number; text: string; suit?: string };
 type SavedState = { bag?: unknown; last?: unknown; drawn?: unknown };
 
 const STORAGE_KEY = "grasping-straws.v1";
-const FLIP_MS = 400;
+// Keep in step with --flip-ms in global.css. 520ms put the words on screen at
+// 553ms against a 560ms budget — inside the limit, but sluggish on a tool
+// built for rapid tapping, and with no headroom on slower hardware.
+const FLIP_MS = 460;
+const RIFFLE_MS = 700; // keep in step with the riffle keyframes
 
 const cardBtn = document.getElementById("card") as HTMLButtonElement;
 const inner = document.getElementById("card-inner") as HTMLElement;
+const faceA = document.getElementById("face-a") as HTMLElement;
+const faceB = document.getElementById("face-b") as HTMLElement;
 const markEl = document.getElementById("card-mark") as HTMLElement;
-const textEl = document.getElementById("card-text") as HTMLElement;
+const deckEl = document.getElementById("deck") as HTMLElement;
+const deckStack = document.getElementById("deck-stack") as HTMLElement;
+const shadowContact = document.querySelector(".card-shadow-contact") as HTMLElement;
+const shadowAmbient = document.querySelector(".card-shadow-ambient") as HTMLElement;
 const liveEl = document.getElementById("live") as HTMLElement;
 const shareBtn = document.getElementById("share") as HTMLButtonElement;
 const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -26,6 +41,8 @@ let byId = new Map<number, Card>();
 let bag: number[] = []; // ids not yet dealt this cycle; the top of the pile is the end
 let last: number | null = null; // id of the card currently face up
 let busy = false;
+let flips = 0; // parity decides which slot faces the viewer
+let angle = 0; // accumulated rotation in degrees
 
 function loadState(): SavedState | null {
   try {
@@ -49,9 +66,16 @@ function saveState(): void {
 // Returning visitors must not watch the hint fade out again, so the
 // has-drawn class has to land before first paint — synchronously, not
 // after the deck fetch resolves. The settled class arms the hint's fade
-// transition one frame later, so the initial state never animates.
+// transition one frame later, so the initial state never animates. The
+// entrance animation reuses the same signal: it runs only when has-drawn
+// is absent, so a returning visitor never sees the card settle in.
 const saved = loadState();
-if (saved && saved.drawn) document.body.classList.add("has-drawn");
+if (saved && saved.drawn) {
+  document.body.classList.add("has-drawn");
+} else if (!reducedMotion.matches) {
+  document.body.classList.add("entrance");
+  setTimeout(() => document.body.classList.remove("entrance"), 1000);
+}
 requestAnimationFrame(() => document.body.classList.add("settled"));
 
 function randInt(n: number): number {
@@ -88,12 +112,41 @@ function refillBag(): void {
   keepTopFresh();
 }
 
-function setFace(id: number): void {
-  markEl.hidden = true;
+/* ---------- the stack beneath ---------- */
+
+// How much bag is left, read as visible card edges. Derived from `bag`,
+// which already persists — no new stored state, no storage version bump.
+function updateDeckDepth(): void {
+  const ratio = deck.length === 0 ? 0 : bag.length / deck.length;
+  deckEl.dataset.edges = String(ratio > 0.6 ? 3 : ratio > 0.3 ? 2 : 1);
+}
+
+function riffle(): void {
+  if (reducedMotion.matches) return;
+  deckStack.classList.remove("riffling");
+  void deckStack.offsetWidth; // reflow, so re-adding the class restarts it
+  deckStack.classList.add("riffling");
+  setTimeout(() => deckStack.classList.remove("riffling"), RIFFLE_MS + 50);
+}
+
+/* ---------- faces ---------- */
+
+function facingSlot(): HTMLElement {
+  return flips % 2 === 0 ? faceA : faceB;
+}
+
+// Writes a card into a slot and moves the accessibility exposure with it.
+// backface-visibility is purely visual — without this, a screen reader would
+// announce both faces.
+function writeFace(slot: HTMLElement, text: string): void {
+  const textEl = slot.querySelector(".card-text") as HTMLElement;
+  textEl.textContent = text;
   textEl.hidden = false;
-  textEl.textContent = byId.get(id)!.text;
-  // A card face is up, so there is something to share. The share control
-  // itself waits for has-drawn too — a deep-link visitor keeps the hint.
+  // The mark lives in face-a and is only needed before the first draw;
+  // nothing ever turns the card back over.
+  if (slot === faceA) markEl.hidden = true;
+  faceA.setAttribute("aria-hidden", String(slot !== faceA));
+  faceB.setAttribute("aria-hidden", String(slot !== faceB));
   document.body.classList.add("has-card");
 }
 
@@ -104,40 +157,125 @@ function show(id: number, { instant = false, keepHint = false } = {}): void {
   history.replaceState(null, "", "#" + id);
   liveEl.textContent = card.text;
 
+  // A deep link arrives already face up: write into whichever slot is
+  // currently facing the viewer rather than leaving the card mid-turn.
   if (instant || !inner.animate) {
-    setFace(id);
+    writeFace(facingSlot(), card.text);
+    return;
+  }
+
+  if (reducedMotion.matches) {
+    busy = true;
+    inner
+      .animate([{ opacity: 1 }, { opacity: 0 }], { duration: 90, easing: "ease-in" })
+      .finished.then(() => {
+        writeFace(facingSlot(), card.text);
+        return inner.animate([{ opacity: 0 }, { opacity: 1 }], {
+          duration: 140,
+          easing: "ease-out",
+        }).finished;
+      })
+      .catch(() => writeFace(facingSlot(), card.text))
+      .finally(() => {
+        busy = false;
+      });
     return;
   }
 
   busy = true;
-  const half = FLIP_MS / 2;
-  const out = reducedMotion.matches
-    ? inner.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 90, easing: "ease-in" })
-    : inner.animate(
-        [{ transform: "rotateY(0deg)" }, { transform: "rotateY(90deg)" }],
-        { duration: half, easing: "cubic-bezier(0.45, 0, 0.85, 0.6)" }
-      );
-  out.finished
-    .then(() => {
-      setFace(id);
-      return reducedMotion.matches
-        ? inner.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 140, easing: "ease-out" }).finished
-        : inner.animate(
-            [{ transform: "rotateY(-90deg)" }, { transform: "rotateY(0deg)" }],
-            { duration: half, easing: "cubic-bezier(0.15, 0.4, 0.35, 1)" }
-          ).finished;
+  const incoming = flips % 2 === 0 ? faceB : faceA;
+  writeFace(incoming, card.text);
+  flips += 1;
+
+  const from = angle;
+  angle += 180;
+  // Settle the resting transform up front so the element holds the new angle
+  // when the animation hands back; no fill mode needed.
+  inner.style.transform = `rotateY(${angle}deg)`;
+
+  cardBtn.classList.add("flipping");
+
+  // Accelerate into the turn, decelerate out of it, overshoot a few degrees
+  // and settle. Per-keyframe easing: one easing across the whole iteration
+  // would smear the overshoot into the turn.
+  const flip = inner.animate(
+    [
+      {
+        transform: `rotateY(${from}deg) translateZ(0px) scale(1)`,
+        easing: "cubic-bezier(0.4, 0, 0.6, 0.55)",
+      },
+      {
+        offset: 0.5,
+        transform: `rotateY(${from + 90}deg) translateZ(16px) scale(1.015)`,
+        easing: "cubic-bezier(0.3, 0.6, 0.35, 1)",
+      },
+      {
+        offset: 0.86,
+        transform: `rotateY(${angle + 3.5}deg) translateZ(3px) scale(1.002)`,
+        easing: "ease-out",
+      },
+      { offset: 1, transform: `rotateY(${angle}deg) translateZ(0px) scale(1)` },
+    ],
+    { duration: FLIP_MS }
+  );
+
+  // Elevation moves in two parts: the contact shadow pulls in and fades as
+  // the card lifts, the ambient spreads and softens. One shadow cannot do
+  // this — lift and spread change at different rates.
+  shadowContact.animate(
+    [
+      { opacity: 1, transform: "scale(1)" },
+      { offset: 0.5, opacity: 0.28, transform: "scale(0.93)" },
+      { offset: 0.86, opacity: 0.94, transform: "scale(1.012)" },
+      { opacity: 1, transform: "scale(1)" },
+    ],
+    { duration: FLIP_MS, easing: "ease-in-out" }
+  );
+  shadowAmbient.animate(
+    [
+      { opacity: 1, transform: "scale(1)" },
+      { offset: 0.5, opacity: 0.78, transform: "scale(1.07)" },
+      { opacity: 1, transform: "scale(1)" },
+    ],
+    { duration: FLIP_MS, easing: "ease-in-out" }
+  );
+
+  // The words land rather than being already there.
+  (incoming.querySelector(".card-text") as HTMLElement).animate(
+    [
+      { opacity: 0, transform: "translateY(7px)" },
+      { opacity: 1, transform: "none" },
+    ],
+    {
+      duration: 190,
+      delay: FLIP_MS * 0.52,
+      easing: "cubic-bezier(0.2, 0.7, 0.3, 1)",
+      fill: "backwards",
+    }
+  );
+
+  flip.finished
+    .catch(() => {
+      /* interrupted — the resting transform above is already correct */
     })
-    .catch(() => setFace(id))
     .finally(() => {
+      cardBtn.classList.remove("flipping");
       busy = false;
     });
 }
 
 function draw(): void {
   if (busy || deck.length === 0) return;
-  if (bag.length === 0) refillBag();
+  // init() fills the bag before the first draw, so reaching zero HERE always
+  // means the whole deck has been dealt. That makes the riffle self-
+  // triggering: no separate reshuffle event to detect.
+  if (bag.length === 0) {
+    refillBag();
+    riffle();
+  }
   last = bag.pop()!;
   show(last);
+  updateDeckDepth();
   saveState();
 }
 
@@ -180,9 +318,7 @@ async function init(): Promise<void> {
     const res = await fetch("/cards.json");
     deck = (await res.json()) as Card[];
   } catch {
-    markEl.hidden = true;
-    textEl.hidden = false;
-    textEl.textContent = "The deck failed to load. Refresh to try again.";
+    writeFace(facingSlot(), "The deck failed to load. Refresh to try again.");
     return;
   }
   byId = new Map(deck.map((c) => [c.id, c]));
@@ -194,6 +330,7 @@ async function init(): Promise<void> {
     last = typeof saved.last === "number" && byId.has(saved.last) ? saved.last : null;
   }
   if (bag.length === 0) refillBag();
+  updateDeckDepth();
 
   // #<id> deep link: show that card face up, then rejoin the normal bag.
   const hashId = Number(location.hash.slice(1));

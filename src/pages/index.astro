@@ -9,15 +9,38 @@ const physicalHref = PHYSICAL_DECK_URL || "/about/#physical";
 
 <Base title={DECK_NAME} description={description}>
   <main class="stage">
-    <button id="card" class="card" aria-describedby="draw-desc">
-      <span class="card-inner" id="card-inner">
-        <span class="card-mark" id="card-mark">
-          <span class="glyph"></span>
-          <span class="card-wordmark">{DECK_NAME}</span>
-        </span>
-        <span class="card-text" id="card-text" hidden></span>
+    {/*
+      .deck-stack and the shadow layers are SIBLINGS of .card — never children
+      of .card-inner. Nesting them inside the rotating element would turn the
+      whole pile with the card and collapse the illusion.
+
+      .face-a and .face-b are geometric slots, not fixed roles: face-a sits at
+      rotateY(0), face-b at rotateY(180deg), and which one carries the current
+      card alternates as the rotation accumulates. See src/scripts/app.ts.
+    */}
+    <div class="deck" id="deck" data-edges="3">
+      <span class="deck-stack" id="deck-stack" aria-hidden="true">
+        <span class="deck-edge"></span>
+        <span class="deck-edge"></span>
+        <span class="deck-edge"></span>
       </span>
-    </button>
+      <span class="card-shadow card-shadow-ambient" aria-hidden="true"></span>
+      <span class="card-shadow card-shadow-contact" aria-hidden="true"></span>
+      <button id="card" class="card" aria-describedby="draw-desc">
+        <span class="card-inner" id="card-inner">
+          <span class="face face-a" id="face-a" aria-hidden="false">
+            <span class="card-mark" id="card-mark">
+              <span class="glyph"></span>
+              <span class="card-wordmark">{DECK_NAME}</span>
+            </span>
+            <span class="card-text" hidden></span>
+          </span>
+          <span class="face face-b" id="face-b" aria-hidden="true">
+            <span class="card-text"></span>
+          </span>
+        </span>
+      </button>
+    </div>
     <span id="draw-desc" class="sr-only">Draws the next card from the deck.</span>
     <div class="hint-slot">
       <p class="hint" id="hint" aria-hidden="true">
@@ -29,7 +52,7 @@ const physicalHref = PHYSICAL_DECK_URL || "/about/#physical";
     <p class="sr-only" aria-live="polite" id="live"></p>
     <noscript>
       <p class="hint">
-        The deck needs JavaScript to shuffle — the cards themselves are just
+        The deck needs JavaScript to shuffle — the cards themselves are just{" "}
         <a href="/cards.json">a JSON file</a>.
       </p>
     </noscript>

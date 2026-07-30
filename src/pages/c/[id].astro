@@ -22,10 +22,23 @@ const physicalHref = PHYSICAL_DECK_URL || "/about/#physical";
 
 <Base title={title} description={description}>
   <main class="stage">
-    <div class="card card-static">
-      <span class="card-inner">
-        <span class="card-text">{card.text}</span>
+    {/* Same deck shell as the draw screen, minus the second face — a shared
+        card is already face up and never turns. */}
+    <div class="deck" data-edges="3">
+      <span class="deck-stack" aria-hidden="true">
+        <span class="deck-edge"></span>
+        <span class="deck-edge"></span>
+        <span class="deck-edge"></span>
       </span>
+      <span class="card-shadow card-shadow-ambient" aria-hidden="true"></span>
+      <span class="card-shadow card-shadow-contact" aria-hidden="true"></span>
+      <div class="card card-static">
+        <span class="card-inner">
+          <span class="face face-a">
+            <span class="card-text">{card.text}</span>
+          </span>
+        </span>
+      </div>
     </div>
     <p class="hint card-page-invite">
       <a href="/">Draw your own card &rarr;</a>

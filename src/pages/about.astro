@@ -31,7 +31,10 @@ const description =
 
     <h2>Lineage</h2>
     <p>
-      The deck is inspired by
+      {/* The space before the link must be explicit: the HTML minifier
+          collapses a newline between text and an inline element to nothing,
+          which rendered as "inspired byOblique Strategies". */}
+      The deck is inspired by{" "}
       <a href="https://en.wikipedia.org/wiki/Oblique_Strategies" rel="noopener">Oblique Strategies</a>,
       the card deck Brian Eno and Peter Schmidt first published in 1975. The debt is to the form,
       not the words: every card here is original.

@@ -35,7 +35,29 @@
   --muted: #6e6455;
   --accent: #8c3b22;
   --line: #dcd2be;
-  --shadow: 0 1px 2px rgb(36 30 22 / 0.08), 0 14px 36px -14px rgb(36 30 22 / 0.28);
+
+  /* Elevation is two layers, not one: the contact shadow tightens as the
+     card settles while the ambient stays broad. A single shadow cannot
+     express weight, because lift and spread change at different rates. */
+  --shadow-ambient: 0 14px 36px -14px rgb(36 30 22 / 0.28);
+  --shadow-contact: 0 1px 2px rgb(36 30 22 / 0.08), 0 3px 8px -4px rgb(36 30 22 / 0.2);
+
+  /* paper stock */
+  --grain-opacity: 0.034;
+  --grain-blend: multiply;
+  --edge-light: rgb(255 255 255 / 0.6);
+  --edge-shade: rgb(36 30 22 / 0.07);
+  --sheen: rgb(255 255 255 / 0.5);
+  --edge-cast: 0 -1px 3px -1px rgb(36 30 22 / 0.16);
+  --edge-rim: rgb(36 30 22 / 0.22);
+
+  --flip-ms: 460ms;
+
+  /* One tile of fractal noise. Encoded as a background-IMAGE, never as a
+     live CSS filter: as an image the turbulence rasterizes exactly once and
+     is then tiled by the compositor like any bitmap. As a filter it would
+     re-rasterize on every composited frame and jank the flip. */
+  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23g)'/%3E%3C/svg%3E");
 }
 
 @media (prefers-color-scheme: dark) {
@@ -47,8 +69,27 @@
     --muted: #a79c8a;
     --accent: #d99668;
     --line: #3a322a;
-    --shadow: 0 1px 2px rgb(0 0 0 / 0.4), 0 16px 40px -14px rgb(0 0 0 / 0.6);
+
+    --shadow-ambient: 0 16px 40px -14px rgb(0 0 0 / 0.6);
+    --shadow-contact: 0 1px 2px rgb(0 0 0 / 0.4), 0 3px 10px -4px rgb(0 0 0 / 0.5);
+
+    /* multiply is invisible on near-black stock — overlay keeps the speckle
+       readable by lifting as well as darkening. */
+    --grain-opacity: 0.055;
+    --grain-blend: overlay;
+    --edge-light: rgb(255 255 255 / 0.075);
+    --edge-shade: rgb(0 0 0 / 0.36);
+    --sheen: rgb(255 255 255 / 0.11);
+    --edge-cast: 0 -2px 5px -2px rgb(0 0 0 / 0.6);
+    --edge-rim: rgb(255 255 255 / 0.11);
   }
+}
+
+/* Cross-document page transitions, from the browser itself — no router, no
+   client bundle. Unsupporting browsers ignore the at-rule and navigate
+   normally, which is the current behaviour. */
+@view-transition {
+  navigation: auto;
 }
 
 /* ---------- base ---------- */
@@ -125,37 +166,214 @@ a {
   align-items: center;
   justify-content: center;
   padding: 1.5rem 1rem;
-  perspective: 1400px;
 }
+
+/* The deck owns layout and everything that must NOT turn with the card.
+   Perspective lives on .card, not here: `perspective` applies only to an
+   element's direct children, and .card-inner — the thing that rotates — is
+   a grandchild of .deck. */
+.deck {
+  position: relative;
+  width: min(82vw, 340px, calc(66dvh * 5 / 7));
+  aspect-ratio: 5 / 7;
+}
+
+/* ---------- the stack beneath ---------- */
+
+/* Depth, and a reading of how much bag is left. Sibling of .card — putting
+   this inside .card-inner would rotate the whole pile. */
+.deck-stack {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+.deck-edge {
+  position: absolute;
+  inset: 0;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  /* No grain here. Only a few millimetres of each edge is ever visible, and
+     the raw turbulence bitmap needs the opacity + blend treatment .face
+     gives it — applied straight it renders as a field of grey static. */
+  background: var(--card);
+  /* Each edge needs the card above it to cast onto it, or the slivers merge
+     into one soft block — especially on near-black stock, where the card's
+     own ambient shadow already washes this area. */
+  box-shadow: var(--edge-cast);
+  /* Only the bottom border of each edge is ever visible, and it is what makes
+     the stack read as separate cards rather than one thick lip. It gets its
+     own colour so it can carry more contrast than the card outline does. */
+  border-bottom-color: var(--edge-rim);
+  transition:
+    opacity 0.45s ease,
+    transform 0.45s cubic-bezier(0.2, 0.7, 0.3, 1);
+}
+
+/* The scale shrink works AGAINST the translate at the bottom edge: a card
+   scaled to 0.96 pulls its own bottom up by ~2% of the card height. Offsets
+   are chosen so what actually shows is an even ~5 / 11 / 17px staircase,
+   not the raw translate values. */
+.deck-edge:nth-child(1) {
+  transform: translateY(7px) scale(0.99);
+  opacity: 1;
+}
+
+.deck-edge:nth-child(2) {
+  transform: translateY(16px) scale(0.978);
+  opacity: 0.88;
+}
+
+.deck-edge:nth-child(3) {
+  transform: translateY(25px) scale(0.966);
+  opacity: 0.74;
+}
+
+/* thinning: spent edges slide back under the card rather than blinking out */
+.deck[data-edges="2"] .deck-edge:nth-child(3),
+.deck[data-edges="1"] .deck-edge:nth-child(2),
+.deck[data-edges="1"] .deck-edge:nth-child(3) {
+  transform: translateY(0) scale(1);
+  opacity: 0;
+}
+
+/* ---------- elevation ---------- */
+
+.card-shadow {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: 14px;
+  pointer-events: none;
+}
+
+.card-shadow-ambient {
+  box-shadow: var(--shadow-ambient);
+}
+
+.card-shadow-contact {
+  box-shadow: var(--shadow-contact);
+}
+
+/* ---------- the card ---------- */
 
 .card {
   /* the whole card is the hit target */
-  width: min(82vw, 340px, calc(66dvh * 5 / 7));
-  aspect-ratio: 5 / 7;
-  padding: clamp(1.25rem, 6vw, 2rem);
-  border: 1px solid var(--line);
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 0;
   border-radius: 14px;
-  background: var(--card);
+  background: none;
   color: inherit;
   font: inherit;
-  box-shadow: var(--shadow);
   cursor: pointer;
   touch-action: manipulation;
   user-select: none;
   -webkit-user-select: none;
   -webkit-tap-highlight-color: transparent;
+  perspective: 900px;
+  transition: transform 0.18s cubic-bezier(0.3, 0.7, 0.4, 1);
 }
 
-.card:focus-visible {
-  border-radius: 14px;
+/* press: the one piece of tactile feedback the card never had */
+.card:active {
+  transform: scale(0.985);
+}
+
+.deck:has(.card:active) .card-shadow-contact {
+  opacity: 0.55;
 }
 
 .card-inner {
+  /* It is a <span>, and position: relative does NOT blockify (unlike the
+     absolutely-positioned faces below, which the browser blockifies for
+     free). Without this it stays inline, width/height are ignored, and the
+     faces size themselves against a 0x0 containing block. */
+  display: block;
+  position: relative;
   width: 100%;
   height: 100%;
+  transform-style: preserve-3d;
+}
+
+/* Two geometric slots, not fixed roles. Which one carries the current card
+   alternates as the rotation accumulates — see src/scripts/app.ts. */
+.face {
+  position: absolute;
+  inset: 0;
   display: grid;
   place-items: center;
-  transform-style: preserve-3d;
+  padding: clamp(1.25rem, 6vw, 2rem);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--card);
+  box-shadow:
+    inset 0 1px 0 var(--edge-light),
+    inset 0 -1px 0 var(--edge-shade);
+  overflow: hidden;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  transform: rotateY(0deg);
+}
+
+/* Pre-rotated so its contents are not mirror-imaged when the card turns. */
+.face-b {
+  transform: rotateY(180deg);
+}
+
+/* paper grain. .face carries a transform, which creates a stacking context,
+   which isolates the blend — so this multiplies against the card's own
+   stock and nothing behind it. */
+.face::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: var(--grain);
+  background-size: 160px 160px;
+  opacity: var(--grain-opacity);
+  mix-blend-mode: var(--grain-blend);
+  pointer-events: none;
+}
+
+/* specular sweep — parked off the face at rest, rides the flip when armed */
+.face::after {
+  content: "";
+  position: absolute;
+  inset: -50%;
+  background: linear-gradient(105deg, transparent 42%, var(--sheen) 50%, transparent 58%);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.card.flipping .face::after {
+  animation: sheen var(--flip-ms) linear;
+}
+
+@keyframes sheen {
+  0% {
+    opacity: 0;
+    transform: translateX(-38%);
+  }
+  38% {
+    opacity: 1;
+  }
+  62% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(38%);
+  }
+}
+
+/* content sits above the grain layer, which is positioned */
+.card-text,
+.card-mark {
+  position: relative;
+  z-index: 1;
 }
 
 .card-text {
@@ -182,6 +400,47 @@ a {
   letter-spacing: 0.22em;
   text-transform: uppercase;
   white-space: nowrap;
+}
+
+/* ---------- entrance & reshuffle ---------- */
+
+/* Runs once for a fresh visitor. Returning visitors already carry has-drawn
+   before first paint, so they never see it. */
+body.entrance .deck {
+  animation: deck-in 0.9s cubic-bezier(0.16, 0.84, 0.28, 1) both;
+}
+
+@keyframes deck-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.965);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* The whole bag has been dealt and refilled. Animating the stack as a unit,
+   not per-edge: each edge has its own resting transform, so a per-edge
+   keyframe would snap to `none` on the last frame. */
+.deck-stack.riffling {
+  animation: riffle 0.7s cubic-bezier(0.3, 0.8, 0.3, 1);
+}
+
+@keyframes riffle {
+  0% {
+    transform: translateY(4px) rotate(0.85deg);
+  }
+  30% {
+    transform: translateY(0) rotate(-0.95deg);
+  }
+  60% {
+    transform: translateY(2px) rotate(0.45deg);
+  }
+  100% {
+    transform: none;
+  }
 }
 
 /* The hint and the share control share one reserved line below the card:
@@ -276,6 +535,11 @@ a {
   cursor: default;
   user-select: text; /* a shared card's text is there to be copied */
   -webkit-user-select: text;
+}
+
+/* a shared card never turns, so it never presses either */
+.card-static:active {
+  transform: none;
 }
 
 /* ---------- chrome ---------- */
@@ -386,5 +650,26 @@ a {
   .settled .hint,
   .settled .share {
     transition: none;
+  }
+
+  /* The flip itself degrades to a crossfade in app.ts. Everything that is
+     decoration rather than feedback is removed outright; the press state
+     keeps its shadow change but loses the movement. */
+  body.entrance .deck,
+  .deck-stack.riffling,
+  .card.flipping .face::after {
+    animation: none;
+  }
+
+  .deck-edge {
+    transition: none;
+  }
+
+  .card {
+    transition: none;
+  }
+
+  .card:active {
+    transform: none;
   }
 }
