@@ -57,6 +57,28 @@
 
   --flip-ms: 460ms;
 
+  /* ---------- type scale ----------
+     EB Garamond's x-height is 0.405em against ~0.523 for a typical sans, so
+     it needs ~1.29x the pixel size to read at the same APPARENT size. Every
+     step below is chosen for the size it appears, not the number it is —
+     which is why they all look too large written down and are not. The old
+     0.85rem chrome was landing at an apparent 10.5px.
+
+     This build of EB Garamond is weight-variable only (wght 400-800, no opsz
+     — verified by measuring: changing opsz moves no metrics). Small sizes get
+     a step up in weight instead, which counteracts a light serif thinning
+     out as it shrinks. */
+  --t-wordmark: 0.98rem; /* 15.7px -> ~12 apparent */
+  --t-meta: 1.05rem; /* 16.8px -> ~13 apparent */
+  --t-small: 1.2rem; /* 19.2px -> ~15 apparent */
+  --t-body: 1.25rem; /* 20px   -> ~15.5 apparent */
+  --t-lede: 1.5rem; /* 24px   -> ~18.6 apparent */
+  --t-label: 1.05rem; /* uppercase section labels */
+  --t-h1: clamp(2.3rem, 4.2vw + 1.1rem, 3.05rem);
+  /* Sized against the longest card (62 chars) at the narrowest card width,
+     so nothing overflows the stock. */
+  --t-card: clamp(1.6rem, 1.05rem + 2.1vw, 2.35rem);
+
   /* One tile of fractal noise. Encoded as a background-IMAGE, never as a
      live CSS filter: as an image the turbulence rasterizes exactly once and
      is then tiled by the compositor like any bitmap. As a filter it would
@@ -123,8 +145,8 @@ body {
   background: var(--bg);
   color: var(--ink);
   font-family: "EB Garamond", "Iowan Old Style", Georgia, "Times New Roman", serif;
-  font-size: 1.125rem;
-  line-height: 1.5;
+  font-size: var(--t-body);
+  line-height: 1.55;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -439,8 +461,10 @@ a {
 }
 
 .card-text {
-  font-size: clamp(1.5rem, 1.05rem + 1.9vw, 2.25rem);
-  line-height: 1.35;
+  font-size: var(--t-card);
+  line-height: 1.32;
+  /* large sizes need the tracking pulled back in */
+  letter-spacing: -0.008em;
   text-align: center;
   text-wrap: balance;
 }
@@ -458,7 +482,8 @@ a {
 }
 
 .card-wordmark {
-  font-size: 0.8rem;
+  font-size: var(--t-wordmark);
+  font-weight: 500;
   letter-spacing: 0.22em;
   text-transform: uppercase;
   white-space: nowrap;
@@ -523,7 +548,7 @@ body.entrance .deck {
   min-height: 1.5em; /* reserve the line so the card never shifts */
   color: var(--muted);
   font-style: italic;
-  font-size: 1rem;
+  font-size: var(--t-small);
   text-align: center;
 }
 
@@ -542,7 +567,7 @@ body.entrance .deck {
   color: var(--muted);
   font: inherit;
   font-style: italic;
-  font-size: 1rem;
+  font-size: var(--t-small);
   cursor: pointer;
   text-decoration: underline;
   text-decoration-thickness: 1px;
@@ -612,7 +637,8 @@ body.entrance .deck {
   align-items: baseline;
   gap: 1.25rem;
   padding: 0.9rem 1.25rem calc(0.9rem + env(safe-area-inset-bottom));
-  font-size: 0.85rem;
+  font-size: var(--t-meta);
+  font-weight: 500;
   letter-spacing: 0.02em;
   color: var(--muted);
 }
@@ -624,6 +650,24 @@ body.entrance .deck {
 .chrome nav {
   display: flex;
   gap: 1.4rem;
+}
+
+/* The type scale bought legibility at the cost of horizontal room: at 390px
+   the three items no longer share a line, and they were breaking mid-phrase
+   ("Get the physical / deck"). Stack them instead of shrinking back down —
+   the whole point of the scale is that nothing returns to 10px apparent. */
+@media (width < 30rem) {
+  .chrome {
+    flex-direction: column;
+    align-items: center;
+    gap: 0.55rem;
+    padding-inline: 1rem;
+    text-align: center;
+  }
+
+  .chrome nav {
+    gap: 1.6rem;
+  }
 }
 
 .chrome a {
@@ -656,7 +700,8 @@ body.entrance .deck {
 .about .backlink {
   display: inline-block;
   margin-bottom: 3rem;
-  font-size: 0.95rem;
+  font-size: var(--t-meta);
+  font-weight: 500;
   color: var(--muted);
   text-decoration: none;
 }
@@ -672,17 +717,18 @@ body.entrance .deck {
 }
 
 .about h1 {
-  font-size: clamp(2.1rem, 4.5vw + 1rem, 2.9rem);
+  font-size: var(--t-h1);
   font-weight: 600;
-  line-height: 1.1;
+  line-height: 1.08;
+  letter-spacing: -0.012em;
   margin-bottom: 1.5rem;
 }
 
 .about h2 {
   margin-top: 2.6em;
   margin-bottom: 0.7em;
-  font-size: 0.95rem;
-  font-weight: 500;
+  font-size: var(--t-label);
+  font-weight: 600;
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--muted);
@@ -694,15 +740,16 @@ body.entrance .deck {
 }
 
 .about .lede {
-  font-size: 1.3rem;
-  line-height: 1.5;
+  font-size: var(--t-lede);
+  line-height: 1.45;
 }
 
 .about .credit {
   margin-top: 4rem;
   padding-top: 1.5rem;
   border-top: 1px solid var(--line);
-  font-size: 0.95rem;
+  font-size: var(--t-meta);
+  font-weight: 500;
   color: var(--muted);
 }
 

@@ -347,6 +347,53 @@ if (fs.existsSync(path.join(distDir, "index.html"))) {
   );
 }
 
+// ---- typography floor ---------------------------------------------------
+// EB Garamond's x-height is 0.405em against ~0.523 for a typical sans, so a
+// px size understates how big the text LOOKS by about 1.29x. Asserting on
+// apparent size is the only way this floor means anything: 0.85rem sounds
+// reasonable and lands at an apparent 10.5px.
+const tooSmall = async (page, where) =>
+  page.evaluate(() => {
+    const c = document.createElement("canvas").getContext("2d");
+    const xh = (font) => {
+      c.font = '100px ' + font;
+      return (c.measureText("x").actualBoundingBoxAscent || 0) / 100;
+    };
+    const ratio = xh('"EB Garamond"') / xh("Helvetica");
+    const out = [];
+    for (const el of document.querySelectorAll("body *")) {
+      if (!el.textContent.trim() || el.children.length) continue;
+      if (el.closest(".sr-only, noscript") || el.classList.contains("sr-only")) continue;
+      const cs = getComputedStyle(el);
+      if (cs.display === "none" || cs.visibility === "hidden") continue;
+      const apparent = parseFloat(cs.fontSize) * ratio;
+      if (apparent < 11.5) out.push(`${el.className || el.tagName}:${apparent.toFixed(1)}`);
+    }
+    return out;
+  }).then((r) => ({ where, list: r }));
+
+const typeFloors = [
+  await tooSmall(page, "/"),
+  await tooSmall(pa, "/about/"),
+  await tooSmall(pcard, "/c/17/"),
+];
+for (const { where, list } of typeFloors) {
+  check(`no text under ~11.5px apparent on ${where}`, list.length === 0, list.join(" "));
+}
+
+// Bigger type costs horizontal room. Nothing in the chrome may break
+// mid-phrase ("Get the physical / deck") and nothing may overflow the page.
+const wrapped = await page.evaluate(() =>
+  [...document.querySelectorAll(".chrome a, .chrome .deck-name")]
+    .filter((el) => el.getClientRects().length > 1)
+    .map((el) => el.textContent.trim())
+);
+check("chrome labels sit on one line each at 390px", wrapped.length === 0, wrapped.join(" | "));
+const overflows = await page.evaluate(() =>
+  document.documentElement.scrollWidth > document.documentElement.clientWidth
+);
+check("no horizontal overflow at 390px", !overflows);
+
 // ---- no third-party requests -------------------------------------------
 const offsite = requests.filter((u) => !u.startsWith(BASE));
 check("no third-party requests at runtime", offsite.length === 0, offsite.join(", "));
