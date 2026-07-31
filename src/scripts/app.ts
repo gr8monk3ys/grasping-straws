@@ -14,7 +14,7 @@
 import { DECK_NAME } from "../config";
 import { mountPaper, type Paper } from "./paper";
 
-type Card = { id: number; text: string; suit?: string };
+type Card = { id: number; text: string; suit?: string; draft?: boolean };
 type SavedState = { bag?: unknown; last?: unknown; drawn?: unknown };
 
 const STORAGE_KEY = "grasping-straws.v1";
@@ -382,7 +382,9 @@ async function shareCard(): Promise<void> {
 async function init(): Promise<void> {
   try {
     const res = await fetch("/cards.json");
-    deck = (await res.json()) as Card[];
+    // Drafts are ids held open so the PRINTED deck reaches one of MPC's
+    // fixed tiers. They carry no text and must never be dealt.
+    deck = ((await res.json()) as Card[]).filter((c) => !c.draft);
   } catch {
     writeFace(facingSlot(), "The deck failed to load. Refresh to try again.");
     return;

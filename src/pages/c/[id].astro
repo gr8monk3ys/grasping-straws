@@ -11,7 +11,12 @@ import Chrome from "../../components/Chrome.astro";
 import { DECK_NAME, PHYSICAL_DECK_URL } from "../../config";
 
 export function getStaticPaths() {
-  return cards.map((card) => ({ params: { id: String(card.id) }, props: { card } }));
+  // Drafts are ids reserved so the printed deck reaches a whole tier; they
+  // have no text yet. Building a share page for one would publish an empty
+  // card with an empty <title>.
+  return cards
+    .filter((card) => !("draft" in card && card.draft))
+    .map((card) => ({ params: { id: String(card.id) }, props: { card } }));
 }
 
 const { card } = Astro.props;
