@@ -353,6 +353,53 @@ check("the longest cards were actually sampled", Math.max(...valid.map((s) => s.
   `max ${Math.max(...valid.map((s) => s.words))} words seen`);
 
 
+// ---- the paper shader, and its fallback ----------------------------------
+const ctxGl = await browser.newContext({ viewport: { width: 390, height: 844 } });
+const pg = await ctxGl.newPage();
+await pg.goto(BASE + "/", { waitUntil: "networkidle" });
+await pg.waitForTimeout(700);
+const glState = await pg.evaluate(() => ({
+  mounted: document.documentElement.classList.contains("gl"),
+  canvases: document.querySelectorAll("canvas.paper").length,
+  cssGrain: getComputedStyle(document.getElementById("face-a"), "::before").display,
+  textIsDom: !!document.querySelector('.face[aria-hidden="false"] .card-text'),
+}));
+check("paper shader mounts on both faces", glState.mounted && glState.canvases === 2, JSON.stringify(glState));
+check("shader supersedes the CSS grain once it links", glState.cssGrain === "none");
+check("card text stays real DOM, never rasterised into the canvas", glState.textIsDom);
+
+// Progressive enhancement is a claim, so it gets tested: with WebGL refused,
+// the CSS grain must come back and the deck must still deal.
+const ctxNoGl = await browser.newContext({ viewport: { width: 390, height: 844 } });
+await ctxNoGl.addInitScript(() => {
+  const real = HTMLCanvasElement.prototype.getContext;
+  HTMLCanvasElement.prototype.getContext = function (kind, ...rest) {
+    if (String(kind).includes("webgl")) return null;
+    return real.call(this, kind, ...rest);
+  };
+});
+const png = await ctxNoGl.newPage();
+await png.goto(BASE + "/", { waitUntil: "networkidle" });
+await png.waitForTimeout(500);
+const fallback = await png.evaluate(() => ({
+  mounted: document.documentElement.classList.contains("gl"),
+  canvases: document.querySelectorAll("canvas.paper").length,
+  cssGrain: getComputedStyle(document.getElementById("face-a"), "::before").display,
+}));
+check("no gl class when WebGL is refused", !fallback.mounted && fallback.canvases === 0, JSON.stringify(fallback));
+check("CSS grain returns as the fallback", fallback.cssGrain !== "none", fallback.cssGrain);
+const fbId = await drawOnce(png, false);
+check("the deck still deals without WebGL", (await faceText(png)) === byIdText(fbId), `#${fbId}`);
+
+// reduced motion never mounts it at all
+const prNoGl = await ctxRM.newPage();
+await prNoGl.goto(BASE + "/", { waitUntil: "networkidle" });
+await prNoGl.waitForTimeout(500);
+check(
+  "reduced motion skips the shader entirely",
+  !(await prNoGl.evaluate(() => document.documentElement.classList.contains("gl")))
+);
+
 // ---- payload: the zero-framework-JS claim must survive --------------------
 // Budgets are measured GZIPPED, because that is what the README claims
 // ("the ~2 KB draw script") and what a visitor actually downloads. Raw
@@ -372,7 +419,10 @@ if (fs.existsSync(path.join(distDir, "index.html"))) {
     gz(grab(/<style[^>]*>([\s\S]*?)<\/style>/g)) +
     listed.filter((f) => f.endsWith(".css")).reduce((n, f) => n + gz(read(f)), 0);
 
-  check("draw script still ships at ~2 KB gzipped", jsGz <= 2560, `${jsGz} B gz`);
+  // Was 2560 B when the draw script was the only JavaScript. The paper
+  // shader roughly doubled it — a real cost, raised deliberately rather than
+  // quietly, and still hand-rolled: Three.js alone would be ~40x this.
+  check("all client JS <= 4.5 KB gzipped (draw script + paper shader)", jsGz <= 4608, `${jsGz} B gz`);
   check("total CSS <= 4 KB gzipped", cssGz <= 4096, `${cssGz} B gz`);
   // The draw script is the only JavaScript on the site and it is inlined, so
   // a JS file appearing in _astro means either a framework crept in or the

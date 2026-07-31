@@ -422,3 +422,91 @@ separate. `--edge-rim` also strengthened, 0.11 → 0.15.
 63 checks, all passing. Three added: the faces are separated in Z, both
 spines exist, and the spines are edge-on (sub-pixel) at rest. Tap to readable
 text 435ms; script 2090 B gzipped.
+
+---
+
+## Third pass — type scale, four animations, WebGL paper
+
+Scope opened up after review: typography was unfrozen, and a framework was
+put on the table.
+
+### On the framework question
+
+A framework was authorised and deliberately not taken. Typography is pure
+CSS — a library adds nothing. And the platform now covers the animation work:
+WAAPI for the flip, `animation-timeline: view()` for scroll-driven reveals,
+`@starting-style`, cross-document view transitions. Motion One or GSAP would
+have bought authoring convenience at 12–70KB, not capability.
+
+The one genuine capability gap was WebGL, so that is the only thing added —
+and hand-rolled rather than pulled in. One quad and one fragment shader needs
+no scene graph, camera or loader; Three.js would have been ~40x the bytes to
+draw a rectangle.
+
+### Type scale
+
+The chrome was set at `0.85rem` and rendering at an **apparent 10.5px**. EB
+Garamond's x-height is 0.405em against ~0.523 for a typical sans, so it needs
+~1.29x the pixel size to read the same. Every step is chosen for apparent
+size.
+
+Measured, not assumed: this build of EB Garamond is **weight-variable only**.
+Changing `opsz` 8 → 48 moves the metrics not at all; `wght` 400 → 700 shifts
+width by 141px. So the earlier plan for optical sizing was not available, and
+small sizes get a step up in weight instead.
+
+The larger type broke the footer mid-phrase at 390px ("Get the physical /
+deck"). It stacks below 30rem rather than shrinking back, since the point of
+the scale is that nothing returns to 10px apparent.
+
+### The four animations
+
+Per-word card reveal, About scroll reveals, hover/focus choreography, and a
+three-beat entrance. All on the platform; the scroll reveals are zero bytes
+of JavaScript.
+
+The word stagger is a budget, not a taste knob: against the longest card (12
+words) the last word lands at `0.40 * 460 + 11 * 15 + 160 = 509ms`, inside
+the 560ms limit. Anything past ~18ms of stagger breaks it.
+
+### WebGL paper
+
+A material layer *behind* DOM text, not a replacement for it. The card text
+is what the aria-live region announces, what a reader selects, and what the
+48 `/c/<id>/` pages serve — none of that survives rasterisation into a
+texture.
+
+**This is why the sheet does not bend.** True cloth-bend needs the text in
+GL; with DOM text on a flat plane above a curved material, the two tear
+apart. That tradeoff was not worth the three things above.
+
+What the shader does buy: fibre generated rather than tiled (so it never
+repeats), and a specular band driven by the card's **live** rotation, read
+straight off the composited matrix via `atan2(-m13, m11)`, rather than
+approximated by a fixed keyframe. It renders only while the card turns — an
+idle tab costs no GPU.
+
+Corrections during this pass, both caught by looking at output:
+
+- The first shader had laid lines at `pow(sin(y*0.55), 6.0) * 0.05`. At screen
+  scale that period lands near the pixel grid and rendered as **corrugated
+  cardboard**. Removed, and the vignette cut from 0.13 to 0.05.
+- The result then looked "cooler" than the CSS card. Reading the actual pixel
+  disproved it: shader centre is `rgb(253,250,243)`, identical to the CSS
+  card. The apparent shift was the corner vignette, at −3.5%.
+
+### Payload
+
+The budget moved and is not pretended otherwise: client JS went from 2.5KB to
+**4181 B gzipped**, roughly doubling. The README's "~2 KB draw script" claim
+was updated rather than quietly falsified. Still zero framework JS, still no
+third-party requests, still inlined.
+
+### Verification
+
+77 checks. New: an apparent-size floor on all three page types, no chrome
+label breaking, no horizontal overflow, no About content stranded invisible
+after scrolling, sampled latency across 12 draws (keyed on the LAST word —
+keying on the container would pass trivially and hide any stagger), the
+shader mounting on both faces, and the full no-WebGL fallback path still
+dealing cards.

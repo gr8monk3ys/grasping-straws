@@ -12,6 +12,7 @@
  */
 
 import { DECK_NAME } from "../config";
+import { mountPaper, type Paper } from "./paper";
 
 type Card = { id: number; text: string; suit?: string };
 type SavedState = { bag?: unknown; last?: unknown; drawn?: unknown };
@@ -44,6 +45,7 @@ let bag: number[] = []; // ids not yet dealt this cycle; the top of the pile is 
 let last: number | null = null; // id of the card currently face up
 let busy = false;
 let flips = 0; // parity decides which slot faces the viewer
+let paper: Paper | null = null; // WebGL stock; null when unavailable
 let angle = 0; // accumulated rotation in degrees
 
 function loadState(): SavedState | null {
@@ -214,6 +216,7 @@ function show(id: number, { instant = false, keepHint = false } = {}): void {
   inner.style.transform = `rotateY(${angle}deg)`;
 
   cardBtn.classList.add("flipping");
+  paper?.follow();
 
   // Accelerate into the turn, decelerate out of it, overshoot a few degrees
   // and settle. Per-keyframe easing: one easing across the whole iteration
@@ -288,6 +291,7 @@ function show(id: number, { instant = false, keepHint = false } = {}): void {
     })
     .finally(() => {
       cardBtn.classList.remove("flipping");
+      paper?.settle();
       busy = false;
     });
 }
@@ -385,6 +389,9 @@ async function init(): Promise<void> {
       saveState();
     }
   });
+
+  // Progressive enhancement: the CSS grain layer stays if this returns null.
+  if (!reducedMotion.matches) paper = mountPaper([faceA, faceB], inner);
 
   cardBtn.addEventListener("click", draw);
   shareBtn.addEventListener("click", shareCard);

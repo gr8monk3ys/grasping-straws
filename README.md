@@ -13,8 +13,16 @@ Tap, get a card, tap again.
 </p>
 
 Built with [Astro](https://astro.build) as a fully static site. The built
-output ships **zero framework JavaScript** — just the ~2 KB draw script,
-inlined into the page.
+output ships **zero framework JavaScript** — just the draw script and a
+hand-rolled WebGL paper shader, ~4 KB gzipped together and inlined into the
+page. No framework, no animation library, no third-party requests at runtime.
+
+The card is a real object rather than a picture of one: a two-faced 3D flip
+with 3px of stock and lit side edges, a deck beneath that thins as you work
+through it, and a fragment shader that generates the paper fibre and tracks
+the specular highlight to the card's live rotation. All of it degrades — the
+shader falls back to a CSS grain layer, and `prefers-reduced-motion` gets a
+plain crossfade.
 
 ## Editing the deck
 

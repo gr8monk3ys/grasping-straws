@@ -428,6 +428,24 @@ a {
   transform: rotateY(180deg) translateZ(calc(var(--thickness) / 2));
 }
 
+/* The WebGL stock, when it is available. Sits under the text (which is
+   z-index 1) and is clipped by the face's own overflow and radius. */
+.paper {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  pointer-events: none;
+}
+
+/* The shader supersedes the tiled bitmap. Keyed off a class the renderer
+   only adds once a context has actually linked, so a failed init leaves the
+   CSS grain in place rather than a bare card. */
+.gl .face::before {
+  display: none;
+}
+
 /* paper grain. .face carries a transform, which creates a stacking context,
    which isolates the blend — so this multiplies against the card's own
    stock and nothing behind it. */
