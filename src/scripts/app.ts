@@ -206,13 +206,15 @@ function show(id: number, { instant = false, keepHint = false } = {}): void {
       },
       {
         offset: 0.5,
-        transform: `rotateY(${from + 90}deg) translateZ(16px) scale(1.015)`,
-        easing: "cubic-bezier(0.3, 0.6, 0.35, 1)",
+        transform: `rotateY(${from + 90}deg) translateZ(18px) scale(1.018)`,
+        easing: "cubic-bezier(0.3, 0.62, 0.3, 1)",
       },
       {
-        offset: 0.86,
-        transform: `rotateY(${angle + 3.5}deg) translateZ(3px) scale(1.002)`,
-        easing: "ease-out",
+        // A settling object, not a bounce: 2.2deg is enough to read as weight
+        // coming to rest. Past ~4deg it starts to look like a spring toy.
+        offset: 0.84,
+        transform: `rotateY(${angle + 2.2}deg) translateZ(4px) scale(1.003)`,
+        easing: "cubic-bezier(0.33, 0, 0.25, 1)",
       },
       { offset: 1, transform: `rotateY(${angle}deg) translateZ(0px) scale(1)` },
     ],

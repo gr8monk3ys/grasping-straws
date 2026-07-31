@@ -367,3 +367,58 @@ seen once per 48 draws, and detecting this case would require persisting a
 60 checks, all passing, covering the pre-existing suite plus the new
 assertions in §5. Notably `drawOnce()`'s post-draw padding moved 450ms →
 620ms to stay above the new flip duration, as §5 required.
+
+---
+
+## Second pass — the spine, dark depth, motion feel
+
+A follow-up iteration after review. Three changes.
+
+### The card now has thickness
+
+The faces were two coplanar surfaces, so the card was a plane that vanished
+as it passed 90 degrees. It is now a solid: `--thickness: 3px`, the faces
+pushed to `translateZ(±T/2)`, and two `.spine` strips filling the gap along
+the left and right edges.
+
+The strips are placed with `rotateY(∓90deg) translateX(∓T/2)`. The translate
+comes *after* the rotation deliberately — in the rotated frame local X is
+world Z, so `translateX` is what recentres the strip on the card's depth.
+`translateZ` there would push it sideways in world X instead.
+
+3px is exaggerated. True 300gsm stock at this scale is ~1.5px, which reads as
+a rendering artifact rather than as thickness.
+
+**A correction made during this pass.** The spine was first cropped to 11% of
+card height, on the reasoning that it "speared past the deck and read as a
+glitch". Measurement showed that was wrong: at the 90-degree crossing the
+*faces* span 280–880 against the deck's 342–818, while the spine sat neatly
+inside at 346–814. The overshoot is inherent to a perspective flip — the near
+edge swings ~170px toward a 900px camera and everything mid-flip projects as
+a trapezoid up to ~1.26x card height — and it predates the spine entirely. It
+is also what makes the flip read as an object turning in space. Cropping the
+spine only made it shorter than the face slivers it joins. Reverted to a 3%
+inset, which just clears the corner radius.
+
+### Dark-mode depth
+
+Card and background sit 9 points of luminance apart, so the stack needs help
+the light theme does not. `--edge-face` inverts per theme: in light the lower
+cards sit in the card's shadow and are slightly darker; on near-black they
+are slightly *lighter*, catching rim light, which is the only way the steps
+separate. `--edge-rim` also strengthened, 0.11 → 0.15.
+
+### Motion feel
+
+- Overshoot 3.5deg → **2.2deg**. Past ~4deg it reads as a spring toy rather
+  than as weight coming to rest.
+- Lift 16px → 18px, with a slightly softer settle curve.
+- The sheen is reweighted toward the first half of the flip, where the face
+  is still square-on. Past 90 degrees the face is foreshortened to nearly
+  nothing and a highlight there flashes rather than travels.
+
+### Verification
+
+63 checks, all passing. Three added: the faces are separated in Z, both
+spines exist, and the spines are edge-on (sub-pixel) at rest. Tap to readable
+text 435ms; script 2090 B gzipped.

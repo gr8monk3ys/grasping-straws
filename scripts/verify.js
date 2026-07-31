@@ -99,6 +99,17 @@ check(
   (await page.locator('.face[aria-hidden="false"]').count()) === 1
 );
 check("deck shows a full stack before any draw", (await edgeCount(page)) === 3);
+// The card is a solid, not two coplanar planes: the faces are pushed apart
+// by the stock thickness and the side strips fill the gap.
+check("card has thickness — faces are separated in Z", await page.evaluate(() => {
+  const z = (el) => new DOMMatrix(getComputedStyle(el).transform).m43;
+  return Math.abs(z(document.getElementById("face-a"))) > 0.5;
+}));
+check("both side spines exist", (await page.locator(".spine").count()) === 2);
+check("spines are edge-on at rest (invisible until the card turns)", await page.evaluate(() => {
+  const w = (s) => document.querySelector(s).getBoundingClientRect().width;
+  return w(".spine-l") < 1 && w(".spine-r") < 1;
+}));
 
 const id1 = await drawOnce(page, false);
 check("click draws a card", byIdText(id1) === (await faceText(page)), `#${id1}`);

@@ -50,6 +50,10 @@
   --sheen: rgb(255 255 255 / 0.5);
   --edge-cast: 0 -1px 3px -1px rgb(36 30 22 / 0.16);
   --edge-rim: rgb(36 30 22 / 0.22);
+  /* lower cards sit in the card's shadow */
+  --edge-face: #f7f1e4;
+  /* the cut edge of the stock: warmer and darker than the printed face */
+  --spine: #e9dfca;
 
   --flip-ms: 460ms;
 
@@ -81,7 +85,12 @@
     --edge-shade: rgb(0 0 0 / 0.36);
     --sheen: rgb(255 255 255 / 0.11);
     --edge-cast: 0 -2px 5px -2px rgb(0 0 0 / 0.6);
-    --edge-rim: rgb(255 255 255 / 0.11);
+    --edge-rim: rgb(255 255 255 / 0.15);
+    /* inverted on near-black: the lower edges CATCH the rim light rather
+       than falling into shadow, which is the only way the stack reads when
+       card and background are 9 points of luminance apart */
+    --edge-face: #272019;
+    --spine: #33291f;
   }
 }
 
@@ -196,7 +205,7 @@ a {
   /* No grain here. Only a few millimetres of each edge is ever visible, and
      the raw turbulence bitmap needs the opacity + blend treatment .face
      gives it — applied straight it renders as a field of grey static. */
-  background: var(--card);
+  background: var(--edge-face);
   /* Each edge needs the card above it to cast onto it, or the slivers merge
      into one soft block — especially on near-black stock, where the card's
      own ambient shadow already washes this area. */
@@ -297,6 +306,50 @@ a {
   width: 100%;
   height: 100%;
   transform-style: preserve-3d;
+  /* Card stock. Exaggerated a little: true 300gsm at this scale would be
+     ~1.5px and read as an artifact rather than as thickness. */
+  --thickness: 3px;
+}
+
+/* ---------- the spine ---------- */
+
+/* The two side edges, so the card is a solid with depth rather than two
+   planes that vanish as they pass 90 degrees. */
+.spine {
+  position: absolute;
+  /* Just enough to clear the 14px corner radius, as a percentage so it
+     tracks the responsive card.
+
+     Deliberately NOT shortened to keep the strip inside the deck's bounds at
+     the 90deg crossing. Rotation swings the near edge ~170px toward a 900px
+     camera, so everything mid-flip projects as a trapezoid up to ~1.26x the
+     card's height — the faces already overshoot the deck by ~60px at that
+     angle, and did so before this element existed. It is what makes the flip
+     read as an object turning in space rather than a texture swap. A spine
+     cropped to fit would be shorter than the face slivers it joins. */
+  top: 3%;
+  bottom: 3%;
+  width: var(--thickness);
+  background: var(--spine);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+/* rotateY(-90deg) maps the strip's local +X onto world +Z, so a strip of
+   width T lands at z 0..T — half a card too far forward. translateX AFTER
+   the rotation applies in the rotated frame, where local X *is* world Z, so
+   it recentres the strip on z -T/2..+T/2. translateZ here would push it
+   sideways in world X instead. */
+.spine-l {
+  left: 0;
+  transform-origin: left center;
+  transform: rotateY(-90deg) translateX(calc(var(--thickness) / -2));
+}
+
+.spine-r {
+  right: 0;
+  transform-origin: right center;
+  transform: rotateY(90deg) translateX(calc(var(--thickness) / 2));
 }
 
 /* Two geometric slots, not fixed roles. Which one carries the current card
@@ -316,12 +369,15 @@ a {
   overflow: hidden;
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
-  transform: rotateY(0deg);
+  /* Pushed forward by half the stock so the spine has a gap to fill. */
+  transform: translateZ(calc(var(--thickness) / 2));
 }
 
-/* Pre-rotated so its contents are not mirror-imaged when the card turns. */
+/* Pre-rotated so its contents are not mirror-imaged when the card turns. The
+   rotation flips this face's local +Z to world -Z, so the same positive
+   translate lands it on the opposite side of the card. */
 .face-b {
-  transform: rotateY(180deg);
+  transform: rotateY(180deg) translateZ(calc(var(--thickness) / 2));
 }
 
 /* paper grain. .face carries a transform, which creates a stacking context,
@@ -352,20 +408,26 @@ a {
   animation: sheen var(--flip-ms) linear;
 }
 
+/* Weighted toward the first half, where the face is still square-on to the
+   viewer. Past 90 degrees the face is foreshortened to almost nothing and a
+   highlight there reads as a flash rather than as light moving over paper. */
 @keyframes sheen {
   0% {
     opacity: 0;
-    transform: translateX(-38%);
+    transform: translateX(-42%);
   }
-  38% {
+  22% {
+    opacity: 0.85;
+  }
+  46% {
     opacity: 1;
   }
-  62% {
-    opacity: 1;
+  72% {
+    opacity: 0.35;
   }
   100% {
     opacity: 0;
-    transform: translateX(38%);
+    transform: translateX(34%);
   }
 }
 

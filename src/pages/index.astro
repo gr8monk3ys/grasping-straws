@@ -28,6 +28,10 @@ const physicalHref = PHYSICAL_DECK_URL || "/about/#physical";
       <span class="card-shadow card-shadow-contact" aria-hidden="true"></span>
       <button id="card" class="card" aria-describedby="draw-desc">
         <span class="card-inner" id="card-inner">
+          {/* The card's thickness. Only one is ever visible at a time —
+              whichever edge is turned toward the viewer. */}
+          <span class="spine spine-l" aria-hidden="true"></span>
+          <span class="spine spine-r" aria-hidden="true"></span>
           <span class="face face-a" id="face-a" aria-hidden="false">
             <span class="card-mark" id="card-mark">
               <span class="glyph"></span>
