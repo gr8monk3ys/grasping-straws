@@ -15,7 +15,13 @@ import { DECK_NAME } from "../config";
 import { mountPaper, type Paper } from "./paper";
 
 type Card = { id: number; text: string; suit?: string; draft?: boolean };
-type SavedState = { bag?: unknown; last?: unknown; drawn?: unknown };
+type SavedState = {
+  bag?: unknown;
+  last?: unknown;
+  drawn?: unknown;
+  order?: unknown; // v2: the sequence dealt this cycle, oldest first
+  aside?: unknown; // v2: ids on the shelf, kept across cycles
+};
 
 const STORAGE_KEY = "grasping-straws.v1";
 // Keep in step with --flip-ms in global.css. 520ms put the words on screen at
@@ -39,8 +45,17 @@ const liveEl = document.getElementById("live") as HTMLElement;
 const shareBtn = document.getElementById("share") as HTMLButtonElement;
 const discardEl = document.getElementById("discard") as HTMLElement | null;
 const deckMiniEl = document.getElementById("deck-mini") as HTMLElement | null;
+const asideEl = document.getElementById("aside") as HTMLElement | null;
 const leftCountEl = document.getElementById("left-count") as HTMLElement | null;
 const drawnCountEl = document.getElementById("drawn-count") as HTMLElement | null;
+const asideCountEl = document.getElementById("aside-count") as HTMLElement | null;
+const discardOpenEl = document.getElementById("discard-open") as HTMLButtonElement | null;
+const asideOpenEl = document.getElementById("aside-open") as HTMLButtonElement | null;
+const keepBtn = document.getElementById("keep") as HTMLButtonElement;
+const spreadEl = document.getElementById("spread") as HTMLDialogElement;
+const spreadListEl = document.getElementById("spread-list") as HTMLElement;
+const spreadTitleEl = document.getElementById("spread-title") as HTMLElement;
+const spreadCloseEl = document.getElementById("spread-close") as HTMLButtonElement;
 const tallyDrawnEl = document.getElementById("tally-drawn") as HTMLElement | null;
 const tallyTotalEl = document.getElementById("tally-total") as HTMLElement | null;
 const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -48,11 +63,15 @@ const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
 let deck: Card[] = [];
 let byId = new Map<number, Card>();
 let bag: number[] = []; // ids not yet dealt this cycle; the top of the pile is the end
+let order: number[] = []; // ids dealt this cycle, oldest first — the discard
+let aside: number[] = []; // ids on the shelf; a bookmark, not a removal
 let last: number | null = null; // id of the card currently face up
 let busy = false;
 let flips = 0; // parity decides which slot faces the viewer
 let paper: Paper | null = null; // WebGL stock; null when unavailable
 let angle = 0; // accumulated rotation in degrees
+let tiltX = 0; // pointer parallax, degrees; zero on touch and reduced motion
+let tiltY = 0;
 
 function loadState(): SavedState | null {
   try {
@@ -66,7 +85,13 @@ function saveState(): void {
   try {
     localStorage.setItem(
       STORAGE_KEY,
-      JSON.stringify({ bag, last, drawn: document.body.classList.contains("has-drawn") })
+      JSON.stringify({
+        bag,
+        order,
+        aside,
+        last,
+        drawn: document.body.classList.contains("has-drawn"),
+      })
     );
   } catch {
     /* storage unavailable (private mode) — the deck just won't remember */
@@ -119,6 +144,7 @@ function keepTopFresh(): void {
 
 function refillBag(): void {
   bag = shuffled(deck.map((c) => c.id));
+  order = []; // a fresh cycle: the discard is swept back into the deck
   keepTopFresh();
 }
 
@@ -131,25 +157,99 @@ function refillBag(): void {
 // own layer. A linear mapping would make the first ten draws look inert.
 const DISCARD_STEPS = [1, 3, 6, 12, 24, 40];
 
+const layersFor = (n: number): string => String(DISCARD_STEPS.filter((step) => n >= step).length);
+
 function updateDeckDepth(): void {
   const ratio = deck.length === 0 ? 0 : bag.length / deck.length;
   deckEl.dataset.edges = String(ratio > 0.6 ? 3 : ratio > 0.3 ? 2 : 1);
 
-  // Everything below is derived from `bag`, which already persists. The
-  // discard is a view of the deck's state, not state of its own.
-  const drawn = deck.length - bag.length;
+  // The discard is now `order`, not `deck.length - bag.length`. The two agree
+  // — every id leaves the bag exactly as it joins the order — but only
+  // `order` also knows the SEQUENCE, which is what makes the pile browsable.
+  const drawn = order.length;
   if (leftCountEl) leftCountEl.textContent = String(bag.length);
   if (drawnCountEl) drawnCountEl.textContent = String(drawn);
+  if (asideCountEl) asideCountEl.textContent = String(aside.length);
   if (tallyDrawnEl) tallyDrawnEl.textContent = String(drawn);
   if (tallyTotalEl) tallyTotalEl.textContent = String(deck.length);
-  if (discardEl) {
-    discardEl.dataset.layers = String(DISCARD_STEPS.filter((n) => drawn >= n).length);
-  }
+  if (discardEl) discardEl.dataset.layers = layersFor(drawn);
+  if (asideEl) asideEl.dataset.layers = layersFor(aside.length);
   // The deck's mini pile thins on the same thresholds, read from the other
   // end, so the two piles are always legible as halves of one deck.
-  if (deckMiniEl) {
-    deckMiniEl.dataset.layers = String(DISCARD_STEPS.filter((n) => bag.length >= n).length);
+  if (deckMiniEl) deckMiniEl.dataset.layers = layersFor(bag.length);
+
+  // An empty pile is not something you can pick up.
+  if (discardOpenEl) discardOpenEl.disabled = drawn === 0;
+  if (asideOpenEl) asideOpenEl.disabled = aside.length === 0;
+}
+
+/* ---------- the shelf ---------- */
+
+// Set-aside is a bookmark, not a removal: the card stays in the cycle and the
+// counts are untouched. Taking it out of play instead would mean refillBag
+// had to exclude it, an all-aside deck would be unshuffleable, and "how many
+// are left" would stop meaning one thing.
+function updateKeep(): void {
+  keepBtn.setAttribute("aria-pressed", String(last !== null && aside.includes(last)));
+}
+
+function toggleAside(): void {
+  if (last === null || !byId.has(last)) return;
+  const at = aside.indexOf(last);
+  if (at >= 0) {
+    aside.splice(at, 1);
+    liveEl.textContent = "Taken off the shelf.";
+  } else {
+    aside.push(last);
+    liveEl.textContent = "Set aside.";
   }
+  updateKeep();
+  updateDeckDepth();
+  saveState();
+}
+
+/* ---------- picking a pile up ---------- */
+
+// Newest on top, the way a pile you set down actually reads. Clicking an
+// entry turns that card face up on the table; it does NOT deal it, so the
+// bag and the discard are unchanged — you are looking through cards you
+// already drew, not drawing again.
+function openSpread(title: string, ids: number[]): void {
+  spreadTitleEl.textContent = title;
+  spreadListEl.textContent = "";
+
+  for (const [i, id] of [...ids].reverse().entries()) {
+    const card = byId.get(id);
+    if (!card) continue; // edited out of cards.json since it was drawn
+    const li = document.createElement("li");
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "spread-card";
+    btn.style.setProperty("--i", String(i));
+    btn.append(card.text);
+    const num = document.createElement("span");
+    num.className = "spread-num";
+    num.textContent = "#" + id;
+    btn.append(num);
+    btn.addEventListener("click", () => {
+      spreadEl.close();
+      last = id;
+      keepTopFresh();
+      show(id, { keepHint: true });
+      updateKeep();
+      saveState();
+    });
+    li.append(btn);
+    spreadListEl.append(li);
+  }
+
+  if (!spreadListEl.children.length) {
+    const p = document.createElement("p");
+    p.className = "spread-empty";
+    p.textContent = "These cards are no longer in the deck.";
+    spreadListEl.append(p);
+  }
+  spreadEl.showModal();
 }
 
 function riffle(): void {
@@ -164,6 +264,18 @@ function riffle(): void {
 
 function facingSlot(): HTMLElement {
   return flips % 2 === 0 ? faceA : faceB;
+}
+
+// The card's resting transform: the accumulated flip plus whatever the
+// pointer parallax is asking for. Both live on .card-inner deliberately —
+// it is the element .card's perspective is applied to, so a tilt here is
+// projected in 3D, and the flip animation overrides the whole property
+// while it runs, which means the two can never fight over it.
+function applyRest(): void {
+  inner.style.transform =
+    tiltX || tiltY
+      ? `rotateY(${angle + tiltY}deg) rotateX(${tiltX}deg)`
+      : `rotateY(${angle}deg)`;
 }
 
 // Words become separate elements so they can arrive in sequence. The
@@ -240,7 +352,7 @@ function show(id: number, { instant = false, keepHint = false } = {}): void {
   angle += 180;
   // Settle the resting transform up front so the element holds the new angle
   // when the animation hands back; no fill mode needed.
-  inner.style.transform = `rotateY(${angle}deg)`;
+  applyRest();
 
   cardBtn.classList.add("flipping");
   paper?.follow();
@@ -333,9 +445,134 @@ function draw(): void {
     riffle();
   }
   last = bag.pop()!;
+  order.push(last); // straight from the bag onto the discard, in sequence
   show(last);
   updateDeckDepth();
+  updateKeep();
   saveState();
+}
+
+/* ---------- throwing the card ---------- */
+
+// Tap turns the card over where it lies. A throw does the same turn, but the
+// card lunges the way you flicked it and swings back — one gesture, one
+// draw. Detaching the two (fly off, then deal a replacement) would mean the
+// flip had nothing to happen to, and the card would stop being one object.
+const THROW_DISTANCE = 44; // px — past this, a drag was meant as a throw
+const THROW_SPEED = 0.4; // px/ms — or a flick this fast, however short
+let dragging = false;
+let dragId = -1;
+let dragX = 0;
+let dragY = 0;
+let dx = 0;
+let dy = 0;
+let lastMoveAt = 0;
+let vx = 0;
+let moved = false;
+
+function dragTransform(x: number, y: number): string {
+  // Rotation from horizontal displacement only: a card pushed sideways
+  // pivots, a card pushed away from you does not.
+  return `translate(${x}px, ${y}px) rotate(${(x * 0.045).toFixed(2)}deg)`;
+}
+
+function endDrag(throwIt: boolean): void {
+  if (!dragging) return;
+  dragging = false;
+  cardBtn.classList.remove("dragging");
+  const from = dragTransform(dx, dy);
+  cardBtn.style.transform = "";
+
+  if (!throwIt) {
+    if (!reducedMotion.matches) {
+      cardBtn.animate([{ transform: from }, { transform: "none" }], {
+        duration: 340,
+        easing: "cubic-bezier(0.22, 0.9, 0.3, 1)",
+      });
+    }
+    return;
+  }
+
+  if (!reducedMotion.matches && cardBtn.animate) {
+    // Peak displacement scales with how hard it was thrown, capped so a
+    // violent flick cannot send the card off the table.
+    const reach = Math.min(Math.abs(dx) + Math.abs(vx) * 110, 150) * Math.sign(dx || 1);
+    cardBtn.animate(
+      [
+        { transform: from, easing: "cubic-bezier(0.32, 0, 0.6, 0.5)" },
+        {
+          offset: 0.38,
+          transform: `translate(${reach.toFixed(1)}px, ${(dy * 0.5).toFixed(1)}px) rotate(${(reach * 0.05).toFixed(2)}deg)`,
+          easing: "cubic-bezier(0.25, 0.65, 0.3, 1)",
+        },
+        { transform: "none" },
+      ],
+      { duration: FLIP_MS + 140 }
+    );
+  }
+  draw();
+}
+
+function onPointerDown(e: PointerEvent): void {
+  if (busy || e.button !== 0) return;
+  dragging = true;
+  moved = false;
+  dragId = e.pointerId;
+  dragX = e.clientX;
+  dragY = e.clientY;
+  dx = dy = vx = 0;
+  lastMoveAt = e.timeStamp;
+  cardBtn.setPointerCapture(e.pointerId);
+  cardBtn.classList.add("dragging");
+}
+
+function onPointerMove(e: PointerEvent): void {
+  if (!dragging || e.pointerId !== dragId) return;
+  const nx = e.clientX - dragX;
+  const dt = e.timeStamp - lastMoveAt;
+  if (dt > 0) vx = (nx - dx) / dt;
+  lastMoveAt = e.timeStamp;
+  dx = nx;
+  dy = e.clientY - dragY;
+  if (Math.abs(dx) > 3 || Math.abs(dy) > 3) moved = true;
+  cardBtn.style.transform = dragTransform(dx, dy);
+}
+
+function onPointerUp(e: PointerEvent): void {
+  if (!dragging || e.pointerId !== dragId) return;
+  endDrag(Math.hypot(dx, dy) > THROW_DISTANCE || Math.abs(vx) > THROW_SPEED);
+}
+
+/* ---------- the paper at rest ---------- */
+
+// The shader only ever drew while the card turned, which left the stock a
+// frozen frame the rest of the time. Tilting the card a couple of degrees
+// toward the pointer moves the specular band across it, so the sheet catches
+// the light as you move — the difference between a photograph of paper and
+// paper. Pointer-only: there is no hover on touch, and the flip already owns
+// the transform whenever the card is mid-turn.
+const TILT_Y = 3.2;
+const TILT_X = 2.2;
+let tiltIdle: ReturnType<typeof setTimeout> | undefined;
+
+function onStageMove(e: PointerEvent): void {
+  if (busy || dragging || e.pointerType !== "mouse") return;
+  const r = cardBtn.getBoundingClientRect();
+  const nx = Math.max(-1, Math.min(1, (e.clientX - (r.left + r.width / 2)) / (r.width / 2)));
+  const ny = Math.max(-1, Math.min(1, (e.clientY - (r.top + r.height / 2)) / (r.height / 2)));
+  tiltY = nx * TILT_Y;
+  tiltX = -ny * TILT_X;
+  applyRest();
+  paper?.redraw();
+  clearTimeout(tiltIdle);
+  tiltIdle = setTimeout(releaseTilt, 2200);
+}
+
+function releaseTilt(): void {
+  if (!tiltX && !tiltY) return;
+  tiltX = tiltY = 0;
+  applyRest();
+  paper?.redraw();
 }
 
 /*
@@ -391,14 +628,35 @@ async function init(): Promise<void> {
   }
   byId = new Map(deck.map((c) => [c.id, c]));
 
+  // Cards removed from cards.json since the last visit simply vanish from
+  // every list; new cards join at the next reshuffle.
+  const live = (id: unknown): id is number => typeof id === "number" && byId.has(id);
   if (saved && Array.isArray(saved.bag)) {
-    // Cards removed from cards.json since the last visit simply vanish
-    // from the bag; new cards join at the next reshuffle.
-    bag = saved.bag.filter((id): id is number => typeof id === "number" && byId.has(id));
-    last = typeof saved.last === "number" && byId.has(saved.last) ? saved.last : null;
+    bag = saved.bag.filter(live);
+    last = live(saved.last) ? saved.last : null;
+    aside = Array.isArray(saved.aside) ? [...new Set(saved.aside.filter(live))] : [];
+
+    if (Array.isArray(saved.order)) {
+      order = [...new Set(saved.order.filter(live))];
+    } else {
+      // Saved before the discard became browsable. The sequence was never
+      // stored, but the SET is recoverable: anything in the deck and not in
+      // the bag was dealt this cycle. So a returning visitor's discard is
+      // faithful in content and arbitrary only in the middle of its order —
+      // and the one position that is actually visible, the most recent card,
+      // is the one position v1 did record.
+      const inBag = new Set(bag);
+      order = deck.map((c) => c.id).filter((id) => !inBag.has(id) && id !== last);
+      if (last !== null) order.push(last);
+      // Freeze it. The reconstruction reads cards.json's order for the part
+      // it cannot know, so leaving it unsaved would let the discard reshuffle
+      // itself every load if the file is ever reordered.
+      saveState();
+    }
   }
   if (bag.length === 0) refillBag();
   updateDeckDepth();
+  updateKeep();
 
   // #<id> deep link: show that card face up, then rejoin the normal bag.
   const hashId = Number(location.hash.slice(1));
@@ -422,7 +680,37 @@ async function init(): Promise<void> {
   // Progressive enhancement: the CSS grain layer stays if this returns null.
   if (!reducedMotion.matches) paper = mountPaper([faceA, faceB], inner);
 
-  cardBtn.addEventListener("click", draw);
+  // pointerup fires before click, so a throw has already dealt by the time
+  // the click arrives; and a drag that sprang back was not a tap either.
+  cardBtn.addEventListener("click", () => {
+    if (moved) {
+      moved = false;
+      return;
+    }
+    draw();
+  });
+  cardBtn.addEventListener("pointerdown", onPointerDown);
+  cardBtn.addEventListener("pointermove", onPointerMove);
+  cardBtn.addEventListener("pointerup", onPointerUp);
+  cardBtn.addEventListener("pointercancel", () => endDrag(false));
+
+  keepBtn.addEventListener("click", toggleAside);
+  discardOpenEl?.addEventListener("click", () => openSpread("the discard", order));
+  asideOpenEl?.addEventListener("click", () => openSpread("set aside", aside));
+  spreadCloseEl.addEventListener("click", () => spreadEl.close());
+  // Clicks on a modal dialog's backdrop are reported against the dialog.
+  spreadEl.addEventListener("click", (e) => {
+    if (e.target === spreadEl) spreadEl.close();
+  });
+
+  // Gated on motion preference and pointer type, NOT on the shader: the tilt
+  // is a CSS transform and looks right against the CSS grain fallback too.
+  // paper?.redraw() no-ops when WebGL is unavailable.
+  if (!reducedMotion.matches && window.matchMedia("(hover: hover) and (pointer: fine)").matches) {
+    deckEl.addEventListener("pointermove", onStageMove);
+    deckEl.addEventListener("pointerleave", releaseTilt);
+  }
+
   shareBtn.addEventListener("click", shareCard);
   document.addEventListener("keydown", (e) => {
     if (e.defaultPrevented) return;

@@ -19,7 +19,15 @@ import { fileURLToPath } from "node:url";
 const here = path.dirname(fileURLToPath(import.meta.url));
 const BASE = process.env.BASE_URL || "http://127.0.0.1:8317";
 const SHOTS = process.env.SHOTS_DIR || fs.mkdtempSync(path.join(os.tmpdir(), "gs-shots-"));
-const cards = JSON.parse(fs.readFileSync(path.join(here, "..", "public", "cards.json"), "utf8"));
+// Drafts are ids reserved so the PRINTED deck reaches one of MakePlayingCards'
+// fixed tiers; they carry no text, and both the deck script and the /c/<id>/
+// page builder filter them out. Reading them here instead made five checks
+// fail against a deck size the site never had.
+const allCards = JSON.parse(
+  fs.readFileSync(path.join(here, "..", "public", "cards.json"), "utf8")
+);
+const cards = allCards.filter((c) => !c.draft);
+const drafts = allCards.filter((c) => c.draft);
 const byIdText = (id) => (cards.find((c) => c.id === id) || {}).text || null;
 
 const results = [];
@@ -362,8 +370,51 @@ check(
   valid.length === samples.length && worst.ms <= 560,
   `worst ${Math.round(worst.ms)}ms at ${worst.words} words`
 );
-check("the longest cards were actually sampled", Math.max(...valid.map((s) => s.words)) >= 8,
-  `max ${Math.max(...valid.map((s) => s.words))} words seen`);
+// The budget exists FOR the longest card, so the longest card has to be
+// measured — not hoped for. 13 of 48 cards run to 8+ words, which leaves a
+// ~2% chance that 12 random draws sample none of them, and this check duly
+// failed on a run where nothing was wrong. Deal the worst case on purpose
+// instead: a hashchange runs the same flip and the same word stagger.
+const longest = cards.reduce((a, c) =>
+  c.text.split(" ").length > a.text.split(" ").length ? c : a
+);
+const longestWords = longest.text.split(" ").length;
+// Park on a different card first: if the hash already names the longest one,
+// setting it again fires no hashchange and nothing turns.
+const parkId = cards.find((c) => c.id !== longest.id).id;
+await pl.evaluate((id) => { location.hash = "#" + id; }, parkId);
+await pl.waitForTimeout(FLIP_SETTLE_MS);
+const worstCase = await pl.evaluate(
+  ({ id, text }) =>
+    new Promise((resolve) => {
+      const t0 = performance.now();
+      location.hash = "#" + id;
+      const tick = () => {
+        const el = document.querySelector('.face[aria-hidden="false"] .card-text');
+        const words = el ? [...el.querySelectorAll(".word")] : [];
+        // The text must be THIS card's before the words mean anything —
+        // the outgoing card's words are all landed already, and checking
+        // opacity alone resolves on frame one against the wrong card.
+        const ready =
+          el && el.textContent === text && words.length && words.every((w) => getComputedStyle(w).opacity === "1");
+        if (ready) resolve({ ms: performance.now() - t0, words: words.length });
+        else if (performance.now() - t0 > 3000) resolve({ ms: -1, words: words.length });
+        else requestAnimationFrame(tick);
+      };
+      requestAnimationFrame(tick);
+    }),
+  { id: longest.id, text: longest.text }
+);
+check(
+  `the longest card (${longestWords} words) is measured, not hoped for`,
+  worstCase.words === longestWords,
+  `${worstCase.words} words`
+);
+check(
+  "worst-case card still readable within 560ms",
+  worstCase.ms > 0 && worstCase.ms <= 560,
+  `${Math.round(worstCase.ms)}ms at ${worstCase.words} words`
+);
 
 
 // ---- masthead, piles and the theme toggle --------------------------------
@@ -402,6 +453,177 @@ check("the tally agrees with the pile counts", after.tally === after.drawn);
 check("remaining count tracks the bag exactly", after.left === after.bag, `${after.left} vs ${after.bag}`);
 check("the discard thickens as the deck thins", after.discardLayers > 0 && after.deckLayers <= 6, JSON.stringify(after));
 await pu.screenshot({ path: path.join(SHOTS, "shot-12-table-light.png") });
+
+// --- reserved print slots never reach the site ----------------------------
+check("there are reserved draft slots to test", drafts.length > 0, `${drafts.length}`);
+check("drafts are excluded from the dealt deck", await pu.evaluate(
+  async () => (await (await fetch("/cards.json")).json()).filter((c) => c.draft).length > 0
+) && (await pileState()).left + (await pileState()).drawn === cards.length);
+const draftRes = await pu.request.get(BASE + "/c/" + drafts[0].id + "/");
+check("a draft gets no share page", draftRes.status() === 404, `/c/${drafts[0].id}/ -> ${draftRes.status()}`);
+check("a draft id in the hash is ignored", await pu.evaluate(async (id) => {
+  location.hash = "#" + id;
+  await new Promise((r) => setTimeout(r, 300));
+  const el = document.querySelector('.face[aria-hidden="false"] .card-text');
+  return !!el.textContent.trim();
+}, drafts[0].id));
+
+// --- picking a pile up ----------------------------------------------------
+// The discard is now a real pile: it knows the sequence, not just the count.
+const savedOrder = await pu.evaluate(
+  () => JSON.parse(localStorage.getItem("grasping-straws.v1")).order
+);
+check("the draw order is persisted, not just the count", Array.isArray(savedOrder) && savedOrder.length === after.drawn, JSON.stringify(savedOrder));
+check("every id in the discard left the bag", await pu.evaluate(() => {
+  const s = JSON.parse(localStorage.getItem("grasping-straws.v1"));
+  return s.order.every((id) => !s.bag.includes(id));
+}));
+
+check("an empty shelf cannot be picked up", await pu.locator("#aside-open").isDisabled());
+check("a non-empty discard can be", !(await pu.locator("#discard-open").isDisabled()));
+
+await pu.click("#discard-open");
+await pu.waitForTimeout(450);
+check("the discard opens as a modal dialog", await pu.evaluate(() => document.getElementById("spread").open));
+const spreadIds = await pu.evaluate(() =>
+  [...document.querySelectorAll(".spread-num")].map((n) => Number(n.textContent.slice(1)))
+);
+check("the spread holds every drawn card", spreadIds.length === savedOrder.length, `${spreadIds.length}/${savedOrder.length}`);
+check("newest sits on top", spreadIds[0] === savedOrder[savedOrder.length - 1], `${spreadIds[0]} vs ${savedOrder.at(-1)}`);
+check("the spread reads as cards, not a list", await pu.evaluate(() => {
+  const el = document.querySelector(".spread-card");
+  const r = el.getBoundingClientRect();
+  return r.height > r.width && el.textContent.length > 8;
+}));
+await pu.screenshot({ path: path.join(SHOTS, "shot-13-spread.png") });
+
+// Looking through the discard must not deal — the bag is not touched.
+const bagBeforePick = await bagLen(pu);
+const pickId = spreadIds[2];
+await pu.evaluate((id) => {
+  [...document.querySelectorAll(".spread-card")]
+    .find((b) => b.querySelector(".spread-num").textContent === "#" + id)
+    .click();
+}, pickId);
+await pu.waitForTimeout(FLIP_SETTLE_MS);
+check("the dialog closes on picking a card", !(await pu.evaluate(() => document.getElementById("spread").open)));
+check("picking from the discard turns that card up", (await faceText(pu)) === byIdText(pickId), `#${pickId}`);
+check("looking through the discard does not deal", (await bagLen(pu)) === bagBeforePick, `${bagBeforePick} -> ${await bagLen(pu)}`);
+check("the discard count is unchanged by browsing", (await pileState()).drawn === after.drawn);
+
+// --- the shelf ------------------------------------------------------------
+await pu.click("#keep");
+await pu.waitForTimeout(120);
+check("set aside marks the control as pressed", (await pu.getAttribute("#keep", "aria-pressed")) === "true");
+check("the shelf pile appears", (await pu.evaluate(() => Number(document.getElementById("aside-count").textContent))) === 1);
+check("the shelf can now be picked up", !(await pu.locator("#aside-open").isDisabled()));
+check("the shelf holds the card that was up", await pu.evaluate((id) => {
+  const s = JSON.parse(localStorage.getItem("grasping-straws.v1"));
+  return s.aside.length === 1 && s.aside[0] === id;
+}, pickId));
+// A bookmark, not a removal: taking a card aside must not change what is
+// left to draw, or the two counts would stop meaning one thing.
+check("setting aside does not remove the card from play", (await pileState()).left === after.left);
+
+await pu.reload({ waitUntil: "networkidle" });
+await pu.waitForTimeout(400);
+check("the shelf survives a reload", (await pu.evaluate(() => Number(document.getElementById("aside-count").textContent))) === 1);
+await pu.click("#aside-open");
+await pu.waitForTimeout(400);
+check("the shelf spread shows the kept card", await pu.evaluate((id) =>
+  document.querySelector(".spread-num")?.textContent === "#" + id, pickId));
+await pu.keyboard.press("Escape");
+await pu.waitForTimeout(200);
+check("Escape closes a spread", !(await pu.evaluate(() => document.getElementById("spread").open)));
+
+// --- a visitor arriving from the previous storage shape -------------------
+// v1 stored bag/last/drawn and no sequence. The set of drawn cards is still
+// recoverable (deck minus bag), so the discard must come back populated
+// rather than empty — an existing visitor should not see their progress
+// silently reset to zero.
+const ctxMig = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+const pm = await ctxMig.newPage();
+await pm.goto(BASE + "/", { waitUntil: "domcontentloaded" });
+const v1Bag = cards.slice(5).map((c) => c.id); // 5 cards "already drawn"
+const v1Last = cards[4].id;
+await pm.evaluate(
+  (s) => localStorage.setItem("grasping-straws.v1", JSON.stringify(s)),
+  { bag: v1Bag, last: v1Last, drawn: true }
+);
+await pm.reload({ waitUntil: "networkidle" });
+await pm.waitForTimeout(400);
+const migrated = await pm.evaluate(() => ({
+  drawn: Number(document.getElementById("drawn-count").textContent),
+  left: Number(document.getElementById("left-count").textContent),
+  order: JSON.parse(localStorage.getItem("grasping-straws.v1")).order,
+  aside: JSON.parse(localStorage.getItem("grasping-straws.v1")).aside,
+}));
+check("a v1 visitor keeps their place in the cycle", migrated.left === v1Bag.length, JSON.stringify(migrated.left));
+check("the discard is reconstructed, not reset", migrated.drawn === cards.length - v1Bag.length, `${migrated.drawn}`);
+check("the reconstructed discard holds exactly the drawn cards", await pm.evaluate((bag) => {
+  const s = JSON.parse(localStorage.getItem("grasping-straws.v1"));
+  return s.order.every((id) => !bag.includes(id)) && s.order.length === new Set(s.order).size;
+}, v1Bag));
+// The one position v1 did record is the card that was face up.
+check("the last card dealt stays last in the reconstructed order", migrated.order.at(-1) === v1Last, `${migrated.order.at(-1)} vs ${v1Last}`);
+check("a v1 visitor starts with an empty shelf", Array.isArray(migrated.aside) && migrated.aside.length === 0);
+await ctxMig.close();
+
+// --- throwing the card ----------------------------------------------------
+// A flick past the distance threshold deals; a nudge below it springs back.
+async function dragCard(page, dxPx, steps = 6) {
+  const box = await page.locator("#card").boundingBox();
+  const cx = box.x + box.width / 2;
+  const cy = box.y + box.height / 2;
+  await page.mouse.move(cx, cy);
+  await page.mouse.down();
+  for (let i = 1; i <= steps; i++) await page.mouse.move(cx + (dxPx * i) / steps, cy);
+  await page.mouse.up();
+}
+const beforeThrow = await pu.evaluate(() => location.hash);
+await dragCard(pu, 12);
+await pu.waitForTimeout(500);
+check("a nudge is not a throw — the card springs back", (await pu.evaluate(() => location.hash)) === beforeThrow, `${beforeThrow} -> ${await pu.evaluate(() => location.hash)}`);
+check("a nudge leaves no residual transform", await pu.evaluate(() => {
+  const t = document.getElementById("card").style.transform;
+  return t === "" || t === "none";
+}), await pu.evaluate(() => document.getElementById("card").style.transform));
+
+const bagBeforeThrow = await bagLen(pu);
+await dragCard(pu, 150);
+await pu.waitForTimeout(FLIP_SETTLE_MS + 250);
+const afterThrow = await pu.evaluate(() => location.hash);
+check("throwing the card deals the next one", afterThrow !== beforeThrow, `${beforeThrow} -> ${afterThrow}`);
+check("a throw deals exactly one card", (await bagLen(pu)) === bagBeforeThrow - 1, `${bagBeforeThrow} -> ${await bagLen(pu)}`);
+check("the thrown card is readable where it started", (await faceText(pu)) === byIdText(Number(afterThrow.slice(1))));
+check("the card returns to the table", await pu.evaluate(() => {
+  const d = document.getElementById("deck").getBoundingClientRect();
+  const c = document.getElementById("card").getBoundingClientRect();
+  return Math.abs((c.left + c.width / 2) - (d.left + d.width / 2)) < 2;
+}));
+
+// touch-action is what decides whether the gesture reaches us at all. Left
+// at `manipulation` the browser claims horizontal panning and the throw
+// silently stops working on exactly the devices it is best on.
+check("the card yields horizontal drags to the page, keeps vertical scroll",
+  (await pu.locator("#card").evaluate((el) => getComputedStyle(el).touchAction)) === "pan-y");
+
+// --- the paper at rest ----------------------------------------------------
+// The shader used to render only mid-flip, leaving a frozen frame. Tilting
+// toward the pointer is what makes it a live surface.
+const restAngle = () => pu.evaluate(() => {
+  const m = new DOMMatrix(getComputedStyle(document.getElementById("card-inner")).transform);
+  return Math.round(Math.atan2(-m.m13, m.m11) * (180 / Math.PI) * 10) / 10;
+});
+const flat = await restAngle();
+const cardBox = await pu.locator("#card").boundingBox();
+await pu.mouse.move(cardBox.x + cardBox.width - 4, cardBox.y + cardBox.height / 2);
+await pu.waitForTimeout(160);
+const tilted = await restAngle();
+check("the card tilts toward the pointer at rest", Math.abs(tilted - flat) > 1, `${flat} -> ${tilted}`);
+await pu.mouse.move(cardBox.x + cardBox.width / 2, cardBox.y - 120);
+await pu.waitForTimeout(200);
+check("it settles flat when the pointer leaves", Math.abs((await restAngle()) - flat) < 0.5, `${await restAngle()} vs ${flat}`);
 
 // --- theme toggle ---------------------------------------------------------
 const themeOf = () => pu.evaluate(() => ({
@@ -496,6 +718,15 @@ check("no gl class when WebGL is refused", !fallback.mounted && fallback.canvase
 check("CSS grain returns as the fallback", fallback.cssGrain !== "none", fallback.cssGrain);
 const fbId = await drawOnce(png, false);
 check("the deck still deals without WebGL", (await faceText(png)) === byIdText(fbId), `#${fbId}`);
+// The tilt is a CSS transform. Gating it on the shader — which is easy to do
+// by accident, since it drives the specular — would deny it to every visitor
+// on the CSS-grain fallback for no reason.
+const fbBox = await png.locator("#card").boundingBox();
+const fbFlat = await png.evaluate(() => new DOMMatrix(getComputedStyle(document.getElementById("card-inner")).transform).m13);
+await png.mouse.move(fbBox.x + fbBox.width - 4, fbBox.y + fbBox.height / 2);
+await png.waitForTimeout(160);
+const fbTilt = await png.evaluate(() => new DOMMatrix(getComputedStyle(document.getElementById("card-inner")).transform).m13);
+check("the card still tilts without WebGL", Math.abs(fbTilt - fbFlat) > 0.01, `${fbFlat} -> ${fbTilt}`);
 
 // reduced motion never mounts it at all
 const prNoGl = await ctxRM.newPage();
@@ -526,11 +757,13 @@ if (fs.existsSync(path.join(distDir, "index.html"))) {
     listed.filter((f) => f.endsWith(".css")).reduce((n, f) => n + gz(read(f)), 0);
 
   // 2560 B when the draw script was alone; the paper shader roughly doubled
-  // it and the theme toggle added ~500 B. Every raise here is deliberate —
-  // still hand-rolled, still no framework: Three.js alone would be ~30x this.
-  check("all client JS <= 5 KB gzipped (draw + shader + theme)", jsGz <= 5120, `${jsGz} B gz`);
+  // it, the theme toggle added ~500 B, and the browsable piles, the throw
+  // gesture and pointer parallax added ~1.3 KB more. Every raise here is
+  // deliberate — still hand-rolled, still no framework: Three.js alone would
+  // be ~25x this, and a drag/gesture library another 10 KB on top.
+  check("all client JS <= 7 KB gzipped (draw + shader + theme + table)", jsGz <= 7168, `${jsGz} B gz`);
+  check("total CSS <= 6 KB gzipped", cssGz <= 6144, `${cssGz} B gz`);
   // Raised with the editorial pass (masthead, piles, two type ramps).
-  check("total CSS <= 5 KB gzipped", cssGz <= 5120, `${cssGz} B gz`);
   // The draw script is the only JavaScript on the site and it is inlined, so
   // a JS file appearing in _astro means either a framework crept in or the
   // script fell back out of the page. Both are regressions.

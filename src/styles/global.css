@@ -306,10 +306,6 @@ a {
   justify-self: end;
 }
 
-.pile-discard {
-  justify-self: start;
-}
-
 .pile-count {
   color: var(--ink);
   font-weight: 500;
@@ -373,6 +369,77 @@ a {
   border-color: color-mix(in srgb, var(--accent) 34%, var(--edge-rim));
 }
 
+/* An empty pile still needs to be a PLACE, or the column reads as a stray
+   number floating in a gap. A hairline ghost of one card marks where they
+   will go without pretending a card is already there. */
+.minipile[data-layers="0"]::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border: 1px dashed var(--rule);
+  border-radius: 3px;
+}
+
+/* The shelf. Distinguished from the discard by tint rather than by shape:
+   they are the same kind of object, holding cards for different reasons. */
+.minipile.is-aside .minipile-layer {
+  background: color-mix(in srgb, var(--ink) 9%, var(--edge-face));
+  border-color: color-mix(in srgb, var(--ink) 26%, var(--edge-rim));
+}
+
+/* Both out-of-play piles share the right-hand column. */
+.pile-column {
+  display: flex;
+  flex-direction: column;
+  /* stretch, not flex-start: each button otherwise sizes to its own label
+     ("DISCARDED" vs "KEPT"), and two piles that are centred inside buttons
+     of different widths do not share a centre line. */
+  align-items: stretch;
+  gap: clamp(1.1rem, 3vh, 2.2rem);
+  justify-self: start;
+}
+
+/* The piles became buttons when they became browsable. Strip the control
+   chrome; the pile itself is the affordance. */
+button.pile {
+  appearance: none;
+  border: 0;
+  background: none;
+  padding: 0.35rem 0.5rem;
+  margin: -0.35rem -0.5rem;
+  border-radius: 4px;
+  cursor: pointer;
+  color: inherit;
+  /* NOT `font: inherit`. The shorthand overrides .pile's font-family (this
+     selector is more specific), the pile falls back to the body serif, and
+     .pile-label — which sets only a size — silently drops from 12.6px
+     apparent to 10.7, under the floor. Restate the family here. */
+  font-family: var(--font-mono);
+  font-size: var(--t-mono-sm);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  transition:
+    opacity 0.3s ease,
+    transform 0.3s cubic-bezier(0.2, 0.7, 0.3, 1);
+}
+
+/* An empty pile is not a control. Disabled rather than hidden so the column
+   does not reflow the moment the first card lands in it. */
+button.pile[disabled] {
+  cursor: default;
+  opacity: 0.42;
+}
+
+button.pile:not([disabled]):hover,
+button.pile:not([disabled]):focus-visible {
+  transform: translateY(-2px);
+}
+
+button.pile:not([disabled]):hover .pile-label,
+button.pile:not([disabled]):focus-visible .pile-label {
+  color: var(--accent);
+}
+
 /* Below the breakpoint the flanking piles would squeeze the card, so they
    collapse to the masthead tally and the labels alone. */
 @media (width < 46rem) {
@@ -391,8 +458,12 @@ a {
     order: 3;
   }
 
-  .pile-discard {
+  .pile-column {
     order: 4;
+    flex-direction: row;
+    align-items: center;
+    justify-self: center;
+    gap: 1.6rem;
   }
 
   /* Renamed from .discard when both sides became one primitive — this rule
@@ -404,6 +475,163 @@ a {
   .pile-count {
     font-size: var(--t-mono);
   }
+
+  /* With the stacks hidden, the piles are just text — and nothing says the
+     text is a control. Hover cannot say it either, on touch. */
+  button.pile:not([disabled]) .pile-label {
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.25em;
+    text-decoration-color: var(--rule);
+  }
+}
+
+/* ---------- picking a pile up ---------- */
+
+/* A pile you can look through. The cards deal in rather than appearing, so
+   opening the discard reads as spreading it across the table. */
+.spread {
+  width: min(64rem, 92vw);
+  max-height: 84vh;
+  padding: 0;
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  /* --paper is not a token on this site; the ground is --bg. Naming a
+     variable that does not exist makes the declaration invalid at computed-
+     value time, and the dialog painted fully transparent. */
+  background: var(--bg);
+  color: var(--ink);
+  /* The reset zeroes every margin, which also kills the UA's `margin: auto`
+     on a modal <dialog> — it renders hard against the top-left corner. */
+  margin: auto;
+  box-shadow: 0 30px 70px -30px rgb(0 0 0 / 45%);
+  overflow: hidden;
+}
+
+/* 46% and a 2px blur left the masthead and the card behind it perfectly
+   legible, which read as a panel floating over a live page rather than as
+   the page being set down. */
+.spread::backdrop {
+  background: rgb(20 16 11 / 62%);
+  backdrop-filter: blur(4px);
+}
+
+.spread-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.35rem clamp(1rem, 3vw, 2rem) 1rem;
+  border-bottom: 1px solid var(--rule);
+}
+
+.spread-title {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--t-mono);
+  font-weight: 400;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.spread-close {
+  appearance: none;
+  border: 0;
+  background: none;
+  padding: 0.1em 0.35em;
+  font: inherit;
+  font-size: 1.5rem;
+  line-height: 1;
+  color: var(--muted);
+  cursor: pointer;
+  border-radius: 3px;
+}
+
+.spread-close:hover,
+.spread-close:focus-visible {
+  color: var(--accent);
+}
+
+.spread-list {
+  display: grid;
+  /* min(11rem, 44%) rather than a bare 11rem: at 390px the track plus the
+     gap overshoots the available width by a few pixels, the grid drops to a
+     single column, and looking through six cards becomes a long scroll of
+     one card at a time. The percentage guarantees two columns fit. */
+  grid-template-columns: repeat(auto-fill, minmax(min(11rem, 44%), 1fr));
+  gap: clamp(0.7rem, 1.6vw, 1.1rem);
+  margin: 0;
+  padding: clamp(1rem, 3vw, 2rem);
+  list-style: none;
+  overflow-y: auto;
+  max-height: calc(84vh - 4.5rem);
+}
+
+/* Each entry is the card in miniature, not a list row — the pile you are
+   looking through is still made of cards. */
+.spread-card {
+  position: relative;
+  display: flex;
+  width: 100%;
+  aspect-ratio: 5 / 7;
+  align-items: center;
+  justify-content: center;
+  padding: 1.15rem 1rem 1.6rem;
+  border: 1px solid var(--edge-rim);
+  border-radius: 5px;
+  background: var(--card);
+  box-shadow: 0 2px 5px -2px rgb(0 0 0 / 22%);
+  font-family: var(--font-text);
+  font-size: 0.98rem;
+  line-height: 1.32;
+  text-align: center;
+  text-wrap: balance;
+  color: var(--ink);
+  cursor: pointer;
+  transition:
+    transform 0.28s cubic-bezier(0.2, 0.7, 0.3, 1),
+    box-shadow 0.28s ease;
+}
+
+.spread-card:hover,
+.spread-card:focus-visible {
+  transform: translateY(-4px) rotate(-0.7deg);
+  box-shadow: 0 10px 20px -8px rgb(0 0 0 / 30%);
+}
+
+.spread-card .spread-num {
+  position: absolute;
+  bottom: 0.6rem;
+  left: 0;
+  right: 0;
+  font-family: var(--font-mono);
+  font-size: var(--t-mono-sm);
+  letter-spacing: 0.12em;
+  color: var(--muted);
+}
+
+/* Cards deal into the spread in sequence, oldest first, so the pile is
+   visibly restacked rather than replaced. Capped: past a dozen the stagger
+   stops being choreography and starts being a wait. */
+.spread-card {
+  animation: deal-in 0.34s cubic-bezier(0.2, 0.7, 0.3, 1) backwards;
+  animation-delay: calc(min(var(--i, 0), 12) * 26ms);
+}
+
+@keyframes deal-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px) rotate(-2.5deg) scale(0.97);
+  }
+}
+
+.spread-empty {
+  padding: 2.5rem clamp(1rem, 3vw, 2rem) 3rem;
+  margin: 0;
+  text-align: center;
+  color: var(--muted);
+  font-size: var(--t-body);
 }
 
 /* ---------- the stack beneath ---------- */
@@ -500,8 +728,10 @@ a {
   background: none;
   color: inherit;
   font: inherit;
-  cursor: pointer;
-  touch-action: manipulation;
+  cursor: grab;
+  /* pan-y, not manipulation: a horizontal drag on the card is a throw and
+     has to reach us, while a vertical swipe still scrolls the page. */
+  touch-action: pan-y;
   user-select: none;
   -webkit-user-select: none;
   -webkit-tap-highlight-color: transparent;
@@ -512,6 +742,14 @@ a {
 /* press: the one piece of tactile feedback the card never had */
 .card:active {
   transform: scale(0.985);
+}
+
+/* While the card is being dragged its transform is written from script every
+   pointermove. The 0.18s transition would turn that into lag, and :hover /
+   :active must not fight the drag for the property. */
+.card.dragging {
+  cursor: grabbing;
+  transition: none;
 }
 
 .deck:has(.card:active) .card-shadow-contact {
@@ -879,6 +1117,33 @@ body.entrance .card-mark {
   opacity: 1;
   visibility: visible;
   transition-delay: 0s;
+}
+
+/* Two quiet controls on one line. They share the hint's grid cell, so the
+   gap has to come from here rather than from a margin that would shift the
+   card. */
+.card-actions {
+  display: flex;
+  align-items: baseline;
+  gap: 1.6rem;
+}
+
+/* A card already on the shelf: the control reads as a state, not an offer.
+   The underline goes — there is nothing left to click toward. */
+#keep[aria-pressed="true"] {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+#keep[aria-pressed="true"]::before {
+  content: "\2713\00a0";
+}
+
+@media (width < 26rem) {
+  .card-actions {
+    gap: 1rem;
+    font-size: var(--t-mono-sm);
+  }
 }
 
 /* The fade only exists once the page has settled (class added one frame

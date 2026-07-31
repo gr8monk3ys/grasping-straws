@@ -140,7 +140,7 @@ const rgb = (css: string): [number, number, number] => {
   return [Number(m[0]) / 255, Number(m[1]) / 255, Number(m[2]) / 255];
 };
 
-export type Paper = { follow(): void; settle(): void };
+export type Paper = { follow(): void; settle(): void; redraw(): void };
 
 export function mountPaper(faces: HTMLElement[], inner: HTMLElement): Paper | null {
   let sheets: Sheet[];
@@ -213,8 +213,10 @@ export function mountPaper(faces: HTMLElement[], inner: HTMLElement): Paper | nu
   rest();
   document.documentElement.classList.add("gl");
 
-  // Nothing renders while the card is at rest, so an idle tab costs no GPU.
-  // The caller starts tracking when a flip begins and settles when it ends.
+  // Nothing renders on its own, so an idle tab costs no GPU. The caller
+  // tracks while a flip runs, settles when it ends, and asks for a single
+  // frame when the pointer tilts the card at rest — one draw per pointermove
+  // is far cheaper than a rAF loop that spins whether or not the card moved.
   return {
     follow() {
       cancelAnimationFrame(raf);
@@ -225,5 +227,6 @@ export function mountPaper(faces: HTMLElement[], inner: HTMLElement): Paper | nu
       raf = 0;
       rest();
     },
+    redraw: rest,
   };
 }

@@ -55,31 +55,70 @@ const description =
         </button>
       </div>
 
-      {/* The discard: layers appear at thresholds, so the pile visibly
-          thickens as the deck thins. Purely an indicator — nothing here is
-          interactive. */}
-      <aside class="pile pile-discard">
-        <span class="minipile is-discard" id="discard" data-layers="0" aria-hidden="true">
-          <span class="minipile-layer"></span>
-          <span class="minipile-layer"></span>
-          <span class="minipile-layer"></span>
-          <span class="minipile-layer"></span>
-          <span class="minipile-layer"></span>
-          <span class="minipile-layer"></span>
-        </span>
-        <span class="pile-count" id="drawn-count">0</span>
-        <span class="pile-label">discarded</span>
-      </aside>
+      {/* Cards no longer in play, grouped: the discard thickens as the deck
+          thins, and the shelf holds whatever was set aside. Both are real
+          piles — you can pick either one up and look through it. */}
+      <div class="pile-column">
+        <button class="pile pile-discard" id="discard-open" type="button" disabled>
+          <span class="minipile is-discard" id="discard" data-layers="0" aria-hidden="true">
+            <span class="minipile-layer"></span>
+            <span class="minipile-layer"></span>
+            <span class="minipile-layer"></span>
+            <span class="minipile-layer"></span>
+            <span class="minipile-layer"></span>
+            <span class="minipile-layer"></span>
+          </span>
+          <span class="pile-count" id="drawn-count">0</span>
+          <span class="pile-label">discarded</span>
+        </button>
+
+        <button class="pile pile-aside" id="aside-open" type="button" disabled>
+          <span class="minipile is-aside" id="aside" data-layers="0" aria-hidden="true">
+            <span class="minipile-layer"></span>
+            <span class="minipile-layer"></span>
+            <span class="minipile-layer"></span>
+            <span class="minipile-layer"></span>
+            <span class="minipile-layer"></span>
+            <span class="minipile-layer"></span>
+          </span>
+          <span class="pile-count" id="aside-count">0</span>
+          {/* "kept", not "set aside": the control beside the card already
+              says "set aside", and having the verb and the place share a
+              label made the two read as the same thing. */}
+          <span class="pile-label">kept</span>
+        </button>
+      </div>
     </div>
 
-    <span id="draw-desc" class="sr-only">Draws the next card from the deck.</span>
+    <span id="draw-desc" class="sr-only">
+      Draws the next card from the deck. You can also throw the card aside with
+      a drag.
+    </span>
     <div class="hint-slot">
       <p class="hint" id="hint" aria-hidden="true">
-        <span class="hint-touch">tap to draw</span>
-        <span class="hint-pointer">press space, or click</span>
+        <span class="hint-touch">tap to draw, or throw the card</span>
+        <span class="hint-pointer">press space, click, or throw the card</span>
       </p>
-      <button id="share" class="share">share this card</button>
+      <span class="card-actions">
+        <button id="keep" class="share" aria-pressed="false">set aside</button>
+        <button id="share" class="share">share this card</button>
+      </span>
     </div>
+    {/*
+      Picking a pile up. A native <dialog> rather than a div: showModal()
+      brings the focus trap, the Esc key, inertness of the page behind and
+      ::backdrop with no script of our own.
+    */}
+    <dialog class="spread" id="spread" aria-labelledby="spread-title">
+      <div class="spread-head">
+        <h2 class="spread-title" id="spread-title"></h2>
+        <button class="spread-close" id="spread-close" type="button" aria-label="close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <ul class="spread-list" id="spread-list"></ul>
+    </dialog>
+
     <p class="sr-only" aria-live="polite" id="live"></p>
     <noscript>
       <p class="hint">
