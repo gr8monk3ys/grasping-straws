@@ -37,6 +37,12 @@ const shadowContact = document.querySelector(".card-shadow-contact") as HTMLElem
 const shadowAmbient = document.querySelector(".card-shadow-ambient") as HTMLElement;
 const liveEl = document.getElementById("live") as HTMLElement;
 const shareBtn = document.getElementById("share") as HTMLButtonElement;
+const discardEl = document.getElementById("discard") as HTMLElement | null;
+const deckMiniEl = document.getElementById("deck-mini") as HTMLElement | null;
+const leftCountEl = document.getElementById("left-count") as HTMLElement | null;
+const drawnCountEl = document.getElementById("drawn-count") as HTMLElement | null;
+const tallyDrawnEl = document.getElementById("tally-drawn") as HTMLElement | null;
+const tallyTotalEl = document.getElementById("tally-total") as HTMLElement | null;
 const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
 
 let deck: Card[] = [];
@@ -120,9 +126,30 @@ function refillBag(): void {
 
 // How much bag is left, read as visible card edges. Derived from `bag`,
 // which already persists — no new stored state, no storage version bump.
+// Layer thresholds are front-loaded: the first few discards should visibly
+// register, while the difference between 30 and 40 drawn does not need its
+// own layer. A linear mapping would make the first ten draws look inert.
+const DISCARD_STEPS = [1, 3, 6, 12, 24, 40];
+
 function updateDeckDepth(): void {
   const ratio = deck.length === 0 ? 0 : bag.length / deck.length;
   deckEl.dataset.edges = String(ratio > 0.6 ? 3 : ratio > 0.3 ? 2 : 1);
+
+  // Everything below is derived from `bag`, which already persists. The
+  // discard is a view of the deck's state, not state of its own.
+  const drawn = deck.length - bag.length;
+  if (leftCountEl) leftCountEl.textContent = String(bag.length);
+  if (drawnCountEl) drawnCountEl.textContent = String(drawn);
+  if (tallyDrawnEl) tallyDrawnEl.textContent = String(drawn);
+  if (tallyTotalEl) tallyTotalEl.textContent = String(deck.length);
+  if (discardEl) {
+    discardEl.dataset.layers = String(DISCARD_STEPS.filter((n) => drawn >= n).length);
+  }
+  // The deck's mini pile thins on the same thresholds, read from the other
+  // end, so the two piles are always legible as halves of one deck.
+  if (deckMiniEl) {
+    deckMiniEl.dataset.layers = String(DISCARD_STEPS.filter((n) => bag.length >= n).length);
+  }
 }
 
 function riffle(): void {

@@ -100,10 +100,20 @@ rebuilds and deploys. When the real domain goes live, update `site` in
   card text in the title and OG tags so shared links preview the card
   itself (`#`-fragments never reach link scrapers). Each page invites the
   visitor to draw their own.
-- **Themes**: light (paper-warm) and dark (near-black) via
-  `prefers-color-scheme`, both AA contrast.
-- **Motion**: the card flip is the only animation; `prefers-reduced-motion`
-  swaps it for a fast crossfade.
+- **Themes**: light (paper-warm) and dark (near-black), following
+  `prefers-color-scheme` by default with a masthead toggle that overrides it
+  and persists. Both AA contrast, including the green accent.
+- **Type**: Fraunces for the card face and prose, IBM Plex Mono for the
+  masthead, tally and labels. Sizes are set by *apparent* size — the two
+  families have different x-heights (0.436 and 0.516), so they get separate
+  ramps, and a check fails the build if anything renders under ~11.5px
+  apparent.
+- **The piles**: the deck thins and the discard thickens as you work through
+  a cycle, both derived from the same bag state rather than stored
+  separately.
+- **Motion**: the flip, a per-word card reveal, scroll-driven About reveals
+  (native `animation-timeline`, zero JS), hover choreography and a three-beat
+  entrance. `prefers-reduced-motion` reduces all of it to a fast crossfade.
 - **Offline**: a small service worker (`public/sw.js`) precaches the stable
   URLs and caches everything else as it streams through; Astro's hashed
   asset names mean bundles can never go stale. No third-party requests, no
@@ -119,5 +129,6 @@ reduced motion, and the no-third-party-requests rule.
 
 ## Licenses
 
-Code is GPL-3.0 (see `LICENSE`). The EB Garamond fonts in `public/fonts/`
-are under the SIL Open Font License (see `public/fonts/OFL.txt`).
+Code is GPL-3.0 (see `LICENSE`). The Fraunces and IBM Plex Mono fonts in
+`public/fonts/` are under the SIL Open Font License (see
+`public/fonts/OFL.txt`).

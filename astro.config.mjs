@@ -22,7 +22,7 @@ export default defineConfig({
       // 4 KB — the script crossed that when the card became a real object.
       // Nothing else is bundled: fonts and the mark live in public/ and are
       // copied verbatim, so raising this cannot base64 them into the CSS.
-      assetsInlineLimit: 10240,
+      assetsInlineLimit: 16384,
     },
   },
 });

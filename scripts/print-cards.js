@@ -32,7 +32,7 @@ fs.mkdirSync(out, { recursive: true });
 
 const cards = JSON.parse(fs.readFileSync(path.join(pub, "cards.json"), "utf8"));
 const svg = fs.readFileSync(path.join(pub, "favicon.svg"), "utf8");
-const font = fs.readFileSync(path.join(pub, "fonts", "EBGaramond-latin.woff2")).toString("base64");
+const font = fs.readFileSync(path.join(pub, "fonts", "Fraunces-latin.woff2")).toString("base64");
 
 const px = (inches) => Math.round(inches * SPEC.dpi);
 const W = px(SPEC.cardWidthIn + 2 * SPEC.bleedIn);
@@ -48,10 +48,10 @@ const guides = process.env.GUIDES
   : "";
 
 const shell = (body) => `<!doctype html><style>
-  @font-face { font-family: "EB Garamond"; src: url(data:font/woff2;base64,${font}) format("woff2"); }
+  @font-face { font-family: "Fraunces"; src: url(data:font/woff2;base64,${font}) format("woff2"); }
   * { margin: 0; box-sizing: border-box; }
   html, body { width: ${W}px; height: ${H}px; }
-  body { background: ${CARD}; font-family: "EB Garamond", serif; color: ${INK};
+  body { background: ${CARD}; font-family: "Fraunces", serif; color: ${INK};
          display: grid; place-items: center; padding: ${inset}px; }
   svg { display: block; }
 </style><body>${body}${guides}</body>`;

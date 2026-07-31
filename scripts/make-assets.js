@@ -24,17 +24,17 @@ const MUTED = "#6e6455";
 const LINE = "#dcd2be";
 
 const svg = fs.readFileSync(path.join(pub, "favicon.svg"), "utf8");
-const font = fs.readFileSync(path.join(pub, "fonts", "EBGaramond-latin.woff2")).toString("base64");
+const font = fs.readFileSync(path.join(pub, "fonts", "Fraunces-latin.woff2")).toString("base64");
 
 const baseCss = `
   @font-face {
-    font-family: "EB Garamond";
+    font-family: "Fraunces";
     src: url(data:font/woff2;base64,${font}) format("woff2");
   }
   * { margin: 0; box-sizing: border-box; }
   html, body { width: 100%; height: 100%; }
   body { background: ${BG}; display: grid; place-items: center;
-         font-family: "EB Garamond", serif; color: ${INK}; }
+         font-family: "Fraunces", serif; color: ${INK}; }
   svg { display: block; }
 `;
 

@@ -7,6 +7,7 @@
  */
 import cards from "../../../public/cards.json";
 import Base from "../../layouts/Base.astro";
+import Chrome from "../../components/Chrome.astro";
 import { DECK_NAME, PHYSICAL_DECK_URL } from "../../config";
 
 export function getStaticPaths() {
@@ -21,6 +22,7 @@ const physicalHref = PHYSICAL_DECK_URL || "/about/#physical";
 ---
 
 <Base title={title} description={description}>
+  <Chrome />
   <main class="stage">
     {/* Same deck shell as the draw screen, minus the second face — a shared
         card is already face up and never turns. */}
@@ -44,11 +46,4 @@ const physicalHref = PHYSICAL_DECK_URL || "/about/#physical";
       <a href="/">Draw your own card &rarr;</a>
     </p>
   </main>
-  <footer class="chrome">
-    <span class="deck-name">{DECK_NAME}</span>
-    <nav>
-      <a href="/about/">About</a>
-      <a href={physicalHref} class="cta">Get the physical deck</a>
-    </nav>
-  </footer>
 </Base>

@@ -43,10 +43,10 @@ void main(){
   vec2 uv=vUv;
   vec2 px=uv*uRes;
 
-  /* Fibres are stretched along x so the noise reads as pulp lying in a
-     direction, which is what separates paper from television static. Two
-     scales: coarse pulp and a fine tooth over it. */
-  float pulp=fbm(vec2(px.x*0.55,px.y*0.09));
+  /* Fibres lie ALONG x, which means a low x frequency and a higher y one —
+     the reverse stretches the noise vertically and reads as streaking down
+     the card rather than as pulp. Two scales: coarse pulp, fine tooth. */
+  float pulp=fbm(vec2(px.x*0.14,px.y*0.5));
   float tooth=fbm(px*2.4);
   float grain=(mix(pulp,tooth,0.6)-0.5)*2.0;
 

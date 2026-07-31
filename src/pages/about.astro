@@ -1,5 +1,6 @@
 ---
 import Base from "../layouts/Base.astro";
+import Chrome from "../components/Chrome.astro";
 import { DECK_NAME, DECK_VERSION, PHYSICAL_DECK_URL } from "../config";
 
 const description =
@@ -7,9 +8,8 @@ const description =
 ---
 
 <Base title={`About — ${DECK_NAME}`} description={description} bodyClass="about">
+  <Chrome />
   <main>
-    <a class="backlink" href="/">&larr; Back to the deck</a>
-
     <span class="glyph page-mark"></span>
 
     <h1>{DECK_NAME}</h1>

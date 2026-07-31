@@ -1,50 +1,77 @@
 ---
 import Base from "../layouts/Base.astro";
-import { DECK_NAME, PHYSICAL_DECK_URL } from "../config";
+import Chrome from "../components/Chrome.astro";
+import { DECK_NAME } from "../config";
 
 const description =
   "An original deck of lateral-thinking prompts for breaking creative deadlocks. Tap to draw a card.";
-const physicalHref = PHYSICAL_DECK_URL || "/about/#physical";
 ---
 
 <Base title={DECK_NAME} description={description}>
+  <Chrome counter />
   <main class="stage">
     {/*
-      .deck-stack and the shadow layers are SIBLINGS of .card — never children
-      of .card-inner. Nesting them inside the rotating element would turn the
-      whole pile with the card and collapse the illusion.
-
-      .face-a and .face-b are geometric slots, not fixed roles: face-a sits at
-      rotateY(0), face-b at rotateY(180deg), and which one carries the current
-      card alternates as the rotation accumulates. See src/scripts/app.ts.
+      Three columns so the card stays optically centred while the discard
+      pile grows beside it. The left column is the deck's own label; the
+      stack itself lives under the card.
     */}
-    <div class="deck" id="deck" data-edges="3">
-      <span class="deck-stack" id="deck-stack" aria-hidden="true">
-        <span class="deck-edge"></span>
-        <span class="deck-edge"></span>
-        <span class="deck-edge"></span>
-      </span>
-      <span class="card-shadow card-shadow-ambient" aria-hidden="true"></span>
-      <span class="card-shadow card-shadow-contact" aria-hidden="true"></span>
-      <button id="card" class="card" aria-describedby="draw-desc">
-        <span class="card-inner" id="card-inner">
-          {/* The card's thickness. Only one is ever visible at a time —
-              whichever edge is turned toward the viewer. */}
-          <span class="spine spine-l" aria-hidden="true"></span>
-          <span class="spine spine-r" aria-hidden="true"></span>
-          <span class="face face-a" id="face-a" aria-hidden="false">
-            <span class="card-mark" id="card-mark">
-              <span class="glyph"></span>
-              <span class="card-wordmark">{DECK_NAME}</span>
-            </span>
-            <span class="card-text" hidden></span>
-          </span>
-          <span class="face face-b" id="face-b" aria-hidden="true">
-            <span class="card-text"></span>
-          </span>
+    <div class="table">
+      <aside class="pile pile-deck">
+        <span class="minipile" id="deck-mini" data-layers="6" aria-hidden="true">
+          <span class="minipile-layer"></span>
+          <span class="minipile-layer"></span>
+          <span class="minipile-layer"></span>
+          <span class="minipile-layer"></span>
+          <span class="minipile-layer"></span>
+          <span class="minipile-layer"></span>
         </span>
-      </button>
+        <span class="pile-count" id="left-count">48</span>
+        <span class="pile-label">in the deck</span>
+      </aside>
+
+      <div class="deck" id="deck" data-edges="3">
+        <span class="deck-stack" id="deck-stack" aria-hidden="true">
+          <span class="deck-edge"></span>
+          <span class="deck-edge"></span>
+          <span class="deck-edge"></span>
+        </span>
+        <span class="card-shadow card-shadow-ambient" aria-hidden="true"></span>
+        <span class="card-shadow card-shadow-contact" aria-hidden="true"></span>
+        <button id="card" class="card" aria-describedby="draw-desc">
+          <span class="card-inner" id="card-inner">
+            <span class="spine spine-l" aria-hidden="true"></span>
+            <span class="spine spine-r" aria-hidden="true"></span>
+            <span class="face face-a" id="face-a" aria-hidden="false">
+              <span class="card-mark" id="card-mark">
+                <span class="glyph"></span>
+                <span class="card-wordmark">{DECK_NAME}</span>
+              </span>
+              <span class="card-text" hidden></span>
+            </span>
+            <span class="face face-b" id="face-b" aria-hidden="true">
+              <span class="card-text"></span>
+            </span>
+          </span>
+        </button>
+      </div>
+
+      {/* The discard: layers appear at thresholds, so the pile visibly
+          thickens as the deck thins. Purely an indicator — nothing here is
+          interactive. */}
+      <aside class="pile pile-discard">
+        <span class="minipile is-discard" id="discard" data-layers="0" aria-hidden="true">
+          <span class="minipile-layer"></span>
+          <span class="minipile-layer"></span>
+          <span class="minipile-layer"></span>
+          <span class="minipile-layer"></span>
+          <span class="minipile-layer"></span>
+          <span class="minipile-layer"></span>
+        </span>
+        <span class="pile-count" id="drawn-count">0</span>
+        <span class="pile-label">discarded</span>
+      </aside>
     </div>
+
     <span id="draw-desc" class="sr-only">Draws the next card from the deck.</span>
     <div class="hint-slot">
       <p class="hint" id="hint" aria-hidden="true">
@@ -61,13 +88,6 @@ const physicalHref = PHYSICAL_DECK_URL || "/about/#physical";
       </p>
     </noscript>
   </main>
-  <footer class="chrome">
-    <span class="deck-name">{DECK_NAME}</span>
-    <nav>
-      <a href="/about/">About</a>
-      <a href={physicalHref} class="cta">Get the physical deck</a>
-    </nav>
-  </footer>
 </Base>
 
 <script>

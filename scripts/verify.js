@@ -78,7 +78,20 @@ check("glyph mask resolves to favicon.svg", await page
   .locator("#card-mark .glyph")
   .evaluate((el) => getComputedStyle(el).maskImage.includes("favicon.svg") || getComputedStyle(el).webkitMaskImage.includes("favicon.svg")));
 check("hint visible pre-draw", (await page.locator("#hint").evaluate((el) => getComputedStyle(el).opacity)) === "1");
-check("EB Garamond loaded", await page.evaluate(() => document.fonts.check('16px "EB Garamond"')));
+check("Fraunces loaded", await page.evaluate(() => document.fonts.check('16px "Fraunces"')));
+check("Plex Mono loaded", await page.evaluate(() => document.fonts.check('16px "Plex Mono"')));
+// The axis EB Garamond lacked. If this stops varying, the card face is being
+// scaled rather than optically sized and the swap bought nothing.
+check("Fraunces exposes a working optical-size axis", await page.evaluate(() => {
+  const el = document.createElement("span");
+  el.style.cssText = 'position:absolute;visibility:hidden;white-space:nowrap;font:400 100px Fraunces;';
+  el.textContent = "Describe it to someone who cannot see it.";
+  document.body.appendChild(el);
+  const w = (v) => { el.style.fontVariationSettings = v; return el.getBoundingClientRect().width; };
+  const small = w("'opsz' 9"), large = w("'opsz' 144");
+  el.remove();
+  return Math.abs(small - large) > 20;
+}));
 await page.screenshot({ path: path.join(SHOTS, "shot-1-facedown-light.png") });
 
 // ---- object structure: the flip must be real, not a content swap --------
@@ -353,6 +366,99 @@ check("the longest cards were actually sampled", Math.max(...valid.map((s) => s.
   `max ${Math.max(...valid.map((s) => s.words))} words seen`);
 
 
+// ---- masthead, piles and the theme toggle --------------------------------
+const ctxUi = await browser.newContext({ colorScheme: "light", viewport: { width: 1280, height: 900 } });
+const pu = await ctxUi.newPage();
+await pu.goto(BASE + "/", { waitUntil: "networkidle" });
+await pu.waitForTimeout(500);
+
+// The masthead is a running head now, so it must sit ABOVE the card rather
+// than below it — the whole point of moving it.
+check("masthead sits above the card", await pu.evaluate(() => {
+  const c = document.querySelector(".chrome").getBoundingClientRect();
+  const d = document.getElementById("deck").getBoundingClientRect();
+  return c.bottom <= d.top;
+}));
+check("masthead carries the tally", (await pu.locator("#tally").count()) === 1);
+
+// Counts are a view of `bag`, so they must agree with it exactly.
+const pileState = async () =>
+  pu.evaluate(() => ({
+    left: Number(document.getElementById("left-count").textContent),
+    drawn: Number(document.getElementById("drawn-count").textContent),
+    tally: Number(document.getElementById("tally-drawn").textContent),
+    discardLayers: Number(document.getElementById("discard").dataset.layers),
+    deckLayers: Number(document.getElementById("deck-mini").dataset.layers),
+    bag: JSON.parse(localStorage.getItem("grasping-straws.v1") || '{"bag":[]}').bag.length,
+  }));
+const before = await pileState();
+check("counts start at a full deck", before.left === cards.length && before.drawn === 0, JSON.stringify(before));
+check("discard starts empty", before.discardLayers === 0 && before.deckLayers === 6);
+
+for (let i = 0; i < 6; i++) await drawOnce(pu, false);
+const after = await pileState();
+check("drawn + remaining always equals the deck", after.left + after.drawn === cards.length, JSON.stringify(after));
+check("the tally agrees with the pile counts", after.tally === after.drawn);
+check("remaining count tracks the bag exactly", after.left === after.bag, `${after.left} vs ${after.bag}`);
+check("the discard thickens as the deck thins", after.discardLayers > 0 && after.deckLayers <= 6, JSON.stringify(after));
+await pu.screenshot({ path: path.join(SHOTS, "shot-12-table-light.png") });
+
+// --- theme toggle ---------------------------------------------------------
+const themeOf = () => pu.evaluate(() => ({
+  attr: document.documentElement.dataset.theme || null,
+  bg: getComputedStyle(document.body).backgroundColor,
+  stored: localStorage.getItem("grasping-straws.theme"),
+}));
+const t0 = await themeOf();
+await pu.click("#theme");
+await pu.waitForTimeout(150);
+const t1 = await themeOf();
+check("the toggle flips the theme", t1.bg !== t0.bg, `${t0.bg} -> ${t1.bg}`);
+check("the choice is stored", t1.stored === "dark" || t1.stored === "light", String(t1.stored));
+await pu.reload({ waitUntil: "networkidle" });
+await pu.waitForTimeout(250);
+const t2 = await themeOf();
+check("the choice survives a reload", t2.bg === t1.bg, `${t1.bg} -> ${t2.bg}`);
+// The override has to beat the OS preference, not merely coexist with it.
+check("an explicit choice overrides prefers-color-scheme", t2.attr === "dark" && t2.bg !== t0.bg, JSON.stringify(t2));
+await pu.screenshot({ path: path.join(SHOTS, "shot-13-table-dark.png") });
+
+// The dark tokens are written twice — once in the media query for no-JS, once
+// on the attribute for the override. This fails if they ever drift apart.
+const viaAttr = await pu.evaluate(() => {
+  const names = ["--bg", "--card", "--ink", "--muted", "--accent", "--line", "--edge-face", "--spine"];
+  const read = () => Object.fromEntries(names.map((n) => [n, getComputedStyle(document.documentElement).getPropertyValue(n).trim()]));
+  document.documentElement.dataset.theme = "dark";
+  return read();
+});
+const ctxDarkOs = await browser.newContext({ colorScheme: "dark", viewport: { width: 900, height: 700 } });
+const pdo = await ctxDarkOs.newPage();
+await pdo.goto(BASE + "/", { waitUntil: "networkidle" });
+const viaMedia = await pdo.evaluate(() => {
+  const names = ["--bg", "--card", "--ink", "--muted", "--accent", "--line", "--edge-face", "--spine"];
+  return Object.fromEntries(names.map((n) => [n, getComputedStyle(document.documentElement).getPropertyValue(n).trim()]));
+});
+const drift = Object.keys(viaAttr).filter((k) => viaAttr[k] !== viaMedia[k]);
+check("both dark-theme blocks stay identical", drift.length === 0, drift.join(","));
+
+// --- accent contrast ------------------------------------------------------
+const contrast = await pu.evaluate(() => {
+  const lum = (css) => {
+    const [r, g, b] = css.match(/[\d.]+/g).slice(0, 3).map(Number);
+    const f = (v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); };
+    return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b);
+  };
+  const ratio = (a, b) => { const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p); return (x + 0.05) / (y + 0.05); };
+  const cs = getComputedStyle(document.documentElement);
+  const probe = document.createElement("span");
+  probe.style.color = cs.getPropertyValue("--accent").trim();
+  document.body.appendChild(probe);
+  const accent = getComputedStyle(probe).color;
+  probe.remove();
+  return { dark: ratio(accent, getComputedStyle(document.body).backgroundColor) };
+});
+check("accent clears AA against its ground (dark)", contrast.dark >= 4.5, contrast.dark.toFixed(2) + ":1");
+
 // ---- the paper shader, and its fallback ----------------------------------
 const ctxGl = await browser.newContext({ viewport: { width: 390, height: 844 } });
 const pg = await ctxGl.newPage();
@@ -419,11 +525,12 @@ if (fs.existsSync(path.join(distDir, "index.html"))) {
     gz(grab(/<style[^>]*>([\s\S]*?)<\/style>/g)) +
     listed.filter((f) => f.endsWith(".css")).reduce((n, f) => n + gz(read(f)), 0);
 
-  // Was 2560 B when the draw script was the only JavaScript. The paper
-  // shader roughly doubled it — a real cost, raised deliberately rather than
-  // quietly, and still hand-rolled: Three.js alone would be ~40x this.
-  check("all client JS <= 4.5 KB gzipped (draw script + paper shader)", jsGz <= 4608, `${jsGz} B gz`);
-  check("total CSS <= 4 KB gzipped", cssGz <= 4096, `${cssGz} B gz`);
+  // 2560 B when the draw script was alone; the paper shader roughly doubled
+  // it and the theme toggle added ~500 B. Every raise here is deliberate —
+  // still hand-rolled, still no framework: Three.js alone would be ~30x this.
+  check("all client JS <= 5 KB gzipped (draw + shader + theme)", jsGz <= 5120, `${jsGz} B gz`);
+  // Raised with the editorial pass (masthead, piles, two type ramps).
+  check("total CSS <= 5 KB gzipped", cssGz <= 5120, `${cssGz} B gz`);
   // The draw script is the only JavaScript on the site and it is inlined, so
   // a JS file appearing in _astro means either a framework crept in or the
   // script fell back out of the page. Both are regressions.
@@ -440,24 +547,34 @@ if (fs.existsSync(path.join(distDir, "index.html"))) {
 // apparent size is the only way this floor means anything: 0.85rem sounds
 // reasonable and lands at an apparent 10.5px.
 const tooSmall = async (page, where) =>
-  page.evaluate(() => {
-    const c = document.createElement("canvas").getContext("2d");
-    const xh = (font) => {
-      c.font = '100px ' + font;
-      return (c.measureText("x").actualBoundingBoxAscent || 0) / 100;
-    };
-    const ratio = xh('"EB Garamond"') / xh("Helvetica");
-    const out = [];
-    for (const el of document.querySelectorAll("body *")) {
-      if (!el.textContent.trim() || el.children.length) continue;
-      if (el.closest(".sr-only, noscript") || el.classList.contains("sr-only")) continue;
-      const cs = getComputedStyle(el);
-      if (cs.display === "none" || cs.visibility === "hidden") continue;
-      const apparent = parseFloat(cs.fontSize) * ratio;
-      if (apparent < 11.5) out.push(`${el.className || el.tagName}:${apparent.toFixed(1)}`);
-    }
-    return out;
-  }).then((r) => ({ where, list: r }));
+  page
+    .evaluate(() => {
+      const c = document.createElement("canvas").getContext("2d");
+      // x-height per family, not one global ratio: Fraunces is 0.436 and
+      // Plex Mono 0.516, so a single factor would misjudge one of them by
+      // ~20%. Measure whatever font the element actually resolves to.
+      const cache = new Map();
+      const xh = (font) => {
+        if (!cache.has(font)) {
+          c.font = "100px " + font;
+          cache.set(font, (c.measureText("x").actualBoundingBoxAscent || 0) / 100);
+        }
+        return cache.get(font);
+      };
+      const sans = xh("Helvetica");
+      const out = [];
+      for (const el of document.querySelectorAll("body *")) {
+        if (!el.textContent.trim() || el.children.length) continue;
+        if (el.closest(".sr-only, noscript") || el.classList.contains("sr-only")) continue;
+        const cs = getComputedStyle(el);
+        if (cs.display === "none" || cs.visibility === "hidden") continue;
+        const own = xh(cs.fontFamily) || sans;
+        const apparent = parseFloat(cs.fontSize) * (own / sans);
+        if (apparent < 11.5) out.push(`${el.className || el.tagName}:${apparent.toFixed(1)}`);
+      }
+      return out;
+    })
+    .then((r) => ({ where, list: r }));
 
 const typeFloors = [
   await tooSmall(page, "/"),

@@ -510,3 +510,94 @@ after scrolling, sampled latency across 12 draws (keyed on the LAST word —
 keying on the container would pass trivially and hide any stagger), the
 shader mounting on both faces, and the full no-WebGL fallback path still
 dealing cards.
+
+---
+
+## Fourth pass — warm editorial: type, palette, masthead, piles, theme toggle
+
+Scope opened again: typeface, palette and layout all unfrozen, against a
+Swiss-mono editorial reference and the owner's own site.
+
+### Values taken from source, not guessed
+
+Both pulled from `~/code/lscaturchio.xyz` rather than eyeballed:
+
+- `--primary: 152 52% 20%` = **#184e35**. Hue 152 is forest/emerald — **not
+  olive**, despite the request's wording. The referent was unambiguous so the
+  site's actual value was used.
+- Fonts: **Fraunces** (display), Instrument Sans, **IBM Plex Mono**.
+
+The reference image was opened and read rather than assumed: bone-cream
+ground, near-black ink, bold grotesque headline, small letterspaced uppercase
+mono placed asymmetrically, rust underlined links, grayscale photography. The
+existing background `#f5efe3` was already almost exactly that bone.
+
+### Type — two ramps, because two x-heights
+
+Measured, per 1em: Fraunces **0.436**, Plex Mono **0.516**, Helvetica 0.523.
+Fraunces needs ~1.20x a sans to match apparent size; Plex Mono needs
+essentially none. The previous single ramp — built for EB Garamond's 1.29x —
+made every mono element ~29% larger than intended the moment the families
+changed. They now have separate scales.
+
+**Fraunces' optical-size axis is real**: `opsz` 9 vs 144 changes the same
+string's width 1932.67 → 1534.8px, a 21% difference in fit. This is the axis
+EB Garamond lacked, so the card face is now genuinely optically sized. There
+is a check that fails if it ever stops varying.
+
+### Palette — the accent was adjusted for its job
+
+`#184e35` scores 8.4:1 on the cream ground but is so dark it reads as
+near-black. On lscaturchio.xyz it is used for **filled buttons**, not link
+text. Lightened within the same hue family to `#2c6e4f` — **5.3:1**, still
+AA, and unmistakably green. `#184e35` is retained as `--accent-strong` for
+solid fills. A contrast check now guards this.
+
+### Layout and features
+
+The chrome became a **masthead**: a running head above the content on every
+page, carrying the wordmark, a live tally, the nav and the theme toggle.
+
+**Both piles are one primitive.** The deck's thins as it empties, the
+discard's thickens, and the discard takes an accent tint so the two are
+distinguishable at a glance. Layer thresholds are front-loaded (1/3/6/12/24/40)
+because a linear mapping makes the first ten draws look inert. Both are
+derived from `bag` — still no new persisted state.
+
+**Theme toggle**: manual light/dark overriding `prefers-color-scheme`,
+persisted, applied by a synchronous inline head script so a stored choice
+lands before first paint. The dark tokens are written twice — once in the
+media query for the no-JS default, once on the attribute for the override —
+with a check that computes both and fails if they drift.
+
+### Things caught only by rendering
+
+- `.deck-edge` inherited raw grain and rendered as grey static.
+- The shader's fibre stretch was **inverted**: low y frequency elongates noise
+  vertically, so it streaked down the card instead of lying along it.
+- `.pile-label` at `0.78em` of the mono step landed at 9.9px apparent, under
+  the floor the previous pass established.
+- The masthead needed 400px at a 390px viewport. Fixed by moving the tally to
+  its own row and dropping the toggle's word — not by shrinking type back
+  toward the 10px apparent this work exists to escape.
+- Renaming `.discard` to `.minipile` silently orphaned the mobile
+  `display: none` rule, so the piles kept rendering on phones.
+- **Deleting EB Garamond broke two checked-in scripts.** `print-cards.js` and
+  `make-assets.js` both read the woff2 directly; both repointed at Fraunces
+  and re-run to confirm.
+
+### Payload
+
+Client JS 4181 → **4689 B gzipped** (theme toggle). CSS → **4351 B gzipped**.
+Fonts: EB Garamond's two files (90KB) out, Fraunces + two Plex Mono weights
+(86KB) in — roughly neutral. Still zero framework JS, still inlined, still no
+third-party requests.
+
+### Verification
+
+**93 checks.** New: masthead above the card, tally agreeing with the pile
+counts, drawn + remaining always equalling the deck, theme toggle flipping /
+persisting / overriding the OS, both dark blocks staying identical, accent
+contrast clearing AA, Fraunces' optical axis working, and the apparent-size
+floor now measuring each element's **own** family rather than one global
+ratio.
