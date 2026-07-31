@@ -22,6 +22,8 @@ const STORAGE_KEY = "grasping-straws.v1";
 // built for rapid tapping, and with no headroom on slower hardware.
 const FLIP_MS = 460;
 const RIFFLE_MS = 700; // keep in step with the riffle keyframes
+const WORD_STAGGER_MS = 15;
+const WORD_MS = 160;
 
 const cardBtn = document.getElementById("card") as HTMLButtonElement;
 const inner = document.getElementById("card-inner") as HTMLElement;
@@ -74,7 +76,7 @@ if (saved && saved.drawn) {
   document.body.classList.add("has-drawn");
 } else if (!reducedMotion.matches) {
   document.body.classList.add("entrance");
-  setTimeout(() => document.body.classList.remove("entrance"), 1000);
+  setTimeout(() => document.body.classList.remove("entrance"), 1300);
 }
 requestAnimationFrame(() => document.body.classList.add("settled"));
 
@@ -135,12 +137,29 @@ function facingSlot(): HTMLElement {
   return flips % 2 === 0 ? faceA : faceB;
 }
 
+// Words become separate elements so they can arrive in sequence. The
+// whitespace text nodes between them are kept, so textContent still reads as
+// the original sentence — the share sheet, the aria-live region and the
+// tests all depend on that.
+function setWords(el: HTMLElement, text: string): HTMLElement[] {
+  el.textContent = "";
+  const parts = text.split(" ");
+  return parts.map((word, i) => {
+    const span = document.createElement("span");
+    span.className = "word";
+    span.textContent = word;
+    el.appendChild(span);
+    if (i < parts.length - 1) el.appendChild(document.createTextNode(" "));
+    return span;
+  });
+}
+
 // Writes a card into a slot and moves the accessibility exposure with it.
 // backface-visibility is purely visual — without this, a screen reader would
 // announce both faces.
-function writeFace(slot: HTMLElement, text: string): void {
+function writeFace(slot: HTMLElement, text: string): HTMLElement[] {
   const textEl = slot.querySelector(".card-text") as HTMLElement;
-  textEl.textContent = text;
+  const words = setWords(textEl, text);
   textEl.hidden = false;
   // The mark lives in face-a and is only needed before the first draw;
   // nothing ever turns the card back over.
@@ -148,6 +167,7 @@ function writeFace(slot: HTMLElement, text: string): void {
   faceA.setAttribute("aria-hidden", String(slot !== faceA));
   faceB.setAttribute("aria-hidden", String(slot !== faceB));
   document.body.classList.add("has-card");
+  return words;
 }
 
 function show(id: number, { instant = false, keepHint = false } = {}): void {
@@ -184,7 +204,7 @@ function show(id: number, { instant = false, keepHint = false } = {}): void {
 
   busy = true;
   const incoming = flips % 2 === 0 ? faceB : faceA;
-  writeFace(incoming, card.text);
+  const words = writeFace(incoming, card.text);
   flips += 1;
 
   const from = angle;
@@ -242,18 +262,24 @@ function show(id: number, { instant = false, keepHint = false } = {}): void {
     { duration: FLIP_MS, easing: "ease-in-out" }
   );
 
-  // The words land rather than being already there.
-  (incoming.querySelector(".card-text") as HTMLElement).animate(
-    [
-      { opacity: 0, transform: "translateY(7px)" },
-      { opacity: 1, transform: "none" },
-    ],
-    {
-      duration: 190,
-      delay: FLIP_MS * 0.52,
-      easing: "cubic-bezier(0.2, 0.7, 0.3, 1)",
-      fill: "backwards",
-    }
+  // The words land in sequence rather than the block appearing at once.
+  // Budgeted against the longest card (12 words): the last one settles at
+  // 0.40 * 460 + 11 * 15 + 160 = 509ms, inside the 560ms readable-text limit.
+  // Widening the stagger past ~18ms breaks that, so it is a real constraint
+  // and not a taste knob.
+  words.forEach((word, i) =>
+    word.animate(
+      [
+        { opacity: 0, transform: "translateY(8px)" },
+        { opacity: 1, transform: "none" },
+      ],
+      {
+        duration: WORD_MS,
+        delay: FLIP_MS * 0.4 + i * WORD_STAGGER_MS,
+        easing: "cubic-bezier(0.2, 0.7, 0.3, 1)",
+        fill: "backwards",
+      }
+    )
   );
 
   flip.finished
@@ -306,6 +332,13 @@ async function shareCard(): Promise<void> {
   try {
     await navigator.clipboard.writeText(url);
     shareBtn.textContent = "link copied";
+    shareBtn.animate(
+      [
+        { opacity: 0, transform: "translateY(3px)" },
+        { opacity: 1, transform: "none" },
+      ],
+      { duration: 220, easing: "cubic-bezier(0.2, 0.7, 0.3, 1)" }
+    );
     clearTimeout(shareLabelTimer);
     shareLabelTimer = setTimeout(() => {
       shareBtn.textContent = shareLabel;

@@ -276,6 +276,9 @@ a {
   z-index: 1;
   border-radius: 14px;
   pointer-events: none;
+  transition:
+    transform 0.28s cubic-bezier(0.2, 0.7, 0.3, 1),
+    opacity 0.28s ease;
 }
 
 .card-shadow-ambient {
@@ -316,6 +319,29 @@ a {
 
 .deck:has(.card:active) .card-shadow-contact {
   opacity: 0.55;
+}
+
+/* Hover is desktop-only by construction: on touch, :hover sticks after a tap
+   and the card would stay lifted. */
+@media (hover: hover) and (pointer: fine) {
+  .card:hover {
+    transform: translateY(-3px);
+  }
+
+  .deck:has(.card:hover) .card-shadow-ambient {
+    transform: scale(1.03);
+    opacity: 0.85;
+  }
+
+  .deck:has(.card:hover) .card-shadow-contact {
+    transform: scale(0.97);
+    opacity: 0.8;
+  }
+
+  /* pressing while hovering must still read as pressing */
+  .card:active {
+    transform: translateY(-1px) scale(0.988);
+  }
 }
 
 .card-inner {
@@ -460,6 +486,13 @@ a {
   z-index: 1;
 }
 
+/* Words are individually animatable, which needs a block box for transform.
+   The whitespace between them stays as real text nodes, so the sentence is
+   still one selectable, copyable string. */
+.card-text .word {
+  display: inline-block;
+}
+
 .card-text {
   font-size: var(--t-card);
   line-height: 1.32;
@@ -493,8 +526,40 @@ a {
 
 /* Runs once for a fresh visitor. Returning visitors already carry has-drawn
    before first paint, so they never see it. */
+/* Three beats: the card settles, the stack arrives underneath it, then the
+   mark fades up. Only .deck-stack and .card-mark are animated as units —
+   each .deck-edge has its own resting transform, so a per-edge keyframe
+   would snap to `none` on its last frame. */
 body.entrance .deck {
   animation: deck-in 0.9s cubic-bezier(0.16, 0.84, 0.28, 1) both;
+}
+
+body.entrance .deck-stack {
+  animation: stack-in 0.7s cubic-bezier(0.16, 0.84, 0.28, 1) 0.18s both;
+}
+
+body.entrance .card-mark {
+  animation: mark-in 0.7s ease-out 0.36s both;
+}
+
+@keyframes stack-in {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes mark-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes deck-in {
@@ -675,9 +740,25 @@ body.entrance .deck {
   text-decoration: none;
 }
 
-.chrome a:hover {
-  text-decoration: underline;
-  text-underline-offset: 0.2em;
+/* The rule wipes in from the left rather than snapping on. text-decoration
+   cannot be animated, so it is a background gradient sized to 0 height-wise
+   and grown on hover. */
+.chrome nav a:not(.cta) {
+  background-image: linear-gradient(currentColor, currentColor);
+  background-repeat: no-repeat;
+  background-position: 0 100%;
+  background-size: 0% 1px;
+  padding-bottom: 0.2em;
+  transition: background-size 0.32s cubic-bezier(0.2, 0.7, 0.3, 1);
+}
+
+.chrome nav a:not(.cta):hover,
+.chrome nav a:not(.cta):focus-visible {
+  background-size: 100% 1px;
+}
+
+.chrome .deck-name:hover {
+  text-decoration: none;
 }
 
 /* the one call to action */
@@ -753,6 +834,35 @@ body.entrance .deck {
   color: var(--muted);
 }
 
+/* ---------- about: scroll-driven reveals ---------- */
+
+/* Native scroll-driven animation — no observer, no client bundle, zero
+   bytes of JavaScript. Gated behind @supports because without a timeline the
+   `both` fill would leave these stuck at opacity 0 in browsers that parse
+   the animation but not the timeline. */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .about main > h2,
+    .about main > p,
+    .about main > .credit {
+      animation: rise-in linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 58%;
+    }
+  }
+}
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(22px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
 /* ---------- motion ---------- */
 
 @media (prefers-reduced-motion: reduce) {
@@ -765,9 +875,23 @@ body.entrance .deck {
      decoration rather than feedback is removed outright; the press state
      keeps its shadow change but loses the movement. */
   body.entrance .deck,
+  body.entrance .deck-stack,
+  body.entrance .card-mark,
   .deck-stack.riffling,
   .card.flipping .face::after {
     animation: none;
+  }
+
+  .card-shadow {
+    transition: none;
+  }
+
+  .chrome nav a:not(.cta) {
+    transition: none;
+  }
+
+  .card:hover {
+    transform: none;
   }
 
   .deck-edge {

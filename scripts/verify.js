@@ -269,6 +269,18 @@ check("about headline keeps the ?", (await pa.textContent("h1")).trim() === "Gra
 check("wikipedia lineage link present", (await pa.locator('a[href*="wikipedia.org/wiki/Oblique_Strategies"]').count()) === 1);
 check("physical link degrades to coming-soon (empty config URL)", (await pa.textContent("main")).includes("coming soon"));
 check("deck version shown discreetly", (await pa.textContent(".credit")).includes("Deck v"));
+// Scroll-driven reveals fail dangerously, not visibly: a browser that parses
+// the animation but not the timeline leaves `both`-filled elements at
+// opacity 0 forever. Scroll to the end and confirm nothing stayed hidden.
+await pa.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+await pa.waitForTimeout(500);
+const invisible = await pa.evaluate(() =>
+  [...document.querySelectorAll(".about main > h2, .about main > p, .about main > .credit")]
+    .filter((el) => parseFloat(getComputedStyle(el).opacity) < 0.9)
+    .map((el) => el.textContent.trim().slice(0, 24))
+);
+check("no about content stranded invisible after scrolling", invisible.length === 0, invisible.join(" | "));
+await pa.evaluate(() => window.scrollTo(0, 0));
 const pad = await ctxDark.newPage();
 await pad.goto(BASE + "/about/", { waitUntil: "networkidle" });
 await pad.screenshot({ path: path.join(SHOTS, "shot-7-about-dark.png"), fullPage: true });
@@ -300,21 +312,46 @@ check("entrance animation skipped for a returning visitor", !(await pe.evaluate(
 const ctxLat = await browser.newContext({ viewport: { width: 390, height: 844 } });
 const pl = await ctxLat.newPage();
 await pl.goto(BASE + "/", { waitUntil: "networkidle" });
-const latency = await pl.evaluate(
-  () =>
-    new Promise((resolve) => {
-      const t0 = performance.now();
-      document.getElementById("card").click();
-      const tick = () => {
-        const el = document.querySelector('.face[aria-hidden="false"] .card-text');
-        if (el && el.textContent && getComputedStyle(el).opacity === "1") resolve(performance.now() - t0);
-        else if (performance.now() - t0 > 3000) resolve(-1);
-        else requestAnimationFrame(tick);
-      };
-      requestAnimationFrame(tick);
-    })
+
+// The words arrive staggered, so "readable" means the LAST one has landed.
+// Measuring the container's opacity would pass trivially — it is never
+// animated — and would hide any stagger, however long.
+const measureLatency = (page) =>
+  page.evaluate(
+    () =>
+      new Promise((resolve) => {
+        const t0 = performance.now();
+        document.getElementById("card").click();
+        const tick = () => {
+          const el = document.querySelector('.face[aria-hidden="false"] .card-text');
+          const words = el ? [...el.querySelectorAll(".word")] : [];
+          const landed = words.length > 0 && words.every((w) => getComputedStyle(w).opacity === "1");
+          if (landed) resolve({ ms: performance.now() - t0, words: words.length });
+          else if (performance.now() - t0 > 3000) resolve({ ms: -1, words: words.length });
+          else requestAnimationFrame(tick);
+        };
+        requestAnimationFrame(tick);
+      })
+  );
+
+// Sampled, not measured once: the stagger scales with word count and a single
+// draw lands on a random card. One lucky 3-word draw would report a latency
+// the deck cannot actually hold to.
+const samples = [];
+for (let i = 0; i < 12; i++) {
+  samples.push(await measureLatency(pl));
+  await pl.waitForTimeout(FLIP_SETTLE_MS);
+}
+const valid = samples.filter((s) => s.ms > 0);
+const worst = valid.reduce((a, b) => (b.ms > a.ms ? b : a), valid[0]);
+check(
+  "tap to readable text <= 560ms across 12 draws",
+  valid.length === samples.length && worst.ms <= 560,
+  `worst ${Math.round(worst.ms)}ms at ${worst.words} words`
 );
-check("tap to readable text <= 560ms", latency > 0 && latency <= 560, `${Math.round(latency)}ms`);
+check("the longest cards were actually sampled", Math.max(...valid.map((s) => s.words)) >= 8,
+  `max ${Math.max(...valid.map((s) => s.words))} words seen`);
+
 
 // ---- payload: the zero-framework-JS claim must survive --------------------
 // Budgets are measured GZIPPED, because that is what the README claims
