@@ -601,3 +601,90 @@ persisting / overriding the OS, both dark blocks staying identical, accent
 contrast clearing AA, Fraunces' optical axis working, and the apparent-size
 floor now measuring each element's **own** family rather than one global
 ratio.
+
+---
+
+## Pass five — a deck you own, and one you can hold
+
+Brief: "make it as beautiful and interactive as possible… the goal is for this
+to be used as if the deck was physically owned", plus help actually printing a
+copy. Chosen: MPC tarot; all four interaction ideas; the four missing cards to
+be written by hand, with the slots set up and gated.
+
+### What was missing, physically
+
+The site knew *how many* cards had been drawn and not *which*. `updateDeckDepth`
+derived the discard as `deck.length - bag.length` — elegant, no extra state,
+and structurally unable to support a pile you can look through. Storing the
+sequence was the precondition for three of the four features.
+
+### Decisions worth recording
+
+- **Set aside is a bookmark, not a removal.** The physically truer model —
+  a card taken out of the cycle — forces `refillBag` to exclude the shelf,
+  makes an all-aside deck unshuffleable, and breaks the invariant that the two
+  counts sum to the deck. The bookmark keeps every count meaning one thing.
+- **The throw composes with the flip rather than replacing it.** Flying the
+  card off and dealing a replacement gives the flip nothing to happen to; the
+  card stops being one object. A lateral lunge on `.card` while `.card-inner`
+  turns is one gesture and cannot desync.
+- **Pointer tilt lives on `.card-inner`.** It is the element `.card`'s
+  perspective applies to, so the tilt is projected in 3D, and the flip's WAAPI
+  animation overrides the whole transform property while it runs.
+- **`draft: true` rather than a second file.** One id space, one validator,
+  one place to look. Drafts are filtered from the dealt deck, the `/c/<id>/`
+  builder, and the printer.
+
+### Print: the placeholders were wrong in a way only the printer would show
+
+MPC's tarot bleed is 36px per side = **0.12"**, not the 1/8" their prose rounds
+to. The previous `SPEC` built 900×1500 against their 897×1497, which they
+accept and silently rescale — every card ~0.3% off register. `SELF_CHECK` now
+fails the run on drift.
+
+Three more print bugs were invisible in code:
+
+- The mark printed **black, not green**: `favicon.svg` hardcodes its ink and
+  carries a `prefers-color-scheme: dark` branch that would print it near-white
+  on cream. The site never sees this because it renders the glyph through a
+  CSS mask.
+- The contact sheet was 55 broken-image icons — a `setContent()` page has an
+  opaque origin and Chromium blocks its `file://` images.
+- Card text at 64px was 8.5% of the content width per em against the site's
+  12%. Also: `font-optical-sizing: auto` reads the *px* number, so at 300 DPI
+  it picks a display cut for what is physically a 15pt setting.
+
+### Corrections to my own reasoning
+
+The tilt was first gated on `paper` existing — conflating "has WebGL" with
+"wants motion", and denying a pure-CSS effect to the fallback path. Fixed to
+gate on `prefers-reduced-motion` and pointer type.
+
+### A flaky check, found and removed
+
+"The longest cards were actually sampled" asserted that 12 random draws
+included an 8+ word card. 13 of 48 qualify, so it fails ~2% of runs — and did,
+on a run where nothing was wrong. Replaced with a deterministic worst case
+dealt via the hash, which revealed the true figure: **546ms against the 560ms
+budget**, where the sampled worst had been reporting 481ms.
+
+### Payload
+
+Client JS 4689 → **6011 B gzipped**. CSS 4351 → **5136 B gzipped**. Budgets in
+`verify.js` raised explicitly, not deleted. Still no framework, no animation
+library, no gesture library.
+
+### Verification
+
+**133 checks**, up from 93. New: draw order persisted and disjoint from the
+bag, spread contents and ordering, browsing not dealing, the shelf persisting
+across reloads and not changing what is left, v1→v2 migration reconstructing
+the discard, throw versus nudge, no residual transform, `touch-action: pan-y`,
+tilt applying and releasing, tilt surviving without WebGL, and drafts reaching
+neither the deck nor a share page.
+
+### Left open
+
+The **tuck box**. Its template depends on stack thickness, which depends on
+the stock chosen at order time — precisely the kind of guess `SPEC` exists to
+prevent. Recorded in `docs/printing.md` rather than approximated.
