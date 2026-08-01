@@ -90,7 +90,8 @@ into `print/final/` at **897 × 1497 px, 300 DPI** — MakePlayingCards'
 published tarot upload size, taken from their own FAQ rather than a
 third-party template. The script self-checks that figure and refuses to run
 if it drifts, if any card is still a draft, or if the face count isn't one
-of MPC's tiers.
+of MPC's tiers. It also measures every face as it renders and fails if any
+text crosses the safe line, which is the mistake that costs a reprint.
 
 `PROOF=1 npm run print` renders the unwritten slots stamped UNWRITTEN into a
 separate directory so layout can be checked before the writing is done.

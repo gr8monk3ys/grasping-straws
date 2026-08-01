@@ -715,6 +715,11 @@ async function init(): Promise<void> {
   document.addEventListener("keydown", (e) => {
     if (e.defaultPrevented) return;
     if (e.key !== " " && e.key !== "Enter") return;
+    // A spread is open over the table. Space here dealt a card behind the
+    // modal — unseen, and it moved `last` out from under the pile the
+    // reader was looking at. showModal() makes the page inert to CLICKS;
+    // it does not stop a document-level key handler.
+    if (spreadEl.open) return;
     const t = e.target;
     // Let links and the card button itself keep their native behavior.
     if (t instanceof Element && (t === cardBtn || t.closest("a, button"))) return;

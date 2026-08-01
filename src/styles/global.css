@@ -1455,4 +1455,25 @@ html:not(.js) .theme {
   .card:active {
     transform: none;
   }
+
+  /* The table and the spreads. `deal-in` uses `backwards` fill, so removing
+     the animation is not enough on its own — the cards would be left at the
+     keyframe's opacity 0. Both have to go. */
+  .spread-card {
+    animation: none;
+    opacity: 1;
+    transition: none;
+  }
+
+  .spread-card:hover,
+  .spread-card:focus-visible,
+  button.pile:not([disabled]):hover,
+  button.pile:not([disabled]):focus-visible {
+    transform: none;
+  }
+
+  button.pile,
+  .minipile-layer {
+    transition: none;
+  }
 }

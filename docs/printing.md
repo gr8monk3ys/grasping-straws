@@ -49,11 +49,22 @@ count isn't a tier. It writes:
 | File | What it is |
 |---|---|
 | `back.png` | one shared back for all 54 cards |
-| `face-00-title.png` | the title card |
-| `face-01-instructions.png` | how to use the deck |
-| `face-NN.png` | one per prompt, `NN` = the card's `id` |
+| `face-001-title.png` | the title card |
+| `face-002-instructions.png` | how to use the deck |
+| `face-NNN-card-II.png` | one per prompt |
 | `contact-sheet.png` | all 55 faces on one sheet |
 | `contact-sheet.html` | the same, live, for zooming in |
+
+Face names carry **two** numbers and they are not the same number. `NNN` is
+the position in the upload, so a plain alphabetical sort is the deck order.
+`II` is the card's `id` — what is printed on the card and what `/c/<id>/`
+resolves to. They differ because the title and instructions cards come first.
+
+Every face is also **measured** as it renders: if any text crosses the safe
+line, the run names the file, quotes the text and the overflow in pixels, and
+exits non-zero. Text at the safe boundary is not reliably visible by eye on a
+downscaled proof — the guide outline and a full-width line of type blur into
+each other — so this is checked rather than looked at.
 
 Every file is **897 × 1497 px at 300 DPI**. That is MPC's published tarot
 upload size, taken from their
@@ -96,8 +107,10 @@ sentence's first word on the line above.
 At MPC, choose a **blank tarot deck** (2.75" × 4.75") and set the card count
 to **54**. Then:
 
-- **Fronts** — upload the 54 `face-*.png` files. Alphabetical order matches
-  deck order: title, instructions, then prompts by id.
+- **Fronts** — upload the 54 `face-*.png` files. Their `NNN` prefix means a
+  plain alphabetical sort is already the deck order. (For a deck you shuffle
+  this is cosmetic, but a scrambled upload makes the online proof hard to
+  check against the contact sheet.)
 - **Back** — choose the same back for every card and upload `back.png`.
 - **Finish** — smooth or linen. Linen hides fingerprints and shuffles better;
   smooth holds fine type slightly more crisply. For a deck meant to be

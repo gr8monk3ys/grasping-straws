@@ -225,18 +225,58 @@ const browser = await chromium.launch();
 const page = await browser.newPage({ viewport: { width: W, height: H } });
 const written = [];
 
+// Anything crossing the safe line can be trimmed off by the printer, and it
+// is not reliably visible by eye on a downscaled proof — the guide outline
+// and a full-width line of type blur into each other. Measured instead, on
+// every face, with a hard stop. This is the check that a reprint costs.
+const overflows = [];
+
 async function shoot(html, file) {
   await page.setContent(html, { waitUntil: "load" });
   await page.evaluate(() => document.fonts.ready);
+
+  const bad = await page.evaluate((safe) => {
+    const out = [];
+    const walk = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+    const r = document.createRange();
+    for (let n = walk.nextNode(); n; n = walk.nextNode()) {
+      if (!n.textContent.trim()) continue;
+      r.selectNodeContents(n);
+      for (const box of r.getClientRects()) {
+        if (box.width === 0) continue;
+        const over = Math.max(
+          safe - box.left,
+          box.right - (window.innerWidth - safe),
+          safe - box.top,
+          box.bottom - (window.innerHeight - safe)
+        );
+        // Sub-pixel layout rounding is not an overflow; 1px at 300 DPI is
+        // 1/300 inch and well inside the printer's own tolerance.
+        if (over > 1) out.push({ text: n.textContent.trim().slice(0, 34), over: Math.round(over) });
+      }
+    }
+    return out;
+  }, inset);
+  if (bad.length) overflows.push({ file, bad });
+
   await page.screenshot({ path: path.join(out, file) });
   written.push(file);
 }
 
+// Two numbers, and they are not the same number. The PREFIX is the position
+// in the upload, so a plain alphabetical sort is the deck order; the suffix
+// is the card's id, which is what is printed on the card and what /c/<id>/
+// resolves. Numbering the instructions card "01" alongside prompt #1 left
+// two different files both claiming 01, ordered correctly only by the
+// accident that "-" sorts before "." in ASCII.
+let seq = 0;
+const seqName = (label) => `face-${String(++seq).padStart(3, "0")}-${label}.png`;
+
 await shoot(back, "back.png");
-await shoot(title, "face-00-title.png");
-await shoot(instructions, "face-01-instructions.png");
+await shoot(title, seqName("title"));
+await shoot(instructions, seqName("instructions"));
 for (const card of printable) {
-  await shoot(face(card), `face-${String(card.id).padStart(2, "0")}.png`);
+  await shoot(face(card), seqName(`card-${String(card.id).padStart(2, "0")}`));
 }
 
 // A contact sheet is the only practical way to catch a bad line break, a
@@ -270,6 +310,18 @@ const broken = await page.evaluate(
 if (broken) throw new Error(`contact sheet: ${broken} thumbnails failed to load`);
 await page.screenshot({ path: path.join(out, "contact-sheet.png"), fullPage: true });
 await browser.close();
+
+if (overflows.length) {
+  console.error(
+    `\n${overflows.length} face(s) put text outside the safe area — the printer can trim this off:\n` +
+      overflows
+        .map((o) => `  ${o.file}\n` + o.bad.map((b) => `      +${b.over}px  "${b.text}"`).join("\n"))
+        .join("\n") +
+      `\n\nThe files were still written so you can look at them, but do NOT upload them.` +
+      `\nGUIDES=1 draws the bleed and safe outlines on the cards.\n`
+  );
+  process.exitCode = 1;
+}
 
 const dir = path.relative(path.join(here, ".."), out);
 console.log(

@@ -281,6 +281,37 @@ const ctxRM = await browser.newContext({ reducedMotion: "reduce", viewport: { wi
 const pr = await ctxRM.newPage();
 await pr.goto(BASE + "/", { waitUntil: "networkidle" });
 check("reduced-motion draw works (crossfade path)", !!byIdText(await drawOnce(pr, false)));
+// The table's own motion has to be covered too, and `deal-in` fills
+// backwards — removing the animation alone would leave the spread's cards
+// stuck at the keyframe's opacity 0, i.e. an empty pile.
+for (let i = 0; i < 2; i++) await drawOnce(pr, false);
+await pr.click("#discard-open");
+await pr.waitForTimeout(120);
+const rmMotion = await pr.evaluate(() => {
+  const c = document.querySelector(".spread-card");
+  return {
+    anim: getComputedStyle(c).animationName,
+    opacity: getComputedStyle(c).opacity,
+    cardTrans: getComputedStyle(c).transitionDuration,
+    layerTrans: getComputedStyle(document.querySelector(".minipile-layer")).transitionDuration,
+  };
+});
+check("reduced motion silences the spread", rmMotion.anim === "none" && rmMotion.cardTrans === "0s", JSON.stringify(rmMotion));
+check("...without leaving the cards invisible", rmMotion.opacity === "1", rmMotion.opacity);
+check("reduced motion silences the pile transitions", rmMotion.layerTrans === "0s", rmMotion.layerTrans);
+
+// showModal() makes the page inert to clicks; it does NOT stop a
+// document-level key handler. Space here used to deal a card behind the
+// open pile — unseen, and it moved `last` out from under the reader.
+const rmHash = await pr.evaluate(() => location.hash);
+await pr.evaluate(() => document.getElementById("spread").focus());
+await pr.keyboard.press("Space");
+await pr.waitForTimeout(400);
+check("space cannot deal behind an open pile", (await pr.evaluate(() => location.hash)) === rmHash, `${rmHash} -> ${await pr.evaluate(() => location.hash)}`);
+check("the pile is still open after it", await pr.evaluate(() => document.getElementById("spread").open));
+await pr.keyboard.press("Escape");
+await pr.waitForTimeout(150);
+check("focus returns to the pile that was opened", (await pr.evaluate(() => document.activeElement.id)) === "discard-open");
 
 // ---- about page ---------------------------------------------------------
 const pa = await ctx.newPage();
