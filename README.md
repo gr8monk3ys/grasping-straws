@@ -9,23 +9,45 @@ Tap, get a card, tap again.
 <p align="center">
   <img src="docs/screenshot-light.png" alt="The face-down card showing the straw-bundle mark, paper-warm light theme" width="42%">
   &nbsp;&nbsp;
-  <img src="docs/screenshot-dark.png" alt="A drawn card reading &quot;Solve the wrong problem beautifully.&quot;, near-black dark theme" width="42%">
+  <img src="docs/screenshot-dark.png" alt="A drawn card reading &quot;Translate it into plain speech; keep the ghost.&quot; in the near-black dark theme, with the deck, discard and kept counts below it" width="42%">
 </p>
 
 Built with [Astro](https://astro.build) as a fully static site. The built
-output ships **zero framework JavaScript** — just the ~2 KB draw script,
-inlined into the page.
+output ships **zero framework JavaScript** — the draw script, a hand-rolled
+WebGL paper shader and the theme toggle come to ~6 KB gzipped together,
+inlined into the page. No framework, no animation library, no gesture
+library, no third-party requests at runtime.
+
+The card is a real object rather than a picture of one: a two-faced 3D flip
+with 3px of stock and lit side edges, a fragment shader that generates the
+paper fibre and tracks the specular to the card's live rotation, and a tilt
+that follows your pointer at rest so the sheet catches light as you move.
+You can throw it — drag and release and it lunges the way you flicked,
+turning over as it goes.
+
+It behaves like a deck you own. Cards deal from a pile that thins, land on a
+discard that thickens, and either pile can be **picked up and looked
+through**; any card you set aside stays on a shelf across sessions. All of it
+degrades — the shader falls back to a CSS grain layer, and
+`prefers-reduced-motion` gets a plain crossfade.
 
 ## Editing the deck
 
 Edit **`public/cards.json`** and nothing else. It's an array of
 `{ "id": 1, "text": "…", "suit": "lateral" }` objects:
 
-- `id` must be unique and stable — it's what `#17`-style deep links and the
-  `/c/17/` share pages point at.
-- `text` is the card.
+- `id` must be unique and stable — it's what `#17`-style deep links, the
+  `/c/17/` share pages, and the number printed on the physical card all
+  point at.
+- `text` is the card. Use typographic quotes (`’`), not `'` — validation
+  enforces it, because at 24pt on card stock the difference is obvious.
 - `suit` is optional metadata for your own editing convenience; it is never
-  shown to visitors.
+  shown to visitors and is never printed.
+- `draft: true` reserves an id without publishing it. Drafts are filtered
+  out of the dealt deck and get no share page, and `npm run print` refuses
+  to run while any remain. They exist because MakePlayingCards prints tarot
+  decks in fixed tiers and the deck has to reach one — see
+  [docs/printing.md](docs/printing.md).
 
 Removed cards vanish from visitors' in-progress decks automatically; added
 cards join at their next reshuffle. When an editing pass lands, bump
@@ -58,17 +80,25 @@ npm run check      # typecheck the client script
 npm run validate   # lint public/cards.json
 npm run verify     # drive the built site end to end (build + serve first)
 npm run assets     # regenerate og.png + PWA icons from favicon.svg
-npm run print      # render 300 DPI card faces into print/ (see below)
+npm run print      # render 300 DPI print files into print/final/ (see below)
 ```
 
 ## Print files (physical deck)
 
-`npm run print` renders every card, the card back, and a title card as
-300 DPI PNGs into `print/` for MakePlayingCards / The Game Crafter. The
-bleed and safe-margin numbers in `scripts/print-cards.js` are
-**placeholders** — download the printer's own template files and copy their
-exact dimensions in before ordering (run with `GUIDES=1` to overlay the
-bleed/safe outlines while checking).
+`npm run print` renders all 54 faces, the shared back and a contact sheet
+into `print/final/` at **897 × 1497 px, 300 DPI** — MakePlayingCards'
+published tarot upload size, taken from their own FAQ rather than a
+third-party template. The script self-checks that figure and refuses to run
+if it drifts, if any card is still a draft, or if the face count isn't one
+of MPC's tiers. It also measures every face as it renders and fails if any
+text crosses the safe line, which is the mistake that costs a reprint.
+
+`PROOF=1 npm run print` renders the unwritten slots stamped UNWRITTEN into a
+separate directory so layout can be checked before the writing is done.
+`GUIDES=1` overlays the bleed and safe outlines.
+
+Full ordering steps, including what is still unresolved about the tuck box:
+**[docs/printing.md](docs/printing.md)**.
 
 ## Deploying
 
@@ -92,10 +122,27 @@ rebuilds and deploys. When the real domain goes live, update `site` in
   card text in the title and OG tags so shared links preview the card
   itself (`#`-fragments never reach link scrapers). Each page invites the
   visitor to draw their own.
-- **Themes**: light (paper-warm) and dark (near-black) via
-  `prefers-color-scheme`, both AA contrast.
-- **Motion**: the card flip is the only animation; `prefers-reduced-motion`
-  swaps it for a fast crossfade.
+- **Themes**: light (paper-warm) and dark (near-black), following
+  `prefers-color-scheme` by default with a masthead toggle that overrides it
+  and persists. Both AA contrast, including the green accent.
+- **Type**: Fraunces for the card face and prose, IBM Plex Mono for the
+  masthead, tally and labels. Sizes are set by *apparent* size — the two
+  families have different x-heights (0.436 and 0.516), so they get separate
+  ramps, and a check fails the build if anything renders under ~11.5px
+  apparent.
+- **The piles**: the deck thins and the discard thickens as you work through
+  a cycle. Both can be picked up — a native `<dialog>` spreads the cards out,
+  newest on top, and clicking one turns it face up again without dealing.
+  This is why the draw *order* is stored and not just the count; a visitor
+  arriving with the old saved shape gets their discard reconstructed from
+  what the bag is missing rather than reset to zero.
+- **The shelf**: "set aside" keeps a card across cycles. It is a bookmark,
+  not a removal — the card stays in play, so "how many are left" keeps
+  meaning one thing.
+- **Motion**: the flip, the throw, a per-word card reveal, pointer parallax
+  on the resting card, scroll-driven About reveals (native
+  `animation-timeline`, zero JS), hover choreography and a three-beat
+  entrance. `prefers-reduced-motion` reduces all of it to a fast crossfade.
 - **Offline**: a small service worker (`public/sw.js`) precaches the stable
   URLs and caches everything else as it streams through; Astro's hashed
   asset names mean bundles can never go stale. No third-party requests, no
@@ -105,11 +152,14 @@ rebuilds and deploys. When the real domain goes live, update `site` in
 
 `.github/workflows/ci.yml` runs on every PR: validates `public/cards.json`,
 typechecks, builds, then drives the built site in headless Chromium
-(`scripts/verify.js`) — full-cycle no-repeat guarantee, reshuffle rule,
+(`scripts/verify.js`, 133 checks) — full-cycle no-repeat guarantee,
+the browsable piles, the shelf, the throw gesture, pointer parallax,
+migration from the previous saved shape, reshuffle rule,
 persistence, deep links, the share flow and per-card pages, themes,
 reduced motion, and the no-third-party-requests rule.
 
 ## Licenses
 
-Code is GPL-3.0 (see `LICENSE`). The EB Garamond fonts in `public/fonts/`
-are under the SIL Open Font License (see `public/fonts/OFL.txt`).
+Code is GPL-3.0 (see `LICENSE`). The Fraunces and IBM Plex Mono fonts in
+`public/fonts/` are under the SIL Open Font License (see
+`public/fonts/OFL.txt`).

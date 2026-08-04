@@ -2,23 +2,37 @@
 
 /* ---------- fonts (self-hosted, SIL OFL — see fonts/OFL.txt) ---------- */
 
+/* Fraunces carries a real optical-size axis (opsz 9..144) alongside weight,
+   which EB Garamond did not — so the card face is genuinely optically sized
+   at display settings rather than just scaled up. */
 @font-face {
-  font-family: "EB Garamond";
+  font-family: "Fraunces";
   font-style: normal;
-  font-weight: 400 800;
+  font-weight: 300 700;
   font-display: swap;
-  src: url("/fonts/EBGaramond-latin.woff2") format("woff2");
+  src: url("/fonts/Fraunces-latin.woff2") format("woff2");
   unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6,
     U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122,
     U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
 @font-face {
-  font-family: "EB Garamond";
-  font-style: italic;
-  font-weight: 400 800;
+  font-family: "Plex Mono";
+  font-style: normal;
+  font-weight: 400;
   font-display: swap;
-  src: url("/fonts/EBGaramond-Italic-latin.woff2") format("woff2");
+  src: url("/fonts/PlexMono-400-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6,
+    U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122,
+    U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "Plex Mono";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("/fonts/PlexMono-500-latin.woff2") format("woff2");
   unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6,
     U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122,
     U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
@@ -33,22 +47,142 @@
   --card: #fdfaf3;
   --ink: #241e16;
   --muted: #6e6455;
-  --accent: #8c3b22;
+  /* The green from lscaturchio.xyz, hue 152 — forest/emerald rather than
+     olive. Its --primary #184e35 scores 8.4:1 on this ground but is so dark
+     it reads as near-black; that value is used there for FILLED buttons,
+     not link text. Lightened within the same hue family for text use:
+     5.3:1, still AA, and unmistakably green. */
+  --accent: #2c6e4f;
+  --accent-strong: #184e35; /* their --primary, for solid fills */
   --line: #dcd2be;
-  --shadow: 0 1px 2px rgb(36 30 22 / 0.08), 0 14px 36px -14px rgb(36 30 22 / 0.28);
+  --rule: rgb(36 30 22 / 0.16); /* editorial hairlines */
+
+  /* Elevation is two layers, not one: the contact shadow tightens as the
+     card settles while the ambient stays broad. A single shadow cannot
+     express weight, because lift and spread change at different rates. */
+  --shadow-ambient: 0 14px 36px -14px rgb(36 30 22 / 0.28);
+  --shadow-contact: 0 1px 2px rgb(36 30 22 / 0.08), 0 3px 8px -4px rgb(36 30 22 / 0.2);
+
+  /* paper stock */
+  --grain-opacity: 0.034;
+  --grain-blend: multiply;
+  --edge-light: rgb(255 255 255 / 0.6);
+  --edge-shade: rgb(36 30 22 / 0.07);
+  --sheen: rgb(255 255 255 / 0.5);
+  --edge-cast: 0 -1px 3px -1px rgb(36 30 22 / 0.16);
+  --edge-rim: rgb(36 30 22 / 0.22);
+  /* lower cards sit in the card's shadow */
+  --edge-face: #f7f1e4;
+  /* the cut edge of the stock: warmer and darker than the printed face */
+  --spine: #e9dfca;
+
+  --flip-ms: 460ms;
+
+  --font-text: "Fraunces", "Iowan Old Style", Georgia, serif;
+  --font-mono: "Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+
+  /* ---------- type scale ----------
+     Sized by APPARENT size, not px. Measured x-heights, per 1em:
+
+       Fraunces   0.436     needs ~1.20x a sans to match
+       Plex Mono  0.516     needs ~1.01x — essentially none
+       Helvetica  0.523     the reference point
+
+     The two families therefore get separate ramps. Sharing one, as the
+     previous EB Garamond scale did, makes every mono element ~29% larger
+     than intended — which is exactly what happened when the families
+     changed underneath it. */
+
+  /* mono: masthead, tally, labels, hint */
+  --t-mono: 0.95rem; /* 15.2px -> ~15 apparent */
+  --t-mono-sm: 0.8rem; /* 12.8px -> ~12.6 apparent */
+
+  /* Fraunces: prose and the card face */
+  --t-body: 1.16rem; /* 18.6px -> ~15.5 apparent */
+  --t-lede: 1.4rem; /* 22.4px -> ~18.7 apparent */
+  --t-h1: clamp(2.15rem, 4vw + 1rem, 2.85rem);
+  /* Sized against the longest card (62 chars) at the narrowest card width,
+     so nothing overflows the stock. */
+  --t-card: clamp(1.55rem, 1rem + 2.05vw, 2.25rem);
+
+  /* One tile of fractal noise. Encoded as a background-IMAGE, never as a
+     live CSS filter: as an image the turbulence rasterizes exactly once and
+     is then tiled by the compositor like any bitmap. As a filter it would
+     re-rasterize on every composited frame and jank the flip. */
+  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23g)'/%3E%3C/svg%3E");
 }
 
+/* Dark tokens live in two places on purpose: the media query is the no-JS
+   default, and the attribute is the manual override set by the toggle. They
+   must stay identical — there is a check in scripts/verify.js that computes
+   both and fails if they drift. */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     /* near-black, still warm */
     --bg: #171310;
     --card: #201b16;
     --ink: #eae3d4;
     --muted: #a79c8a;
-    --accent: #d99668;
+    --accent: #42a979; /* their dark-mode primary; 6.3:1 on near-black */
+    --accent-strong: #6cc39a;
     --line: #3a322a;
-    --shadow: 0 1px 2px rgb(0 0 0 / 0.4), 0 16px 40px -14px rgb(0 0 0 / 0.6);
+    --rule: rgb(234 227 212 / 0.16);
+
+    --shadow-ambient: 0 16px 40px -14px rgb(0 0 0 / 0.6);
+    --shadow-contact: 0 1px 2px rgb(0 0 0 / 0.4), 0 3px 10px -4px rgb(0 0 0 / 0.5);
+
+    /* multiply is invisible on near-black stock — overlay keeps the speckle
+       readable by lifting as well as darkening. */
+    --grain-opacity: 0.055;
+    --grain-blend: overlay;
+    --edge-light: rgb(255 255 255 / 0.075);
+    --edge-shade: rgb(0 0 0 / 0.36);
+    --sheen: rgb(255 255 255 / 0.11);
+    --edge-cast: 0 -2px 5px -2px rgb(0 0 0 / 0.6);
+    --edge-rim: rgb(255 255 255 / 0.15);
+    /* inverted on near-black: the lower edges CATCH the rim light rather
+       than falling into shadow, which is the only way the stack reads when
+       card and background are 9 points of luminance apart */
+    --edge-face: #272019;
+    --spine: #33291f;
   }
+}
+
+:root[data-theme="dark"] {
+    /* near-black, still warm */
+    --bg: #171310;
+    --card: #201b16;
+    --ink: #eae3d4;
+    --muted: #a79c8a;
+    --accent: #42a979; /* their dark-mode primary; 6.3:1 on near-black */
+    --accent-strong: #6cc39a;
+    --line: #3a322a;
+    --rule: rgb(234 227 212 / 0.16);
+
+    --shadow-ambient: 0 16px 40px -14px rgb(0 0 0 / 0.6);
+    --shadow-contact: 0 1px 2px rgb(0 0 0 / 0.4), 0 3px 10px -4px rgb(0 0 0 / 0.5);
+
+    /* multiply is invisible on near-black stock — overlay keeps the speckle
+       readable by lifting as well as darkening. */
+    --grain-opacity: 0.055;
+    --grain-blend: overlay;
+    --edge-light: rgb(255 255 255 / 0.075);
+    --edge-shade: rgb(0 0 0 / 0.36);
+    --sheen: rgb(255 255 255 / 0.11);
+    --edge-cast: 0 -2px 5px -2px rgb(0 0 0 / 0.6);
+    --edge-rim: rgb(255 255 255 / 0.15);
+    /* inverted on near-black: the lower edges CATCH the rim light rather
+       than falling into shadow, which is the only way the stack reads when
+       card and background are 9 points of luminance apart */
+    --edge-face: #272019;
+    --spine: #33291f;
+}
+
+/* Cross-document page transitions, from the browser itself — no router, no
+   client bundle. Unsupporting browsers ignore the at-rule and navigate
+   normally, which is the current behaviour. */
+@view-transition {
+  navigation: auto;
 }
 
 /* ---------- base ---------- */
@@ -72,9 +206,9 @@ body {
   flex-direction: column;
   background: var(--bg);
   color: var(--ink);
-  font-family: "EB Garamond", "Iowan Old Style", Georgia, "Times New Roman", serif;
-  font-size: 1.125rem;
-  line-height: 1.5;
+  font-family: var(--font-text);
+  font-size: var(--t-body);
+  line-height: 1.55;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -124,43 +258,713 @@ a {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 1.5rem 1rem;
-  perspective: 1400px;
+  gap: 0.5rem;
+  padding: clamp(1.5rem, 4vw, 2.75rem) 1rem;
 }
+
+/* The deck owns layout and everything that must NOT turn with the card.
+   Perspective lives on .card, not here: `perspective` applies only to an
+   element's direct children, and .card-inner — the thing that rotates — is
+   a grandchild of .deck. */
+.deck {
+  position: relative;
+  width: min(82vw, 340px, calc(66dvh * 5 / 7));
+  aspect-ratio: 5 / 7;
+}
+
+/* ---------- the table: deck, card, discard ---------- */
+
+/* Three columns so the card stays optically centred no matter how the piles
+   grow. Both flanking columns reserve the same width, which is why adding
+   the discard does not shove the card off-centre. */
+.table {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: clamp(1rem, 4vw, 3.5rem);
+  width: 100%;
+  /* Bounded so the piles sit in relation to the card rather than drifting
+     to the far edges of a wide viewport. */
+  max-width: 56rem;
+  margin-inline: auto;
+}
+
+.pile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.45rem;
+  font-family: var(--font-mono);
+  font-size: var(--t-mono-sm);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  text-align: center;
+}
+
+.pile-deck {
+  justify-self: end;
+}
+
+.pile-count {
+  color: var(--ink);
+  font-weight: 500;
+  font-size: var(--t-mono);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.pile-label {
+  /* deliberately NOT scaled down further: at 0.78em of the mono-sm step
+     this landed at 9.9px apparent, under the floor. */
+  font-size: var(--t-mono-sm);
+}
+
+/* One primitive for both piles. The deck's thins as it empties; the
+   discard's thickens. Layers are offset enough to be countable at a glance
+   — cream on cream at 1px apart just reads as a single flat card. */
+.minipile {
+  position: relative;
+  display: block;
+  width: clamp(38px, 7vw, 58px);
+  aspect-ratio: 5 / 7;
+  margin-bottom: 0.55rem;
+}
+
+.minipile-layer {
+  position: absolute;
+  inset: 0;
+  border: 1px solid var(--edge-rim);
+  border-radius: 3px;
+  background: var(--edge-face);
+  box-shadow: 0 1px 0 var(--rule);
+  opacity: 0;
+  transition:
+    opacity 0.45s ease,
+    transform 0.45s cubic-bezier(0.2, 0.7, 0.3, 1);
+}
+
+/* Each layer sits a little higher and turns a little differently, so a full
+   pile reads as stacked card stock rather than a printed stripe. */
+.minipile-layer:nth-child(1) { transform: translateY(0) rotate(-1.4deg); }
+.minipile-layer:nth-child(2) { transform: translateY(-2.5px) rotate(1deg); }
+.minipile-layer:nth-child(3) { transform: translateY(-5px) rotate(-0.5deg); }
+.minipile-layer:nth-child(4) { transform: translateY(-7.5px) rotate(1.5deg); }
+.minipile-layer:nth-child(5) { transform: translateY(-10px) rotate(-1.1deg); }
+.minipile-layer:nth-child(6) { transform: translateY(-12.5px) rotate(0.4deg); }
+
+.minipile[data-layers="1"] .minipile-layer:nth-child(-n + 1),
+.minipile[data-layers="2"] .minipile-layer:nth-child(-n + 2),
+.minipile[data-layers="3"] .minipile-layer:nth-child(-n + 3),
+.minipile[data-layers="4"] .minipile-layer:nth-child(-n + 4),
+.minipile[data-layers="5"] .minipile-layer:nth-child(-n + 5),
+.minipile[data-layers="6"] .minipile-layer:nth-child(-n + 6) {
+  opacity: 1;
+}
+
+/* The discard is face-down stock that has been turned over and set aside,
+   so it takes the accent rather than the paper colour. */
+.minipile.is-discard .minipile-layer {
+  /* Plain values first. An unsupported color-mix() is invalid at computed-
+     value time, not ignored — the layer would fall back to a TRANSPARENT
+     background, i.e. an invisible pile, on Safari below 16.2. */
+  background: var(--edge-face);
+  border-color: var(--edge-rim);
+  background: color-mix(in srgb, var(--accent) 12%, var(--edge-face));
+  border-color: color-mix(in srgb, var(--accent) 34%, var(--edge-rim));
+}
+
+/* An empty pile still needs to be a PLACE, or the column reads as a stray
+   number floating in a gap. A hairline ghost of one card marks where they
+   will go without pretending a card is already there. */
+.minipile[data-layers="0"]::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border: 1px dashed var(--rule);
+  border-radius: 3px;
+}
+
+/* The shelf. Distinguished from the discard by tint rather than by shape:
+   they are the same kind of object, holding cards for different reasons. */
+.minipile.is-aside .minipile-layer {
+  background: var(--edge-face);
+  border-color: var(--edge-rim);
+  background: color-mix(in srgb, var(--ink) 9%, var(--edge-face));
+  border-color: color-mix(in srgb, var(--ink) 26%, var(--edge-rim));
+}
+
+/* Both out-of-play piles share the right-hand column. */
+.pile-column {
+  display: flex;
+  flex-direction: column;
+  /* stretch, not flex-start: each button otherwise sizes to its own label
+     ("DISCARDED" vs "KEPT"), and two piles that are centred inside buttons
+     of different widths do not share a centre line. */
+  align-items: stretch;
+  gap: clamp(1.1rem, 3vh, 2.2rem);
+  justify-self: start;
+}
+
+/* The piles became buttons when they became browsable. Strip the control
+   chrome; the pile itself is the affordance. */
+button.pile {
+  appearance: none;
+  border: 0;
+  background: none;
+  padding: 0.35rem 0.5rem;
+  margin: -0.35rem -0.5rem;
+  border-radius: 4px;
+  cursor: pointer;
+  color: inherit;
+  /* NOT `font: inherit`. The shorthand overrides .pile's font-family (this
+     selector is more specific), the pile falls back to the body serif, and
+     .pile-label — which sets only a size — silently drops from 12.6px
+     apparent to 10.7, under the floor. Restate the family here. */
+  font-family: var(--font-mono);
+  font-size: var(--t-mono-sm);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  transition:
+    opacity 0.3s ease,
+    transform 0.3s cubic-bezier(0.2, 0.7, 0.3, 1);
+}
+
+/* An empty pile is not a control. Disabled rather than hidden so the column
+   does not reflow the moment the first card lands in it. */
+button.pile[disabled] {
+  cursor: default;
+  opacity: 0.42;
+}
+
+button.pile:not([disabled]):hover,
+button.pile:not([disabled]):focus-visible {
+  transform: translateY(-2px);
+}
+
+button.pile:not([disabled]):hover .pile-label,
+button.pile:not([disabled]):focus-visible .pile-label {
+  color: var(--accent);
+}
+
+/* Below the breakpoint the flanking piles would squeeze the card, so they
+   collapse to the masthead tally and the labels alone. */
+@media (width < 46rem) {
+  .table {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+
+  .pile {
+    flex-direction: row;
+    gap: 0.5em;
+    justify-self: center;
+  }
+
+  .pile-deck {
+    order: 3;
+  }
+
+  .pile-column {
+    order: 4;
+    flex-direction: row;
+    align-items: center;
+    justify-self: center;
+    gap: 1.6rem;
+  }
+
+  /* Renamed from .discard when both sides became one primitive — this rule
+     silently stopped matching and the piles kept rendering on mobile. */
+  .minipile {
+    display: none;
+  }
+
+  .pile-count {
+    font-size: var(--t-mono);
+  }
+
+  /* With the stacks hidden, the piles are just text — and nothing says the
+     text is a control. Hover cannot say it either, on touch. */
+  button.pile:not([disabled]) .pile-label {
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.25em;
+    text-decoration-color: var(--rule);
+  }
+}
+
+/* ---------- picking a pile up ---------- */
+
+/* A pile you can look through. The cards deal in rather than appearing, so
+   opening the discard reads as spreading it across the table. */
+.spread {
+  width: min(64rem, 92vw);
+  max-height: 84vh;
+  padding: 0;
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  /* --paper is not a token on this site; the ground is --bg. Naming a
+     variable that does not exist makes the declaration invalid at computed-
+     value time, and the dialog painted fully transparent. */
+  background: var(--bg);
+  color: var(--ink);
+  /* The reset zeroes every margin, which also kills the UA's `margin: auto`
+     on a modal <dialog> — it renders hard against the top-left corner. */
+  margin: auto;
+  box-shadow: 0 30px 70px -30px rgb(0 0 0 / 45%);
+  overflow: hidden;
+}
+
+/* 46% and a 2px blur left the masthead and the card behind it perfectly
+   legible, which read as a panel floating over a live page rather than as
+   the page being set down. */
+.spread::backdrop {
+  background: rgb(20 16 11 / 62%);
+  -webkit-backdrop-filter: blur(4px); /* Safari needed the prefix until 18 */
+  backdrop-filter: blur(4px);
+}
+
+.spread-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.35rem clamp(1rem, 3vw, 2rem) 1rem;
+  border-bottom: 1px solid var(--rule);
+}
+
+.spread-title {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--t-mono);
+  font-weight: 400;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.spread-close {
+  appearance: none;
+  border: 0;
+  background: none;
+  padding: 0.1em 0.35em;
+  font: inherit;
+  font-size: 1.5rem;
+  line-height: 1;
+  color: var(--muted);
+  cursor: pointer;
+  border-radius: 3px;
+}
+
+.spread-close:hover,
+.spread-close:focus-visible {
+  color: var(--accent);
+}
+
+.spread-list {
+  display: grid;
+  /* min(11rem, 44%) rather than a bare 11rem: at 390px the track plus the
+     gap overshoots the available width by a few pixels, the grid drops to a
+     single column, and looking through six cards becomes a long scroll of
+     one card at a time. The percentage guarantees two columns fit. */
+  grid-template-columns: repeat(auto-fill, minmax(min(11rem, 44%), 1fr));
+  gap: clamp(0.7rem, 1.6vw, 1.1rem);
+  margin: 0;
+  padding: clamp(1rem, 3vw, 2rem);
+  list-style: none;
+  overflow-y: auto;
+  max-height: calc(84vh - 4.5rem);
+}
+
+/* Each entry is the card in miniature, not a list row — the pile you are
+   looking through is still made of cards. */
+.spread-card {
+  position: relative;
+  display: flex;
+  width: 100%;
+  aspect-ratio: 5 / 7;
+  align-items: center;
+  justify-content: center;
+  padding: 1.15rem 1rem 1.6rem;
+  border: 1px solid var(--edge-rim);
+  border-radius: 5px;
+  background: var(--card);
+  box-shadow: 0 2px 5px -2px rgb(0 0 0 / 22%);
+  font-family: var(--font-text);
+  font-size: 0.98rem;
+  line-height: 1.32;
+  text-align: center;
+  text-wrap: balance;
+  color: var(--ink);
+  cursor: pointer;
+  transition:
+    transform 0.28s cubic-bezier(0.2, 0.7, 0.3, 1),
+    box-shadow 0.28s ease;
+}
+
+.spread-card:hover,
+.spread-card:focus-visible {
+  transform: translateY(-4px) rotate(-0.7deg);
+  box-shadow: 0 10px 20px -8px rgb(0 0 0 / 30%);
+}
+
+.spread-card .spread-num {
+  position: absolute;
+  bottom: 0.6rem;
+  left: 0;
+  right: 0;
+  font-family: var(--font-mono);
+  font-size: var(--t-mono-sm);
+  letter-spacing: 0.12em;
+  color: var(--muted);
+}
+
+/* Cards deal into the spread in sequence, oldest first, so the pile is
+   visibly restacked rather than replaced. Capped: past a dozen the stagger
+   stops being choreography and starts being a wait. */
+.spread-card {
+  animation: deal-in 0.34s cubic-bezier(0.2, 0.7, 0.3, 1) backwards;
+  animation-delay: calc(min(var(--i, 0), 12) * 26ms);
+}
+
+@keyframes deal-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px) rotate(-2.5deg) scale(0.97);
+  }
+}
+
+.spread-empty {
+  grid-column: 1 / -1;
+  padding: 2.5rem clamp(1rem, 3vw, 2rem) 3rem;
+  margin: 0;
+  text-align: center;
+  color: var(--muted);
+  font-size: var(--t-body);
+}
+
+/* ---------- the stack beneath ---------- */
+
+/* Depth, and a reading of how much bag is left. Sibling of .card — putting
+   this inside .card-inner would rotate the whole pile. */
+.deck-stack {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+.deck-edge {
+  position: absolute;
+  inset: 0;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  /* No grain here. Only a few millimetres of each edge is ever visible, and
+     the raw turbulence bitmap needs the opacity + blend treatment .face
+     gives it — applied straight it renders as a field of grey static. */
+  background: var(--edge-face);
+  /* Each edge needs the card above it to cast onto it, or the slivers merge
+     into one soft block — especially on near-black stock, where the card's
+     own ambient shadow already washes this area. */
+  box-shadow: var(--edge-cast);
+  /* Only the bottom border of each edge is ever visible, and it is what makes
+     the stack read as separate cards rather than one thick lip. It gets its
+     own colour so it can carry more contrast than the card outline does. */
+  border-bottom-color: var(--edge-rim);
+  transition:
+    opacity 0.45s ease,
+    transform 0.45s cubic-bezier(0.2, 0.7, 0.3, 1);
+}
+
+/* The scale shrink works AGAINST the translate at the bottom edge: a card
+   scaled to 0.96 pulls its own bottom up by ~2% of the card height. Offsets
+   are chosen so what actually shows is an even ~5 / 11 / 17px staircase,
+   not the raw translate values. */
+.deck-edge:nth-child(1) {
+  transform: translateY(7px) scale(0.99);
+  opacity: 1;
+}
+
+.deck-edge:nth-child(2) {
+  transform: translateY(16px) scale(0.978);
+  opacity: 0.88;
+}
+
+.deck-edge:nth-child(3) {
+  transform: translateY(25px) scale(0.966);
+  opacity: 0.74;
+}
+
+/* thinning: spent edges slide back under the card rather than blinking out */
+.deck[data-edges="2"] .deck-edge:nth-child(3),
+.deck[data-edges="1"] .deck-edge:nth-child(2),
+.deck[data-edges="1"] .deck-edge:nth-child(3) {
+  transform: translateY(0) scale(1);
+  opacity: 0;
+}
+
+/* ---------- elevation ---------- */
+
+.card-shadow {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: 14px;
+  pointer-events: none;
+  transition:
+    transform 0.28s cubic-bezier(0.2, 0.7, 0.3, 1),
+    opacity 0.28s ease;
+}
+
+.card-shadow-ambient {
+  box-shadow: var(--shadow-ambient);
+}
+
+.card-shadow-contact {
+  box-shadow: var(--shadow-contact);
+}
+
+/* ---------- the card ---------- */
 
 .card {
   /* the whole card is the hit target */
-  width: min(82vw, 340px, calc(66dvh * 5 / 7));
-  aspect-ratio: 5 / 7;
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: 14px;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: grab;
+  /* pan-y, not manipulation: a horizontal drag on the card is a throw and
+     has to reach us, while a vertical swipe still scrolls the page. */
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  perspective: 900px;
+  transition: transform 0.18s cubic-bezier(0.3, 0.7, 0.4, 1);
+}
+
+/* press: the one piece of tactile feedback the card never had */
+.card:active {
+  transform: scale(0.985);
+}
+
+/* While the card is being dragged its transform is written from script every
+   pointermove. The 0.18s transition would turn that into lag, and :hover /
+   :active must not fight the drag for the property. */
+.card.dragging {
+  cursor: grabbing;
+  transition: none;
+}
+
+.deck:has(.card:active) .card-shadow-contact {
+  opacity: 0.55;
+}
+
+/* Hover is desktop-only by construction: on touch, :hover sticks after a tap
+   and the card would stay lifted. */
+@media (hover: hover) and (pointer: fine) {
+  .card:hover {
+    transform: translateY(-3px);
+  }
+
+  .deck:has(.card:hover) .card-shadow-ambient {
+    transform: scale(1.03);
+    opacity: 0.85;
+  }
+
+  .deck:has(.card:hover) .card-shadow-contact {
+    transform: scale(0.97);
+    opacity: 0.8;
+  }
+
+  /* pressing while hovering must still read as pressing */
+  .card:active {
+    transform: translateY(-1px) scale(0.988);
+  }
+}
+
+.card-inner {
+  /* It is a <span>, and position: relative does NOT blockify (unlike the
+     absolutely-positioned faces below, which the browser blockifies for
+     free). Without this it stays inline, width/height are ignored, and the
+     faces size themselves against a 0x0 containing block. */
+  display: block;
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  /* Card stock. Exaggerated a little: true 300gsm at this scale would be
+     ~1.5px and read as an artifact rather than as thickness. */
+  --thickness: 3px;
+}
+
+/* ---------- the spine ---------- */
+
+/* The two side edges, so the card is a solid with depth rather than two
+   planes that vanish as they pass 90 degrees. */
+.spine {
+  position: absolute;
+  /* Just enough to clear the 14px corner radius, as a percentage so it
+     tracks the responsive card.
+
+     Deliberately NOT shortened to keep the strip inside the deck's bounds at
+     the 90deg crossing. Rotation swings the near edge ~170px toward a 900px
+     camera, so everything mid-flip projects as a trapezoid up to ~1.26x the
+     card's height — the faces already overshoot the deck by ~60px at that
+     angle, and did so before this element existed. It is what makes the flip
+     read as an object turning in space rather than a texture swap. A spine
+     cropped to fit would be shorter than the face slivers it joins. */
+  top: 3%;
+  bottom: 3%;
+  width: var(--thickness);
+  background: var(--spine);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+/* rotateY(-90deg) maps the strip's local +X onto world +Z, so a strip of
+   width T lands at z 0..T — half a card too far forward. translateX AFTER
+   the rotation applies in the rotated frame, where local X *is* world Z, so
+   it recentres the strip on z -T/2..+T/2. translateZ here would push it
+   sideways in world X instead. */
+.spine-l {
+  left: 0;
+  transform-origin: left center;
+  transform: rotateY(-90deg) translateX(calc(var(--thickness) / -2));
+}
+
+.spine-r {
+  right: 0;
+  transform-origin: right center;
+  transform: rotateY(90deg) translateX(calc(var(--thickness) / 2));
+}
+
+/* Two geometric slots, not fixed roles. Which one carries the current card
+   alternates as the rotation accumulates — see src/scripts/app.ts. */
+.face {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
   padding: clamp(1.25rem, 6vw, 2rem);
   border: 1px solid var(--line);
   border-radius: 14px;
   background: var(--card);
-  color: inherit;
-  font: inherit;
-  box-shadow: var(--shadow);
-  cursor: pointer;
-  touch-action: manipulation;
-  user-select: none;
-  -webkit-user-select: none;
-  -webkit-tap-highlight-color: transparent;
+  box-shadow:
+    inset 0 1px 0 var(--edge-light),
+    inset 0 -1px 0 var(--edge-shade);
+  overflow: hidden;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  /* Pushed forward by half the stock so the spine has a gap to fill. */
+  transform: translateZ(calc(var(--thickness) / 2));
 }
 
-.card:focus-visible {
-  border-radius: 14px;
+/* Pre-rotated so its contents are not mirror-imaged when the card turns. The
+   rotation flips this face's local +Z to world -Z, so the same positive
+   translate lands it on the opposite side of the card. */
+.face-b {
+  transform: rotateY(180deg) translateZ(calc(var(--thickness) / 2));
 }
 
-.card-inner {
+/* The WebGL stock, when it is available. Sits under the text (which is
+   z-index 1) and is clipped by the face's own overflow and radius. */
+.paper {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
-  display: grid;
-  place-items: center;
-  transform-style: preserve-3d;
+  display: block;
+  pointer-events: none;
+}
+
+/* The shader supersedes the tiled bitmap. Keyed off a class the renderer
+   only adds once a context has actually linked, so a failed init leaves the
+   CSS grain in place rather than a bare card. */
+.gl .face::before {
+  display: none;
+}
+
+/* paper grain. .face carries a transform, which creates a stacking context,
+   which isolates the blend — so this multiplies against the card's own
+   stock and nothing behind it. */
+.face::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: var(--grain);
+  background-size: 160px 160px;
+  opacity: var(--grain-opacity);
+  mix-blend-mode: var(--grain-blend);
+  pointer-events: none;
+}
+
+/* specular sweep — parked off the face at rest, rides the flip when armed */
+.face::after {
+  content: "";
+  position: absolute;
+  inset: -50%;
+  background: linear-gradient(105deg, transparent 42%, var(--sheen) 50%, transparent 58%);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.card.flipping .face::after {
+  animation: sheen var(--flip-ms) linear;
+}
+
+/* Weighted toward the first half, where the face is still square-on to the
+   viewer. Past 90 degrees the face is foreshortened to almost nothing and a
+   highlight there reads as a flash rather than as light moving over paper. */
+@keyframes sheen {
+  0% {
+    opacity: 0;
+    transform: translateX(-42%);
+  }
+  22% {
+    opacity: 0.85;
+  }
+  46% {
+    opacity: 1;
+  }
+  72% {
+    opacity: 0.35;
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(34%);
+  }
+}
+
+/* content sits above the grain layer, which is positioned */
+.card-text,
+.card-mark {
+  position: relative;
+  z-index: 1;
+}
+
+/* Words are individually animatable, which needs a block box for transform.
+   The whitespace between them stays as real text nodes, so the sentence is
+   still one selectable, copyable string. */
+.card-text .word {
+  display: inline-block;
 }
 
 .card-text {
-  font-size: clamp(1.5rem, 1.05rem + 1.9vw, 2.25rem);
-  line-height: 1.35;
+  font-family: var(--font-text);
+  font-size: var(--t-card);
+  /* Fraunces carries opsz 9..144, so the browser fits the design to the
+     size on its own. This is the axis EB Garamond did not have. */
+  font-optical-sizing: auto;
+  font-weight: 400;
+  line-height: 1.28;
+  /* large sizes need the tracking pulled back in */
+  letter-spacing: -0.012em;
   text-align: center;
   text-wrap: balance;
 }
@@ -178,10 +982,85 @@ a {
 }
 
 .card-wordmark {
-  font-size: 0.8rem;
-  letter-spacing: 0.22em;
+  font-family: var(--font-mono);
+  font-size: var(--t-mono-sm);
+  font-weight: 500;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
   white-space: nowrap;
+}
+
+/* ---------- entrance & reshuffle ---------- */
+
+/* Runs once for a fresh visitor. Returning visitors already carry has-drawn
+   before first paint, so they never see it. */
+/* Three beats: the card settles, the stack arrives underneath it, then the
+   mark fades up. Only .deck-stack and .card-mark are animated as units —
+   each .deck-edge has its own resting transform, so a per-edge keyframe
+   would snap to `none` on its last frame. */
+body.entrance .deck {
+  animation: deck-in 0.9s cubic-bezier(0.16, 0.84, 0.28, 1) both;
+}
+
+body.entrance .deck-stack {
+  animation: stack-in 0.7s cubic-bezier(0.16, 0.84, 0.28, 1) 0.18s both;
+}
+
+body.entrance .card-mark {
+  animation: mark-in 0.7s ease-out 0.36s both;
+}
+
+@keyframes stack-in {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes mark-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes deck-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.965);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* The whole bag has been dealt and refilled. Animating the stack as a unit,
+   not per-edge: each edge has its own resting transform, so a per-edge
+   keyframe would snap to `none` on the last frame. */
+.deck-stack.riffling {
+  animation: riffle 0.7s cubic-bezier(0.3, 0.8, 0.3, 1);
+}
+
+@keyframes riffle {
+  0% {
+    transform: translateY(4px) rotate(0.85deg);
+  }
+  30% {
+    transform: translateY(0) rotate(-0.95deg);
+  }
+  60% {
+    transform: translateY(2px) rotate(0.45deg);
+  }
+  100% {
+    transform: none;
+  }
 }
 
 /* The hint and the share control share one reserved line below the card:
@@ -201,8 +1080,10 @@ a {
   margin-top: 1.75rem;
   min-height: 1.5em; /* reserve the line so the card never shifts */
   color: var(--muted);
-  font-style: italic;
-  font-size: 1rem;
+  font-family: var(--font-mono);
+  font-size: var(--t-mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
   text-align: center;
 }
 
@@ -220,8 +1101,10 @@ a {
   background: none;
   color: var(--muted);
   font: inherit;
-  font-style: italic;
-  font-size: 1rem;
+  font-family: var(--font-mono);
+  font-size: var(--t-mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
   cursor: pointer;
   text-decoration: underline;
   text-decoration-thickness: 1px;
@@ -243,6 +1126,33 @@ a {
   opacity: 1;
   visibility: visible;
   transition-delay: 0s;
+}
+
+/* Two quiet controls on one line. They share the hint's grid cell, so the
+   gap has to come from here rather than from a margin that would shift the
+   card. */
+.card-actions {
+  display: flex;
+  align-items: baseline;
+  gap: 1.6rem;
+}
+
+/* A card already on the shelf: the control reads as a state, not an offer.
+   The underline goes — there is nothing left to click toward. */
+#keep[aria-pressed="true"] {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+#keep[aria-pressed="true"]::before {
+  content: "\2713\00a0";
+}
+
+@media (width < 26rem) {
+  .card-actions {
+    gap: 1rem;
+    font-size: var(--t-mono-sm);
+  }
 }
 
 /* The fade only exists once the page has settled (class added one frame
@@ -278,26 +1188,40 @@ a {
   -webkit-user-select: text;
 }
 
-/* ---------- chrome ---------- */
+/* a shared card never turns, so it never presses either */
+.card-static:active {
+  transform: none;
+}
 
+/* ---------- masthead ---------- */
+
+/* A running head, not a footer: the wordmark and the tally sit where an
+   editorial page carries them, above the content. */
 .chrome {
   display: flex;
-  justify-content: space-between;
   align-items: baseline;
-  gap: 1.25rem;
-  padding: 0.9rem 1.25rem calc(0.9rem + env(safe-area-inset-bottom));
-  font-size: 0.85rem;
-  letter-spacing: 0.02em;
+  justify-content: space-between;
+  gap: 1.5rem;
+  padding: 1.15rem clamp(1rem, 3.5vw, 2.25rem);
+  border-bottom: 1px solid var(--rule);
+  font-family: var(--font-mono);
+  font-size: var(--t-mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
   color: var(--muted);
 }
 
 .chrome .deck-name {
-  letter-spacing: 0.08em;
+  color: var(--ink);
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-decoration: none;
 }
 
 .chrome nav {
   display: flex;
-  gap: 1.4rem;
+  align-items: baseline;
+  gap: clamp(1rem, 2.5vw, 1.9rem);
 }
 
 .chrome a {
@@ -305,17 +1229,101 @@ a {
   text-decoration: none;
 }
 
-.chrome a:hover {
-  text-decoration: underline;
-  text-underline-offset: 0.2em;
-}
-
-/* the one call to action */
 .chrome a.cta {
   color: var(--accent);
-  text-decoration: underline;
-  text-decoration-thickness: 1px;
-  text-underline-offset: 0.2em;
+}
+
+/* the rule wipes in rather than snapping on */
+.chrome nav a {
+  background-image: linear-gradient(currentColor, currentColor);
+  background-repeat: no-repeat;
+  background-position: 0 100%;
+  background-size: 0% 1px;
+  padding-bottom: 0.25em;
+  transition: background-size 0.32s cubic-bezier(0.2, 0.7, 0.3, 1);
+}
+
+.chrome nav a:hover,
+.chrome nav a:focus-visible {
+  background-size: 100% 1px;
+}
+
+/* At 390px the masthead's three groups need 400px. Rather than shrinking the
+   type back toward the 10px apparent this whole pass was meant to escape,
+   the tally drops to its own centred row, the toggle keeps only its disc,
+   and the mono step comes down one notch — still ~13px apparent. */
+@media (width < 34rem) {
+  .chrome {
+    flex-wrap: wrap;
+    gap: 0.55rem 1rem;
+    --t-mono: 0.85rem;
+  }
+
+  .chrome .tally {
+    order: 3;
+    width: 100%;
+    justify-content: center;
+  }
+
+  .theme-word {
+    display: none;
+  }
+}
+
+/* ---------- the tally ---------- */
+
+.tally {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4em;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.08em;
+}
+
+.tally-num {
+  color: var(--ink);
+  font-weight: 500;
+}
+
+.tally-sep,
+.tally-label {
+  color: var(--muted);
+}
+
+/* ---------- theme toggle ---------- */
+
+.theme {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5em;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  cursor: pointer;
+}
+
+.theme-dot {
+  width: 0.72em;
+  height: 0.72em;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  /* half-filled: the disc reads as the current state without a label */
+  background: linear-gradient(to right, currentColor 50%, transparent 50%);
+  transition: transform 0.4s cubic-bezier(0.2, 0.7, 0.3, 1);
+}
+
+.theme:hover .theme-dot {
+  transform: rotate(180deg);
+}
+
+/* No JavaScript means no way to persist a choice, so the control is not
+   offered at all rather than offered and broken. */
+html:not(.js) .theme {
+  display: none;
 }
 
 /* ---------- about page ---------- */
@@ -327,18 +1335,6 @@ a {
   padding: 3.5rem 1.35rem 4rem;
 }
 
-.about .backlink {
-  display: inline-block;
-  margin-bottom: 3rem;
-  font-size: 0.95rem;
-  color: var(--muted);
-  text-decoration: none;
-}
-
-.about .backlink:hover {
-  text-decoration: underline;
-}
-
 .about .page-mark {
   width: 44px;
   color: var(--muted);
@@ -346,16 +1342,18 @@ a {
 }
 
 .about h1 {
-  font-size: clamp(2.1rem, 4.5vw + 1rem, 2.9rem);
+  font-size: var(--t-h1);
   font-weight: 600;
-  line-height: 1.1;
+  line-height: 1.08;
+  letter-spacing: -0.012em;
   margin-bottom: 1.5rem;
 }
 
 .about h2 {
   margin-top: 2.6em;
   margin-bottom: 0.7em;
-  font-size: 0.95rem;
+  font-family: var(--font-mono);
+  font-size: var(--t-mono-sm);
   font-weight: 500;
   letter-spacing: 0.16em;
   text-transform: uppercase;
@@ -368,16 +1366,47 @@ a {
 }
 
 .about .lede {
-  font-size: 1.3rem;
-  line-height: 1.5;
+  font-size: var(--t-lede);
+  line-height: 1.45;
 }
 
 .about .credit {
   margin-top: 4rem;
   padding-top: 1.5rem;
-  border-top: 1px solid var(--line);
-  font-size: 0.95rem;
+  border-top: 1px solid var(--rule);
+  font-family: var(--font-mono);
+  font-size: var(--t-mono-sm);
+  letter-spacing: 0.06em;
   color: var(--muted);
+}
+
+/* ---------- about: scroll-driven reveals ---------- */
+
+/* Native scroll-driven animation — no observer, no client bundle, zero
+   bytes of JavaScript. Gated behind @supports because without a timeline the
+   `both` fill would leave these stuck at opacity 0 in browsers that parse
+   the animation but not the timeline. */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .about main > h2,
+    .about main > p,
+    .about main > .credit {
+      animation: rise-in linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 58%;
+    }
+  }
+}
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(22px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 /* ---------- motion ---------- */
@@ -385,6 +1414,62 @@ a {
 @media (prefers-reduced-motion: reduce) {
   .settled .hint,
   .settled .share {
+    transition: none;
+  }
+
+  /* The flip itself degrades to a crossfade in app.ts. Everything that is
+     decoration rather than feedback is removed outright; the press state
+     keeps its shadow change but loses the movement. */
+  body.entrance .deck,
+  body.entrance .deck-stack,
+  body.entrance .card-mark,
+  .deck-stack.riffling,
+  .card.flipping .face::after {
+    animation: none;
+  }
+
+  .card-shadow {
+    transition: none;
+  }
+
+  .chrome nav a:not(.cta) {
+    transition: none;
+  }
+
+  .card:hover {
+    transform: none;
+  }
+
+  .deck-edge {
+    transition: none;
+  }
+
+  .card {
+    transition: none;
+  }
+
+  .card:active {
+    transform: none;
+  }
+
+  /* The table and the spreads. `deal-in` uses `backwards` fill, so removing
+     the animation is not enough on its own — the cards would be left at the
+     keyframe's opacity 0. Both have to go. */
+  .spread-card {
+    animation: none;
+    opacity: 1;
+    transition: none;
+  }
+
+  .spread-card:hover,
+  .spread-card:focus-visible,
+  button.pile:not([disabled]):hover,
+  button.pile:not([disabled]):focus-visible {
+    transform: none;
+  }
+
+  button.pile,
+  .minipile-layer {
     transition: none;
   }
 }

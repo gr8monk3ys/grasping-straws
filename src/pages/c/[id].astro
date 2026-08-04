@@ -7,10 +7,16 @@
  */
 import cards from "../../../public/cards.json";
 import Base from "../../layouts/Base.astro";
+import Chrome from "../../components/Chrome.astro";
 import { DECK_NAME, PHYSICAL_DECK_URL } from "../../config";
 
 export function getStaticPaths() {
-  return cards.map((card) => ({ params: { id: String(card.id) }, props: { card } }));
+  // Drafts are ids reserved so the printed deck reaches a whole tier; they
+  // have no text yet. Building a share page for one would publish an empty
+  // card with an empty <title>.
+  return cards
+    .filter((card) => !("draft" in card && card.draft))
+    .map((card) => ({ params: { id: String(card.id) }, props: { card } }));
 }
 
 const { card } = Astro.props;
@@ -21,21 +27,28 @@ const physicalHref = PHYSICAL_DECK_URL || "/about/#physical";
 ---
 
 <Base title={title} description={description}>
+  <Chrome />
   <main class="stage">
-    <div class="card card-static">
-      <span class="card-inner">
-        <span class="card-text">{card.text}</span>
+    {/* Same deck shell as the draw screen, minus the second face — a shared
+        card is already face up and never turns. */}
+    <div class="deck" data-edges="3">
+      <span class="deck-stack" aria-hidden="true">
+        <span class="deck-edge"></span>
+        <span class="deck-edge"></span>
+        <span class="deck-edge"></span>
       </span>
+      <span class="card-shadow card-shadow-ambient" aria-hidden="true"></span>
+      <span class="card-shadow card-shadow-contact" aria-hidden="true"></span>
+      <div class="card card-static">
+        <span class="card-inner">
+          <span class="face face-a">
+            <span class="card-text">{card.text}</span>
+          </span>
+        </span>
+      </div>
     </div>
     <p class="hint card-page-invite">
       <a href="/">Draw your own card &rarr;</a>
     </p>
   </main>
-  <footer class="chrome">
-    <span class="deck-name">{DECK_NAME}</span>
-    <nav>
-      <a href="/about/">About</a>
-      <a href={physicalHref} class="cta">Get the physical deck</a>
-    </nav>
-  </footer>
 </Base>

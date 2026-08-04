@@ -18,7 +18,7 @@
   { "id": 17, "text": "Finish it badly, then defend the flaw.", "suit": "lateral" },
   { "id": 18, "text": "Ask the least qualified person in the room. That may be you.", "suit": "lateral" },
   { "id": 19, "text": "Tune to the room, not the chart.", "suit": "sound" },
-  { "id": 20, "text": "Play the chord you can't name.", "suit": "sound" },
+  { "id": 20, "text": "Play the chord you can’t name.", "suit": "sound" },
   { "id": 21, "text": "Voice it in two notes.", "suit": "sound" },
   { "id": 22, "text": "Detune one string; keep the fingering.", "suit": "sound" },
   { "id": 23, "text": "Let the drums lie about the tempo.", "suit": "sound" },
@@ -39,12 +39,21 @@
   { "id": 38, "text": "Steal the syntax of a prayer.", "suit": "language" },
   { "id": 39, "text": "Say it once. Trust the echo.", "suit": "language" },
   { "id": 40, "text": "Translate it into plain speech; keep the ghost.", "suit": "language" },
-  { "id": 41, "text": "Delete every sentence you're proud of. Read what's left.", "suit": "language" },
+  { "id": 41, "text": "Delete every sentence you’re proud of. Read what’s left.", "suit": "language" },
   { "id": 42, "text": "Let a minor character narrate.", "suit": "language" },
   { "id": 43, "text": "The obstacle is the initiation.", "suit": "threshold" },
   { "id": 44, "text": "Descend, retrieve, return. You are on the wrong step.", "suit": "threshold" },
   { "id": 45, "text": "Read it as a cipher for something kind.", "suit": "threshold" },
   { "id": 46, "text": "What would the older tradition call this?", "suit": "threshold" },
   { "id": 47, "text": "Consult the dream, then disobey it.", "suit": "threshold" },
-  { "id": 48, "text": "Cross the threshold facing backward.", "suit": "threshold" }
+  { "id": 48, "text": "Cross the threshold facing backward.", "suit": "threshold" },
+
+  { "id": 49, "text": "", "suit": "language", "draft": true,
+    "note": "A register shift. The six written cards all tune voice or trim it; none says 'write this as something else entirely' — a manual, a legal clause, a recipe, a weather report." },
+  { "id": 50, "text": "", "suit": "language", "draft": true,
+    "note": "Repetition. Nothing in the suit uses saying-it-again as a tool; #39 says the opposite. Say the same line three times and change one word." },
+  { "id": 51, "text": "", "suit": "threshold", "draft": true,
+    "note": "Waiting. Every threshold card is an act — descend, cross, consult, disobey. None is about refusing to move yet, or about arriving too early." },
+  { "id": 52, "text": "", "suit": "threshold", "draft": true,
+    "note": "The toll. Nothing here asks what has to be left at the door to get through it." }
 ]
