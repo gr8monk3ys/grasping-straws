@@ -521,6 +521,14 @@ const spreadIds = await pu.evaluate(() =>
 );
 check("the spread holds every drawn card", spreadIds.length === savedOrder.length, `${spreadIds.length}/${savedOrder.length}`);
 check("newest sits on top", spreadIds[0] === savedOrder[savedOrder.length - 1], `${spreadIds[0]} vs ${savedOrder.at(-1)}`);
+// The dialog's accessible name. Without the count a screen reader hears
+// "the discard" and gets none of what a spread conveys at a glance.
+check("the spread names its size", /\b\d+ cards?\b/.test(await pu.textContent("#spread-title")), await pu.textContent("#spread-title"));
+check("the piles say they open a dialog",
+  (await pu.locator('#discard-open[aria-haspopup="dialog"]').count()) === 1 &&
+    (await pu.locator('#aside-open[aria-haspopup="dialog"]').count()) === 1);
+check("the spread's list holds only list items", await pu.evaluate(() =>
+  [...document.getElementById("spread-list").children].every((c) => c.tagName === "LI")));
 check("the spread reads as cards, not a list", await pu.evaluate(() => {
   const el = document.querySelector(".spread-card");
   const r = el.getBoundingClientRect();
@@ -640,6 +648,42 @@ check("the card yields horizontal drags to the page, keeps vertical scroll",
   (await pu.locator("#card").evaluate((el) => getComputedStyle(el).touchAction)) === "pan-y");
 
 // --- the paper at rest ----------------------------------------------------
+// This handler ends in a shader draw, and a pointermove can fire far more
+// often than the screen refreshes. Unthrottled, and painting BOTH faces when
+// only one is visible, it measured 3.3ms per event — a fifth of a 60fps
+// frame, burned while merely moving the mouse. Guarded because it is exactly
+// the kind of cost that creeps back in unnoticed.
+const moveCost = await pu.evaluate(() => {
+  const deck = document.getElementById("deck");
+  const box = deck.getBoundingClientRect();
+  const fire = (x, y) =>
+    deck.dispatchEvent(new PointerEvent("pointermove", { clientX: x, clientY: y, pointerType: "mouse", bubbles: true }));
+  for (let i = 0; i < 10; i++) fire(box.left + 50, box.top + 50);
+  const t = performance.now();
+  for (let i = 0; i < 300; i++) fire(box.left + 10 + (i % 100) * 2, box.top + 20 + (i % 50) * 3);
+  return (performance.now() - t) / 300;
+});
+check("pointer tilt stays off the event path (<0.2ms/event)", moveCost < 0.2, `${moveCost.toFixed(3)} ms/event`);
+// Those 300 synthetic moves left the card tilted, which would silently
+// become the "flat" baseline for the tilt checks below.
+await pu.evaluate(() =>
+  document.getElementById("deck").dispatchEvent(new PointerEvent("pointerleave", { pointerType: "mouse", bubbles: false }))
+);
+await pu.waitForTimeout(120);
+
+// Both sheets must still hold real paper. redraw() paints only the visible
+// one; if that ever became the ONLY paint path, the other face would sit at
+// the WebGL buffer's initial opaque black and flash on the next flip.
+const sheetPixels = await pu.evaluate(() =>
+  [...document.querySelectorAll("canvas.paper")].map((cv) => {
+    const g = cv.getContext("webgl", { preserveDrawingBuffer: true });
+    const b = new Uint8Array(4);
+    g.readPixels(Math.floor(cv.width / 2), Math.floor(cv.height / 2), 1, 1, g.RGBA, g.UNSIGNED_BYTE, b);
+    return [...b].slice(0, 3).join(",");
+  })
+);
+check("neither face is left unpainted", sheetPixels.length === 2 && sheetPixels.every((p) => p !== "0,0,0"), JSON.stringify(sheetPixels));
+
 // The shader used to render only mid-flip, leaving a frozen frame. Tilting
 // toward the pointer is what makes it a live surface.
 const restAngle = () => pu.evaluate(() => {
@@ -792,6 +836,23 @@ if (fs.existsSync(path.join(distDir, "index.html"))) {
   // gesture and pointer parallax added ~1.3 KB more. Every raise here is
   // deliberate — still hand-rolled, still no framework: Three.js alone would
   // be ~25x this, and a drag/gesture library another 10 KB on top.
+  // Renaming a class and missing one of its rules has bitten this project
+  // twice: `.discard` -> `.minipile` orphaned the mobile `display: none` and
+  // the piles kept rendering on phones, and the About page's `.backlink`
+  // outlived the link when the masthead replaced it. Both were silent — dead
+  // CSS does not throw. Scan for class selectors that match nothing.
+  const cssSrc = fs.readFileSync(path.join(here, "..", "src", "styles", "global.css"), "utf8");
+  const selectorText = cssSrc
+    .replace(/\/\*[\s\S]*?\*\//g, "") // comments can mention old class names
+    .replace(/url\([^)]*\)/g, "") // and URLs look exactly like .class tokens
+    .replace(/\{[^{}]*\}/g, "{}"); // declaration values are not selectors
+  const declared = new Set([...selectorText.matchAll(/\.([a-zA-Z][\w-]*)/g)].map((m) => m[1]));
+  const markup = ["index.html", "about/index.html", "c/17/index.html", "404.html"]
+    .map((f) => fs.readFileSync(path.join(here, "..", "dist", f), "utf8"))
+    .join("\n");
+  const orphans = [...declared].filter((c) => !new RegExp(`[\\s"'\`.]${c}[\\s"'\`.]`).test(markup));
+  check("every class rule still matches something", orphans.length === 0, orphans.join(", "));
+
   check("all client JS <= 7 KB gzipped (draw + shader + theme + table)", jsGz <= 7168, `${jsGz} B gz`);
   check("total CSS <= 6 KB gzipped", cssGz <= 6144, `${cssGz} B gz`);
   // Raised with the editorial pass (masthead, piles, two type ramps).

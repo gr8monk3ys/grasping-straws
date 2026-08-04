@@ -59,7 +59,7 @@ const description =
           thins, and the shelf holds whatever was set aside. Both are real
           piles — you can pick either one up and look through it. */}
       <div class="pile-column">
-        <button class="pile pile-discard" id="discard-open" type="button" disabled>
+        <button class="pile pile-discard" id="discard-open" type="button" aria-haspopup="dialog" disabled>
           <span class="minipile is-discard" id="discard" data-layers="0" aria-hidden="true">
             <span class="minipile-layer"></span>
             <span class="minipile-layer"></span>
@@ -72,7 +72,7 @@ const description =
           <span class="pile-label">discarded</span>
         </button>
 
-        <button class="pile pile-aside" id="aside-open" type="button" disabled>
+        <button class="pile pile-aside" id="aside-open" type="button" aria-haspopup="dialog" disabled>
           <span class="minipile is-aside" id="aside" data-layers="0" aria-hidden="true">
             <span class="minipile-layer"></span>
             <span class="minipile-layer"></span>

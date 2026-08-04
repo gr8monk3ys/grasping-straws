@@ -215,7 +215,6 @@ function toggleAside(): void {
 // bag and the discard are unchanged — you are looking through cards you
 // already drew, not drawing again.
 function openSpread(title: string, ids: number[]): void {
-  spreadTitleEl.textContent = title;
   spreadListEl.textContent = "";
 
   for (const [i, id] of [...ids].reverse().entries()) {
@@ -243,11 +242,22 @@ function openSpread(title: string, ids: number[]): void {
     spreadListEl.append(li);
   }
 
-  if (!spreadListEl.children.length) {
-    const p = document.createElement("p");
-    p.className = "spread-empty";
-    p.textContent = "These cards are no longer in the deck.";
-    spreadListEl.append(p);
+  // Titled from what was actually RENDERED, not from ids.length. The loop
+  // skips any card edited out of cards.json since it was drawn, so counting
+  // the input would promise cards the spread does not contain. (Today the
+  // load-time filter makes that unreachable — every id in a pile is live —
+  // but the title should not depend on a guarantee made somewhere else.)
+  const shown = spreadListEl.children.length;
+  spreadTitleEl.textContent = shown
+    ? `${title} — ${shown} card${shown === 1 ? "" : "s"}`
+    : title;
+
+  if (!shown) {
+    // An <li>, not a <p>: the container is a <ul>.
+    const li = document.createElement("li");
+    li.className = "spread-empty";
+    li.textContent = "These cards are no longer in the deck.";
+    spreadListEl.append(li);
   }
   spreadEl.showModal();
 }
@@ -555,20 +565,37 @@ const TILT_Y = 3.2;
 const TILT_X = 2.2;
 let tiltIdle: ReturnType<typeof setTimeout> | undefined;
 
+// A pointermove can fire far more often than the screen refreshes, and this
+// handler ends in a shader draw. Coalesce to one update per frame: the extra
+// events cannot show up on a display that has not repainted.
+let tiltRaf = 0;
+let tiltFrom: { x: number; y: number } | null = null;
+
 function onStageMove(e: PointerEvent): void {
   if (busy || dragging || e.pointerType !== "mouse") return;
+  tiltFrom = { x: e.clientX, y: e.clientY };
+  clearTimeout(tiltIdle);
+  tiltIdle = setTimeout(releaseTilt, 2200);
+  if (tiltRaf) return;
+  tiltRaf = requestAnimationFrame(applyTilt);
+}
+
+function applyTilt(): void {
+  tiltRaf = 0;
+  if (!tiltFrom || busy || dragging) return;
   const r = cardBtn.getBoundingClientRect();
-  const nx = Math.max(-1, Math.min(1, (e.clientX - (r.left + r.width / 2)) / (r.width / 2)));
-  const ny = Math.max(-1, Math.min(1, (e.clientY - (r.top + r.height / 2)) / (r.height / 2)));
+  const nx = Math.max(-1, Math.min(1, (tiltFrom.x - (r.left + r.width / 2)) / (r.width / 2)));
+  const ny = Math.max(-1, Math.min(1, (tiltFrom.y - (r.top + r.height / 2)) / (r.height / 2)));
   tiltY = nx * TILT_Y;
   tiltX = -ny * TILT_X;
   applyRest();
   paper?.redraw();
-  clearTimeout(tiltIdle);
-  tiltIdle = setTimeout(releaseTilt, 2200);
 }
 
 function releaseTilt(): void {
+  cancelAnimationFrame(tiltRaf);
+  tiltRaf = 0;
+  tiltFrom = null;
   if (!tiltX && !tiltY) return;
   tiltX = tiltY = 0;
   applyRest();

@@ -365,6 +365,11 @@ a {
 /* The discard is face-down stock that has been turned over and set aside,
    so it takes the accent rather than the paper colour. */
 .minipile.is-discard .minipile-layer {
+  /* Plain values first. An unsupported color-mix() is invalid at computed-
+     value time, not ignored — the layer would fall back to a TRANSPARENT
+     background, i.e. an invisible pile, on Safari below 16.2. */
+  background: var(--edge-face);
+  border-color: var(--edge-rim);
   background: color-mix(in srgb, var(--accent) 12%, var(--edge-face));
   border-color: color-mix(in srgb, var(--accent) 34%, var(--edge-rim));
 }
@@ -383,6 +388,8 @@ a {
 /* The shelf. Distinguished from the discard by tint rather than by shape:
    they are the same kind of object, holding cards for different reasons. */
 .minipile.is-aside .minipile-layer {
+  background: var(--edge-face);
+  border-color: var(--edge-rim);
   background: color-mix(in srgb, var(--ink) 9%, var(--edge-face));
   border-color: color-mix(in srgb, var(--ink) 26%, var(--edge-rim));
 }
@@ -513,6 +520,7 @@ button.pile:not([disabled]):focus-visible .pile-label {
    the page being set down. */
 .spread::backdrop {
   background: rgb(20 16 11 / 62%);
+  -webkit-backdrop-filter: blur(4px); /* Safari needed the prefix until 18 */
   backdrop-filter: blur(4px);
 }
 
@@ -627,6 +635,7 @@ button.pile:not([disabled]):focus-visible .pile-label {
 }
 
 .spread-empty {
+  grid-column: 1 / -1;
   padding: 2.5rem clamp(1rem, 3vw, 2rem) 3rem;
   margin: 0;
   text-align: center;
@@ -1324,19 +1333,6 @@ html:not(.js) .theme {
   max-width: 34rem;
   margin-inline: auto;
   padding: 3.5rem 1.35rem 4rem;
-}
-
-.about .backlink {
-  display: inline-block;
-  margin-bottom: 3rem;
-  font-size: var(--t-mono);
-  font-weight: 500;
-  color: var(--muted);
-  text-decoration: none;
-}
-
-.about .backlink:hover {
-  text-decoration: underline;
 }
 
 .about .page-mark {

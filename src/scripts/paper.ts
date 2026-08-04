@@ -154,8 +154,13 @@ export function mountPaper(faces: HTMLElement[], inner: HTMLElement): Paper | nu
   const dark = window.matchMedia("(prefers-color-scheme: dark)");
   let raf = 0;
 
-  function resize(): void {
+  // Returns whether any buffer was reallocated. Assigning canvas.width CLEARS
+  // the drawing buffer — to opaque black, since the context is alpha: false —
+  // so a caller that then repaints only one sheet would leave the other one
+  // black until something repainted it. The caller has to know.
+  function resize(): boolean {
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    let cleared = false;
     for (const s of sheets) {
       const r = s.face.getBoundingClientRect();
       const w = Math.max(1, Math.round(r.width * dpr));
@@ -164,8 +169,10 @@ export function mountPaper(faces: HTMLElement[], inner: HTMLElement): Paper | nu
         s.canvas.width = w;
         s.canvas.height = h;
         s.gl.viewport(0, 0, w, h);
+        cleared = true;
       }
     }
+    return cleared;
   }
 
   // rotateY(t) puts cos(t) in m11 and -sin(t) in m13, so the live angle can
@@ -177,23 +184,35 @@ export function mountPaper(faces: HTMLElement[], inner: HTMLElement): Paper | nu
     return Math.atan2(-m.m13, m.m11);
   }
 
+  function paint(s: Sheet, angle: number, isDark: number): void {
+    const { gl, u } = s;
+    gl.uniform2f(u.res, s.canvas.width, s.canvas.height);
+    gl.uniform3fv(u.paper, rgb(getComputedStyle(s.face).backgroundColor));
+    gl.uniform1f(u.angle, angle);
+    gl.uniform1f(u.dark, isDark);
+    gl.uniform1f(u.fibre, isDark ? 0.03 : 0.016);
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+  }
+
   function draw(angle: number): void {
     const isDark = dark.matches ? 1 : 0;
-    for (const s of sheets) {
-      const { gl, u } = s;
-      gl.uniform2f(u.res, s.canvas.width, s.canvas.height);
-      gl.uniform3fv(u.paper, rgb(getComputedStyle(s.face).backgroundColor));
-      gl.uniform1f(u.angle, angle);
-      gl.uniform1f(u.dark, isDark);
-      gl.uniform1f(u.fibre, isDark ? 0.030 : 0.016);
-      gl.drawArrays(gl.TRIANGLES, 0, 3);
-    }
+    for (const s of sheets) paint(s, angle, isDark);
   }
 
   function rest(): void {
     resize();
     draw(currentAngle());
   }
+
+  // Which sheet the viewer is actually looking at. The other one is behind
+  // backface-visibility: hidden, so painting it is pure waste — and this
+  // shader is five octaves of fbm over the whole card at DPR 2, which is not
+  // a cheap thing to waste.
+  const frontIndex = (angle: number): number => (Math.cos(angle) >= 0 ? 0 : 1);
+
+  // Redraw skips a repaint the eye could not resolve anyway. Sub-degree
+  // pointer jitter was re-running the shader for nothing.
+  let lastPainted = NaN;
 
   function follow(): void {
     draw(currentAngle());
@@ -225,8 +244,21 @@ export function mountPaper(faces: HTMLElement[], inner: HTMLElement): Paper | nu
     settle() {
       cancelAnimationFrame(raf);
       raf = 0;
+      lastPainted = NaN;
       rest();
     },
-    redraw: rest,
+    // The tilt path, called from a pointermove. Only the visible sheet, and
+    // only when the angle has actually moved. Measured at 3.3ms per event
+    // before this — a fifth of a 60fps frame, spent on a face nobody can see.
+    redraw() {
+      const angle = currentAngle();
+      if (Math.abs(angle - lastPainted) < 0.0026) return; // ~0.15 degrees
+      lastPainted = angle;
+      // A reallocated buffer is a cleared buffer, so the saving does not
+      // apply on that frame: both sheets have to be repainted or the hidden
+      // one is left black, ready to flash on the next flip.
+      if (resize()) draw(angle);
+      else paint(sheets[frontIndex(angle)]!, angle, dark.matches ? 1 : 0);
+    },
   };
 }
