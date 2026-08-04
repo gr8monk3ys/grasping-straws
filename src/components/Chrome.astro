@@ -5,6 +5,7 @@
  * editorial page would carry them.
  */
 import { DECK_NAME, PHYSICAL_DECK_URL } from "../config";
+import cards from "../../public/cards.json";
 
 interface Props {
   /* the draw screen carries a live count; other pages do not */
@@ -12,6 +13,10 @@ interface Props {
 }
 const { counter = false } = Astro.props;
 const physicalHref = PHYSICAL_DECK_URL || "/about/#physical";
+// Computed, not hardcoded: a literal 48 here becomes a first-paint lie the
+// moment the deck changes size — which it is about to, when the four
+// reserved print slots are written. Drafts never reach the site.
+const deckSize = cards.filter((c) => !("draft" in c && c.draft)).length;
 ---
 
 <header class="chrome">
@@ -22,7 +27,7 @@ const physicalHref = PHYSICAL_DECK_URL || "/about/#physical";
       <p class="tally" id="tally" aria-live="off">
         <span class="tally-num" id="tally-drawn">0</span>
         <span class="tally-sep">/</span>
-        <span class="tally-num" id="tally-total">48</span>
+        <span class="tally-num" id="tally-total">{deckSize}</span>
         <span class="tally-label">drawn</span>
       </p>
     )

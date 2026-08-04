@@ -691,6 +691,11 @@ async function init(): Promise<void> {
     last = hashId;
     keepTopFresh();
     show(hashId, { instant: true, keepHint: true });
+    // Every path that changes `last` must resync the set-aside button, or
+    // the toggle INVERTS: deep-linking to a card already on the shelf showed
+    // "set aside" unpressed, and pressing it removed the card while
+    // appearing to add it.
+    updateKeep();
     saveState();
   }
 
@@ -700,6 +705,7 @@ async function init(): Promise<void> {
       last = id;
       keepTopFresh();
       show(id, { keepHint: true });
+      updateKeep(); // same invariant as the deep link above
       saveState();
     }
   });

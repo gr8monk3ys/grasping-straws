@@ -34,7 +34,7 @@ const results = [];
 const check = (name, cond, extra = "") =>
   results.push(`${cond ? "PASS" : "FAIL"}  ${name}${extra ? "  [" + extra + "]" : ""}`);
 
-// Must stay above FLIP_MS in src/scripts/app.ts (520ms) — the busy guard
+// Must stay above FLIP_MS in src/scripts/app.ts (460ms) — the busy guard
 // swallows input for the whole flip, so padding below it makes the
 // full-cycle test flake rather than fail honestly.
 const FLIP_SETTLE_MS = 620;
@@ -575,6 +575,43 @@ await pu.keyboard.press("Escape");
 await pu.waitForTimeout(200);
 check("Escape closes a spread", !(await pu.evaluate(() => document.getElementById("spread").open)));
 
+// --- every last-changing path resyncs the set-aside button ----------------
+// The draw, spread-pick and toggle paths all call updateKeep(); the two hash
+// paths did not, which INVERTED the toggle: deep-linking to a card already
+// on the shelf showed "set aside" unpressed, and pressing it removed the
+// card while appearing to add it.
+const ctxKeep = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+const pk = await ctxKeep.newPage();
+// Seed from the 404 page: same origin, no draw script. Seeding from the draw
+// page races init(), and navigating "/" -> "/#id" is a SAME-document
+// navigation — no reload, so the seed is never read and the hashchange
+// handler's saveState() clobbers it with the live (unseeded) state.
+await pk.goto(BASE + "/404.html", { waitUntil: "domcontentloaded" });
+const keepId = cards[7].id;
+await pk.evaluate(
+  ({ id, bag }) =>
+    localStorage.setItem(
+      "grasping-straws.v1",
+      JSON.stringify({ bag, order: [id], aside: [id], last: id, drawn: true })
+    ),
+  { id: keepId, bag: cards.slice(10).map((c) => c.id) }
+);
+await pk.goto(BASE + "/#" + keepId, { waitUntil: "networkidle" });
+await pk.waitForTimeout(400);
+check(
+  "deep-linking a shelved card shows the toggle pressed",
+  (await pk.getAttribute("#keep", "aria-pressed")) === "true"
+);
+// and the hashchange path, to a card that is NOT shelved
+const otherId = cards[12].id;
+await pk.evaluate((id) => { location.hash = "#" + id; }, otherId);
+await pk.waitForTimeout(FLIP_SETTLE_MS + 100);
+check(
+  "hash-navigating to an unshelved card releases it",
+  (await pk.getAttribute("#keep", "aria-pressed")) === "false"
+);
+await ctxKeep.close();
+
 // --- a visitor arriving from the previous storage shape -------------------
 // v1 stored bag/last/drawn and no sequence. The set of drawn cards is still
 // recoverable (deck minus bag), so the discard must come back populated
@@ -836,6 +873,28 @@ if (fs.existsSync(path.join(distDir, "index.html"))) {
   // gesture and pointer parallax added ~1.3 KB more. Every raise here is
   // deliberate — still hand-rolled, still no framework: Three.js alone would
   // be ~25x this, and a drag/gesture library another 10 KB on top.
+  // --- what ships in dist -------------------------------------------------
+  const distFile = (f) => fs.readFileSync(path.join(here, "..", "dist", f), "utf8");
+  // Notes-to-self belong in Astro comments, which are stripped at build; an
+  // HTML comment ships to every view-source.
+  check("no owner notes leak into built HTML", !["index.html", "about/index.html"].some((f) => /<!--[^>]*owner:/.test(distFile(f))));
+  // The masthead wordmark and tally are weight 500 at first paint on every
+  // page; preloading only the other two files made the most visible text on
+  // the page the one that swapped in late.
+  check("every first-paint font weight is preloaded", (distFile("index.html").match(/rel="preload"[^>]*PlexMono-500/g) || []).length === 1);
+  check("canonical present on the card pages", /rel="canonical" href="https:\/\/[^"]+\/c\/17\/"/.test(distFile("c/17/index.html")));
+  // First-paint counts are computed from cards.json, never hardcoded — a
+  // literal 48 became a lie the moment the deck changed size.
+  check("static tally matches the live deck size", distFile("index.html").includes(`id="tally-total">${cards.length}<`), `expected ${cards.length}`);
+  check("static deck count matches too", distFile("index.html").includes(`id="left-count">${cards.length}<`));
+  // The share pages are the discovery surface; without a sitemap nothing can
+  // find them. Drafts must not be advertised.
+  const sitemap = distFile("sitemap.xml");
+  check("sitemap lists every live card page", cards.every((c) => sitemap.includes(`/c/${c.id}/`)), `${cards.length} pages`);
+  check("sitemap omits reserved drafts", drafts.every((c) => !sitemap.includes(`/c/${c.id}/`)));
+  const robots = distFile("robots.txt");
+  check("robots.txt points at the sitemap", /Sitemap: https:\/\/[^\s]+\/sitemap\.xml/.test(robots));
+
   // Renaming a class and missing one of its rules has bitten this project
   // twice: `.discard` -> `.minipile` orphaned the mobile `display: none` and
   // the piles kept rendering on phones, and the About page's `.backlink`

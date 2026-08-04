@@ -23,6 +23,9 @@ const { title, description, bodyClass } = Astro.props;
     <meta property="og:site_name" content={DECK_NAME} />
     {Astro.site && <meta property="og:image" content={new URL("/og.png", Astro.site).href} />}
     {Astro.site && <meta name="twitter:card" content="summary_large_image" />}
+    {/* The same card exists at /#17 and /c/17/, and the share pages are the
+        indexable surface — canonical keeps crawlers from splitting them. */}
+    {Astro.site && <link rel="canonical" href={new URL(Astro.url.pathname, Astro.site).href} />}
     <meta name="color-scheme" content="light dark" />
     <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f5efe3" />
     <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#171310" />
@@ -31,6 +34,10 @@ const { title, description, bodyClass } = Astro.props;
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="preload" href="/fonts/Fraunces-latin.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="preload" href="/fonts/PlexMono-400-latin.woff2" as="font" type="font/woff2" crossorigin />
+    {/* The masthead wordmark and tally are weight 500 and render at first
+        paint on EVERY page — leaving this one out preloaded the two other
+        files and let the most visible text on the page swap in late. */}
+    <link rel="preload" href="/fonts/PlexMono-500-latin.woff2" as="font" type="font/woff2" crossorigin />
     {/* Synchronous on purpose: a stored theme has to land before first paint
         or the page flashes the other one. Also marks that JS is running, so
         the toggle can hide itself when it would not work. */}

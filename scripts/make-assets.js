@@ -25,11 +25,19 @@ const LINE = "#dcd2be";
 
 const svg = fs.readFileSync(path.join(pub, "favicon.svg"), "utf8");
 const font = fs.readFileSync(path.join(pub, "fonts", "Fraunces-latin.woff2")).toString("base64");
+// The wordmark on a card BACK is Plex Mono everywhere else — the masthead
+// and the printed deck. The OG image is the same object and must not be the
+// one place it renders in a serif.
+const mono = fs.readFileSync(path.join(pub, "fonts", "PlexMono-500-latin.woff2")).toString("base64");
 
 const baseCss = `
   @font-face {
     font-family: "Fraunces";
     src: url(data:font/woff2;base64,${font}) format("woff2");
+  }
+  @font-face {
+    font-family: "Plex Mono";
+    src: url(data:font/woff2;base64,${mono}) format("woff2");
   }
   * { margin: 0; box-sizing: border-box; }
   html, body { width: 100%; height: 100%; }
@@ -46,7 +54,7 @@ const ogHtml = `<!doctype html><style>${baseCss}
           display: grid; place-items: center; }
   .mark { display: grid; justify-items: center; gap: 34px; color: ${MUTED}; }
   .mark svg { width: 120px; height: 120px; }
-  .wordmark { font-size: 21px; letter-spacing: 0.22em; text-transform: uppercase; }
+  .wordmark { font-family: "Plex Mono", monospace; font-size: 19px; letter-spacing: 0.24em; text-transform: uppercase; }
 </style><body>
   <div class="card"><div class="mark">${svg}<div class="wordmark">Grasping&nbsp;Straws?</div></div></div>
 </body>`;

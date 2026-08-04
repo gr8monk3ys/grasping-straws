@@ -2,7 +2,11 @@
 import Base from "../layouts/Base.astro";
 import Chrome from "../components/Chrome.astro";
 import { DECK_NAME } from "../config";
+import cards from "../../public/cards.json";
 
+// Same rule as the masthead tally: the first-paint count is computed from
+// cards.json (drafts excluded), never hardcoded.
+const deckSize = cards.filter((c) => !("draft" in c && c.draft)).length;
 const description =
   "An original deck of lateral-thinking prompts for breaking creative deadlocks. Tap to draw a card.";
 ---
@@ -25,7 +29,7 @@ const description =
           <span class="minipile-layer"></span>
           <span class="minipile-layer"></span>
         </span>
-        <span class="pile-count" id="left-count">48</span>
+        <span class="pile-count" id="left-count">{deckSize}</span>
         <span class="pile-label">in the deck</span>
       </aside>
 
