@@ -3,10 +3,11 @@ import { defineConfig } from "astro/config";
 
 // Static output (Astro's default). No integrations, no client framework —
 // the built site ships zero framework JavaScript.
-// `site` makes og:image URLs absolute — update it when the real domain
-// (grasping-straws.com / graspingstraws.cards) goes live.
+// `site` is the single source for every absolute URL: og:image, canonical,
+// sitemap.xml and robots.txt all derive from it. grasping-straws.vercel.app
+// still serves as a secondary; canonical points every crawler here.
 export default defineConfig({
-  site: "https://grasping-straws.vercel.app",
+  site: "https://straws.lscaturchio.xyz",
   build: {
     // assetsInlineLimit below also governs stylesheet inlining ("auto" keys
     // off the same threshold), which would have inlined the 8 KB stylesheet

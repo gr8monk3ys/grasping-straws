@@ -216,7 +216,7 @@ const instructions = shell(`<div class="safe" style="align-content:center; gap:4
     <p>Deal through the deck before reshuffling — no card twice in a cycle.</p>
   </div>
   <div style="justify-self:start; width:120px; height:${RULE_PX}px; background:${ACCENT}; opacity:0.65;"></div>
-  <div class="num" style="font-size:26px;">GRASPING-STRAWS.VERCEL.APP</div>
+  <div class="num" style="font-size:26px;">STRAWS.LSCATURCHIO.XYZ</div>
 </div>`);
 
 /* ---------- render ---------- */
