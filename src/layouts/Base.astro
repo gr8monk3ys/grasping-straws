@@ -15,6 +15,18 @@ const { title, description, bodyClass } = Astro.props;
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    {/* The README's "no third-party requests" is a promise, and until now it
+        depended on every pipe between the origin and the visitor staying
+        clean — which the Cloudflare proxy broke by auto-injecting its RUM
+        beacon into proxied HTML. This policy makes the document enforce the
+        promise itself: only same-origin loads, full stop. 'unsafe-inline' is
+        the site's own architecture (the draw script and theme snippet are
+        inlined; there is no remote script host to allow), and img data: is
+        the grain texture. */}
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'"
+    />
     <title>{title}</title>
     <meta name="description" content={description} />
     <meta property="og:title" content={title} />
