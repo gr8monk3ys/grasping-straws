@@ -77,6 +77,15 @@ const ctx = await browser.newContext({ colorScheme: "light", viewport: { width: 
 const page = await ctx.newPage();
 const requests = [];
 page.on("request", (r) => requests.push(r.url()));
+// A request the document's CSP vetoed shows up in the request log but never
+// touches the network — Chrome reports the blocked ATTEMPT. Track those
+// separately: an injecting proxy (Cloudflare RUM rode in exactly this way)
+// can add script tags to the HTML, and the CSP turning them inert is the
+// promise being KEPT, not broken.
+const cspBlocked = new Set();
+page.on("requestfailed", (r) => {
+  if (/csp|BLOCKED_BY_CSP/i.test(r.failure()?.errorText ?? "")) cspBlocked.add(r.url());
+});
 await page.goto(BASE + "/", { waitUntil: "networkidle" });
 
 check("face-down mark visible on load", await page.locator("#card-mark").isVisible());
@@ -983,8 +992,20 @@ const overflows = await page.evaluate(() =>
 check("no horizontal overflow at 390px", !overflows);
 
 // ---- no third-party requests -------------------------------------------
+// The promise is that nothing leaves the visitor's browser for a third
+// party. Attempts the CSP vetoed never reach the network; they are listed
+// separately so an injecting proxy is visible without failing the promise.
 const offsite = requests.filter((u) => !u.startsWith(BASE));
-check("no third-party requests at runtime", offsite.length === 0, offsite.join(", "));
+const escaped = offsite.filter((u) => !cspBlocked.has(u));
+const vetoed = offsite.filter((u) => cspBlocked.has(u));
+check("no third-party request reaches the network", escaped.length === 0, escaped.join(", "));
+check(
+  "the CSP is present to veto anything injected",
+  await page.evaluate(
+    () => !!document.querySelector('meta[http-equiv="Content-Security-Policy"]')
+  ),
+  vetoed.length ? `vetoed: ${[...new Set(vetoed)].join(", ").slice(0, 120)}` : "nothing tried"
+);
 
 console.log(results.join("\n"));
 const fails = results.filter((r) => r.startsWith("FAIL"));
