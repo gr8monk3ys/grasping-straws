@@ -29,7 +29,11 @@ const STORAGE_KEY = "grasping-straws.v1";
 // built for rapid tapping, and with no headroom on slower hardware.
 const FLIP_MS = 460;
 const RIFFLE_MS = 700; // keep in step with the riffle keyframes
-const WORD_STAGGER_MS = 15;
+// 15 put the nominal worst case at 509ms against the 560ms budget, but the
+// measured worst ran 546-561ms — frame overhead ate the margin, and the
+// deterministic longest-card check tipped 1ms over on the deployed site.
+// 13 buys back 22ms on a 12-word card; the cascade still reads as a cascade.
+const WORD_STAGGER_MS = 13;
 const WORD_MS = 160;
 
 const cardBtn = document.getElementById("card") as HTMLButtonElement;
@@ -416,9 +420,9 @@ function show(id: number, { instant = false, keepHint = false } = {}): void {
 
   // The words land in sequence rather than the block appearing at once.
   // Budgeted against the longest card (12 words): the last one settles at
-  // 0.40 * 460 + 11 * 15 + 160 = 509ms, inside the 560ms readable-text limit.
-  // Widening the stagger past ~18ms breaks that, so it is a real constraint
-  // and not a taste knob.
+  // 0.40 * 460 + 11 * 13 + 160 = 487ms nominal, and measurement shows frame
+  // overhead adds 40-50ms on top — which is why the stagger sits at 13 and
+  // not 15. It is a real constraint, not a taste knob.
   words.forEach((word, i) =>
     word.animate(
       [
