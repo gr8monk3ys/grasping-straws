@@ -102,9 +102,14 @@ Full ordering steps, including what is still unresolved about the tuck box:
 
 ## Deploying
 
-Vercel auto-detects Astro; zero further config. Every push to `main`
-rebuilds and deploys. When the real domain goes live, update `site` in
-`astro.config.mjs` so `og:image` URLs point at it.
+Live at **[straws.lscaturchio.xyz](https://straws.lscaturchio.xyz)**
+(grasping-straws.vercel.app serves too; canonical tags point at the
+subdomain). Vercel auto-detects Astro; every push to `main` rebuilds and
+deploys. The domain rides lscaturchio.xyz's Cloudflare wildcard, so the
+subdomain needed no DNS work — Vercel routes it by Host header. If the
+domain ever changes, `site` in `astro.config.mjs` is the only source:
+og:image, canonicals, sitemap.xml and robots.txt all derive from it. The
+printed deck carries the URL too — `scripts/print-cards.js`.
 
 ## How it works
 
