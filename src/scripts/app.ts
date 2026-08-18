@@ -34,6 +34,12 @@ const RIFFLE_MS = 700; // keep in step with the riffle keyframes
 // deterministic longest-card check tipped 1ms over on the deployed site.
 // 13 buys back 22ms on a 12-word card; the cascade still reads as a cascade.
 const WORD_STAGGER_MS = 13;
+// Shaving that beat again (15 → 13 → 11 → …) is a losing race against frame
+// overhead — each pass buys ~20ms and dulls every card, and CI has measured
+// overhead as high as 76ms. Cap the TOTAL run instead: up to 9 words keep the
+// full beat, longer cards share the same 104ms envelope, so the worst case
+// lands at 0.4·460 + 104 + 160 = 448ms nominal with >100ms of headroom.
+const STAGGER_ENVELOPE_MS = 104; // 8 gaps at the full 13ms beat
 const WORD_MS = 160;
 
 const cardBtn = document.getElementById("card") as HTMLButtonElement;
@@ -418,11 +424,14 @@ function show(id: number, { instant = false, keepHint = false } = {}): void {
     { duration: FLIP_MS, easing: "ease-in-out" }
   );
 
-  // The words land in sequence rather than the block appearing at once.
-  // Budgeted against the longest card (12 words): the last one settles at
-  // 0.40 * 460 + 11 * 13 + 160 = 487ms nominal, and measurement shows frame
-  // overhead adds 40-50ms on top — which is why the stagger sits at 13 and
-  // not 15. It is a real constraint, not a taste knob.
+  // The words land in sequence rather than the block appearing at once,
+  // inside a capped envelope so the longest card cannot outgrow the 560ms
+  // budget (see STAGGER_ENVELOPE_MS). It is a real constraint, not a taste
+  // knob.
+  const gap =
+    words.length > 1
+      ? Math.min(WORD_STAGGER_MS, STAGGER_ENVELOPE_MS / (words.length - 1))
+      : 0;
   words.forEach((word, i) =>
     word.animate(
       [
@@ -431,7 +440,7 @@ function show(id: number, { instant = false, keepHint = false } = {}): void {
       ],
       {
         duration: WORD_MS,
-        delay: FLIP_MS * 0.4 + i * WORD_STAGGER_MS,
+        delay: FLIP_MS * 0.4 + i * gap,
         easing: "cubic-bezier(0.2, 0.7, 0.3, 1)",
         fill: "backwards",
       }
