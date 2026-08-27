@@ -4,3 +4,4 @@ dist/
 print/
 .vercel
 .env*
+.claude/settings.local.json
