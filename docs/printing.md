@@ -131,6 +131,45 @@ area; nothing should cross it.
 
 ---
 
+## The free print-and-play edition
+
+`npm run pnp` renders `public/print-and-play.pdf`: the whole live deck plus
+the five rules cards and a title card, four to a US Letter page at true
+tarot size, with a cover sheet of instructions and a page of backs for
+optional duplexing. It is linked from the About page and served as a static
+asset.
+
+```sh
+npm run pnp          # -> public/print-and-play.pdf
+npm run pnp:check    # is the committed PDF still in step with cards.json?
+```
+
+Three things it deliberately does differently from the manufactured run:
+
+- **Drafts don't block it.** A permanent deck must not ship a placeholder, so
+  `npm run print` refuses while any card is unwritten. Someone printing at
+  home today should get today's cards rather than nothing, so the PDF renders
+  the live deck and leaves the reserved slots out.
+- **The rules cards are here and only here.** MPC prints tarot decks in fixed
+  tiers, and the manufactured deck already sits exactly on 54 faces (52
+  prompts + title + instructions). Adding five rules cards would make 59,
+  which is not a tier — it would cost four written prompts or a jump to the
+  72 tier. The five games are on `/play/`, printed in the free edition, and
+  out of the manufactured deck until the deck is deliberately resized.
+- **The PDF is committed.** It is a generated artifact in git, which is
+  normally the wrong thing: the site is static files on a host with no
+  browser, so it cannot be rendered on request, and the About page links it.
+  The cost of committing generated output is silent drift, so
+  `scripts/pnp-stamp.json` records a hash of the inputs (card texts, rules
+  cards, generator) and `npm run pnp:check` fails CI when the PDF stops
+  matching them. PDFs are not byte-reproducible — they carry ids and dates —
+  so the inputs are hashed rather than the output.
+
+Every cell is measured for overflow before the PDF is written, the same way
+the manufactured faces are measured against the safe line.
+
+---
+
 ## Not done yet: the tuck box
 
 The box is a separate piece of artwork on a different template, and its
@@ -148,8 +187,8 @@ would rather not.
 ## If Playwright can't find a browser
 
 `npm run print` drives headless Chromium. If it dies with *"Executable doesn't
-exist"*, another tool has pruned the shared browser cache — see
-`.claude/skills/verify/SKILL.md`. The isolated copy lives at:
+exist"*, another tool has pruned the shared browser cache. Reinstall it with
+`npx playwright install chromium`, or keep an isolated copy at:
 
 ```sh
 export PLAYWRIGHT_BROWSERS_PATH="$HOME/Library/Caches/gs-playwright"

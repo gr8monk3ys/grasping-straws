@@ -1,0 +1,10 @@
+{
+  "inputs": [
+    "public/cards.json",
+    "scripts/rules-cards.js",
+    "scripts/print-and-play.js"
+  ],
+  "sha256": "561fd8264a7576cfa55f2c45104b8e03459ee4aa47b08d682da6e93fff4f181b",
+  "bytes": 340839,
+  "faces": 54
+}

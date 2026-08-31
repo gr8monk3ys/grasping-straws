@@ -1,0 +1,65 @@
+---
+/*
+ * The daily card: one card per calendar day, the same for everyone who
+ * shares a date. The pick happens client-side (src/scripts/today.ts) — a
+ * static page can't know the visitor's date, and "today" should mean the
+ * visitor's today, not the build machine's.
+ *
+ * The card is the same object as the draw screen's and the share pages':
+ * the deck shell, one face, and .card-static so it never turns. It starts
+ * showing the deck's back mark and swaps to the text once the date is
+ * known, which is also the no-JavaScript state.
+ */
+import Base from "../layouts/Base.astro";
+import Chrome from "../components/Chrome.astro";
+import { DECK_NAME } from "../config";
+
+const description =
+  "One card a day from Grasping Straws, an original deck of lateral-thinking prompts. Same card for everyone, until midnight.";
+---
+
+<Base title={`Today's card — ${DECK_NAME}`} description={description}>
+  <Chrome />
+  <main class="stage">
+    <div class="deck" data-edges="3">
+      <span class="deck-stack" aria-hidden="true">
+        <span class="deck-edge"></span>
+        <span class="deck-edge"></span>
+        <span class="deck-edge"></span>
+      </span>
+      <span class="card-shadow card-shadow-ambient" aria-hidden="true"></span>
+      <span class="card-shadow card-shadow-contact" aria-hidden="true"></span>
+      <div class="card card-static">
+        <span class="card-inner">
+          <span class="face face-a">
+            <span class="card-mark" id="today-mark">
+              <span class="glyph"></span>
+              <span class="card-wordmark">{DECK_NAME}</span>
+            </span>
+            <span class="card-text" id="today-text" hidden></span>
+          </span>
+        </span>
+      </div>
+    </div>
+
+    <p class="hint today-line">
+      {/* The separator is glued to the date with a nbsp: on a narrow phone the
+          line wraps between them and the bullet starts the next line. */}
+      the card for <span id="today-date">today</span>&nbsp;&middot;{" "}
+      <a id="today-share" href="/">share this card</a>
+    </p>
+    <p class="hint card-page-invite">
+      <a href="/">Draw your own card &rarr;</a>
+    </p>
+    <noscript>
+      <p class="hint">
+        Today's card needs JavaScript to know your today &mdash; the cards themselves are just{" "}
+        <a href="/cards.json">a JSON file</a>.
+      </p>
+    </noscript>
+  </main>
+</Base>
+
+<script>
+  import "../scripts/today";
+</script>

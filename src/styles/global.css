@@ -1380,6 +1380,74 @@ html:not(.js) .theme {
   color: var(--muted);
 }
 
+/* ---------- ways to play (/play/) and the contents page (/deck/) ---------- */
+
+/* Both pages reuse the about page's editorial column (bodyClass="about").
+   Only what they add is styled here. */
+
+/* Who a game is for, riding on the section head that names it. The head is
+   already mono/uppercase/muted, so this is the same voice one notch down and
+   un-capitalised — it reads as a caption, not a second heading. */
+.players {
+  margin-left: 0.75em;
+  font-size: 0.85em;
+  letter-spacing: 0.1em;
+  text-transform: none;
+  opacity: 0.75;
+}
+
+.about .suit-block {
+  margin-top: 2.6em;
+}
+
+/* The suit head belongs to its block, so it must not re-add the 2.6em the
+   block already carries. */
+.about .suit-block h2 {
+  margin-top: 0;
+}
+
+.about .suit-blurb {
+  color: var(--muted);
+  margin-bottom: 1.2em;
+}
+
+/* Numbers hang in their own column so the card texts share one left edge —
+   a ragged left made 52 short lines read as noise. Printed numbering, not a
+   list marker: the id is what is on the card and in /c/<id>/. */
+.deck-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.deck-list li {
+  display: grid;
+  grid-template-columns: 2.25rem 1fr;
+  gap: 0.5rem;
+  align-items: baseline;
+  padding: 0.55rem 0;
+  border-top: 1px solid var(--rule);
+  line-height: 1.5;
+}
+
+.deck-list li:last-child {
+  border-bottom: 1px solid var(--rule);
+}
+
+.deck-num {
+  font-family: var(--font-mono);
+  font-size: var(--t-mono-sm);
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+
+/* The daily card carries two hint lines: which day this card is, then the
+   invitation to draw your own. They are one block, so the second sits tight
+   under the first rather than a second full .hint gap away. */
+.today-line + .card-page-invite {
+  margin-top: 0.5rem;
+}
+
 /* ---------- about: scroll-driven reveals ---------- */
 
 /* Native scroll-driven animation — no observer, no client bundle, zero

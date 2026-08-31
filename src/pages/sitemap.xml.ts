@@ -19,6 +19,9 @@ export const GET: APIRoute = ({ site }) => {
   const urls = [
     "/",
     "/about/",
+    "/today/",
+    "/play/",
+    "/deck/",
     ...cards.filter((c) => !("draft" in c && c.draft)).map((c) => `/c/${c.id}/`),
   ];
 
