@@ -70,7 +70,14 @@ const edgeCount = (page) =>
 const bagLen = (page) =>
   page.evaluate(() => JSON.parse(localStorage.getItem("grasping-straws.v1")).bag.length);
 
-const browser = await chromium.launch();
+// PW_CHANNEL=chrome drives system Chrome instead of the pinned download.
+// Playwright's own chromium build stalls mid-extract on some hosts, and a
+// verification suite nobody can run is a verification suite nobody runs. CI
+// installs the pinned browser and passes nothing, so this is a local escape
+// hatch, not a change to what CI proves.
+const browser = await chromium.launch(
+  process.env.PW_CHANNEL ? { channel: process.env.PW_CHANNEL } : {}
+);
 
 // ---- mobile, light, fresh visitor -----------------------------------
 const ctx = await browser.newContext({ colorScheme: "light", viewport: { width: 390, height: 844 } });
@@ -915,7 +922,15 @@ if (fs.existsSync(path.join(distDir, "index.html"))) {
     .replace(/url\([^)]*\)/g, "") // and URLs look exactly like .class tokens
     .replace(/\{[^{}]*\}/g, "{}"); // declaration values are not selectors
   const declared = new Set([...selectorText.matchAll(/\.([a-zA-Z][\w-]*)/g)].map((m) => m[1]));
-  const markup = ["index.html", "about/index.html", "c/17/index.html", "404.html"]
+  const markup = [
+    "index.html",
+    "about/index.html",
+    "c/17/index.html",
+    "404.html",
+    "today/index.html",
+    "play/index.html",
+    "deck/index.html",
+  ]
     .map((f) => fs.readFileSync(path.join(here, "..", "dist", f), "utf8"))
     .join("\n");
   const orphans = [...declared].filter((c) => !new RegExp(`[\\s"'\`.]${c}[\\s"'\`.]`).test(markup));
@@ -990,6 +1005,97 @@ const overflows = await page.evaluate(() =>
   document.documentElement.scrollWidth > document.documentElement.clientWidth
 );
 check("no horizontal overflow at 390px", !overflows);
+
+// ---- the daily card (/today/) --------------------------------------------
+// The pick is deterministic from the LOCAL date, so it is checkable: freeze
+// the clock, compute the same card here, and demand the page agree. A
+// second context on a different day must land somewhere else, which is what
+// distinguishes a working hash from one that always returns the same card.
+const dailyCard = (dateStr) => {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < dateStr.length; i++) {
+    h ^= dateStr.charCodeAt(i);
+    h = Math.imul(h, 0x01000193) >>> 0;
+  }
+  h ^= h >>> 16; h = Math.imul(h, 0x85ebca6b);
+  h ^= h >>> 13; h = Math.imul(h, 0xc2b2ae35);
+  h ^= h >>> 16; h >>>= 0;
+  const sorted = cards.slice().sort((a, b) => a.id - b.id);
+  return sorted[h % sorted.length];
+};
+
+const todayOn = async (iso) => {
+  const c = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  const p = await c.newPage();
+  // Pin the clock before any script runs; the page reads new Date() once.
+  await p.addInitScript(`{
+    const Real = Date;
+    const fixed = new Real(${JSON.stringify(iso)});
+    class Frozen extends Real {
+      constructor(...a) { return a.length ? new Real(...a) : new Real(fixed); }
+      static now() { return fixed.getTime(); }
+    }
+    Date = Frozen;
+  }`);
+  await p.goto(BASE + "/today/", { waitUntil: "networkidle" });
+  await p.waitForFunction(() => !document.getElementById("today-text").hidden, null, { timeout: 5000 });
+  return { ctx: c, page: p };
+};
+
+// A local date, not a UTC instant: "today" has to mean the visitor's today,
+// and this is the case that catches a page reading toISOString().
+const day1 = await todayOn("2026-09-04T09:30:00");
+const expected1 = dailyCard("2026-09-04");
+check("daily card matches the date's deterministic pick", (await day1.page.textContent("#today-text")).trim() === expected1.text, expected1.text);
+check("daily card hides the face-down mark once it has a card", await day1.page.locator("#today-mark").isHidden());
+check("daily card names the day it belongs to", /2026/.test(await day1.page.textContent("#today-date")));
+check("daily card links its own share page", (await day1.page.getAttribute("#today-share", "href")) === "/c/" + expected1.id + "/");
+await day1.page.screenshot({ path: path.join(SHOTS, "shot-10-today.png") });
+
+const day2 = await todayOn("2026-09-05T09:30:00");
+const expected2 = dailyCard("2026-09-05");
+check("a different day draws a different card", (await day2.page.textContent("#today-text")).trim() === expected2.text && expected2.id !== expected1.id, `${expected1.id} -> ${expected2.id}`);
+await day2.ctx.close();
+
+// Same day, same card, for everyone: a second fresh context with no storage
+// must land on the identical text.
+const day3 = await todayOn("2026-09-04T22:10:00");
+check("same day, same card in a fresh browser", (await day3.page.textContent("#today-text")).trim() === expected1.text);
+await day3.ctx.close();
+await day1.ctx.close();
+
+// ---- ways to play (/play/) and the contents page (/deck/) ----------------
+const pplay = await ctx.newPage();
+await pplay.goto(BASE + "/play/", { waitUntil: "networkidle" });
+const gameTitles = await pplay.evaluate(() =>
+  [...document.querySelectorAll("main h2")]
+    .filter((h) => h.querySelector(".players"))
+    .map((h) => h.firstChild.textContent.trim())
+);
+check("all five games are on /play/", gameTitles.length === 5, gameTitles.join(" | "));
+check("every game says who it is for", (await pplay.locator("main h2 .players").count()) === 5);
+await pplay.screenshot({ path: path.join(SHOTS, "shot-11-play.png"), fullPage: true });
+
+const pdeck = await ctx.newPage();
+await pdeck.goto(BASE + "/deck/", { waitUntil: "networkidle" });
+const listed = await pdeck.evaluate(() =>
+  [...document.querySelectorAll(".deck-list li .deck-text")].map((el) => el.textContent.trim())
+);
+check("/deck/ lists every live card exactly once", listed.length === cards.length && new Set(listed).size === cards.length, `${listed.length} listed, ${cards.length} live`);
+check("/deck/ lists no draft", drafts.every((d) => !listed.includes(d.text ?? "")));
+const suitCount = new Set(cards.map((c) => c.suit).filter(Boolean)).size;
+check("/deck/ groups by suit", (await pdeck.locator(".suit-block").count()) === suitCount, `${suitCount} suits`);
+// The page is a contents list, not a second draw screen: it must ship no
+// script of its own. Measured against /about/, which is the site's baseline
+// of "only the chrome" — the head's theme snippet and the theme module.
+const deckScripts = await pdeck.locator("script").count();
+const aboutScripts = await pa.locator("script").count();
+check("/deck/ ships no JavaScript of its own", deckScripts === aboutScripts, `${deckScripts} vs ${aboutScripts} on /about/`);
+await pdeck.screenshot({ path: path.join(SHOTS, "shot-12-deck.png"), fullPage: true });
+
+// ---- the free print-and-play PDF ----------------------------------------
+const resPdf = await pdeck.request.get(BASE + "/print-and-play.pdf");
+check("print-and-play PDF is served", resPdf.ok() && (resPdf.headers()["content-type"] || "").includes("pdf"), `${resPdf.status()} ${resPdf.headers()["content-type"]}`);
 
 // ---- no third-party requests -------------------------------------------
 // The promise is that nothing leaves the visitor's browser for a third

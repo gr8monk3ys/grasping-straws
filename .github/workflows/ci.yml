@@ -17,6 +17,10 @@ jobs:
       - run: npm ci
       - name: Validate cards.json
         run: npm run validate
+      - name: The games on /play/ match the printed rules cards
+        run: npm run validate:rules
+      - name: The committed print-and-play PDF is in step with the deck
+        run: npm run pnp:check
       - name: Typecheck
         run: npm run check
       - name: Build

@@ -1,0 +1,88 @@
+---
+/*
+ * The whole deck, in print. Every card grouped by suit, set as a list
+ * rather than as clickable faces — this page exists to show what is in the
+ * box (the physical deck has no other evidence page), not to let a visitor
+ * shop for the card they'd rather have drawn. The deck doesn't negotiate;
+ * that rule should survive its own contents page.
+ *
+ * Built from public/cards.json like everything else, so a card edit lands
+ * here at the next build with nothing to keep in step. No JavaScript.
+ */
+import cards from "../../public/cards.json";
+import Base from "../layouts/Base.astro";
+import Chrome from "../components/Chrome.astro";
+import { DECK_NAME, DECK_VERSION, PHYSICAL_DECK_URL } from "../config";
+
+const description =
+  "Every card in Grasping Straws, grouped by suit — the full contents of the deck.";
+const physicalHref = PHYSICAL_DECK_URL || "/about/#physical";
+
+// Drafts are reserved ids with no text, held so the printed deck reaches
+// one of the printer's fixed tiers. They are not part of the deck anyone
+// has, so they are not listed — the same filter the share pages use.
+const deck = cards.filter((c) => !("draft" in c && c.draft));
+
+// Suits in order of first appearance in cards.json, which is the deck's own
+// order. Cards with no suit are collected last so none can go unlisted.
+const suits = [...new Set(deck.map((c) => c.suit).filter(Boolean))];
+const groups = [
+  ...suits.map((suit) => ({
+    suit,
+    cards: deck.filter((c) => c.suit === suit).sort((a, b) => a.id - b.id),
+  })),
+  { suit: null, cards: deck.filter((c) => !c.suit).sort((a, b) => a.id - b.id) },
+].filter((g) => g.cards.length > 0);
+
+// What each suit is for. Keyed by suit name so a new suit in cards.json
+// still shows up here with its cards, just without a description.
+const BLURB: Record<string, string> = {
+  lateral: "For when the approach itself is the problem.",
+  sound: "For work you listen to.",
+  image: "For work you look at.",
+  language: "For work made of words.",
+  threshold: "For starting, and for stopping.",
+};
+---
+
+<Base title={`The deck — ${DECK_NAME}`} description={description} bodyClass="about">
+  <Chrome />
+  <main>
+    <span class="glyph page-mark"></span>
+
+    <h1>The deck</h1>
+
+    <p class="lede">
+      All {deck.length} cards, grouped by suit. Reading them straight through is a different thing from
+      drawing one &mdash; the deck works because it picks, not you. Consider this the contents of the
+      box rather than a menu.
+    </p>
+
+    {
+      groups.map((group) => (
+        <section class="suit-block">
+          <h2>
+            {group.suit ?? "Unsuited"}
+            <span class="players">{group.cards.length} cards</span>
+          </h2>
+          {group.suit && BLURB[group.suit] && <p class="suit-blurb">{BLURB[group.suit]}</p>}
+          <ol class="deck-list">
+            {group.cards.map((card) => (
+              <li>
+                <span class="deck-num">{card.id}</span>
+                <span class="deck-text">{card.text}</span>
+              </li>
+            ))}
+          </ol>
+        </section>
+      ))
+    }
+
+    <p class="credit">
+      Deck v{DECK_VERSION} &middot; <a href="/">Draw a card</a> &middot;
+      <a href="/today/">Today's card</a> &middot;
+      <a href="/play/">Ways to play</a> &middot;
+      <a href={physicalHref}>Get the physical deck</a>
+    </p>
+  </main>
+</Base>

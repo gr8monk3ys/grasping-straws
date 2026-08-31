@@ -41,8 +41,11 @@ Edit **`public/cards.json`** and nothing else. It's an array of
   point at.
 - `text` is the card. Use typographic quotes (`’`), not `'` — validation
   enforces it, because at 24pt on card stock the difference is obvious.
-- `suit` is optional metadata for your own editing convenience; it is never
-  shown to visitors and is never printed.
+- `suit` groups the deck on [`/deck/`](https://straws.lscaturchio.xyz/deck/),
+  which is the only place a visitor sees it — the drawn card never names its
+  suit, and neither does the printed card. A new suit needs a one-line
+  description in `BLURB` in `src/pages/deck.astro`; without one its cards
+  still list, just unannotated.
 - `draft: true` reserves an id without publishing it. Drafts are filtered
   out of the dealt deck and get no share page, and `npm run print` refuses
   to run while any remain. They exist because MakePlayingCards prints tarot
@@ -81,6 +84,9 @@ npm run validate   # lint public/cards.json
 npm run verify     # drive the built site end to end (build + serve first)
 npm run assets     # regenerate og.png + PWA icons from favicon.svg
 npm run print      # render 300 DPI print files into print/final/ (see below)
+npm run pnp        # render the free print-and-play PDF into public/
+npm run pnp:check  # is the committed PDF still in step with cards.json?
+npm run validate:rules  # do /play/ and the printed rules cards list the same games?
 ```
 
 ## Print files (physical deck)
@@ -99,6 +105,31 @@ separate directory so layout can be checked before the writing is done.
 
 Full ordering steps, including what is still unresolved about the tuck box:
 **[docs/printing.md](docs/printing.md)**.
+
+### The free print-and-play edition
+
+`npm run pnp` renders `public/print-and-play.pdf` — the live deck plus the
+five rules cards, four to a US Letter page at true tarot size, with cut
+lines, a cover of instructions and a page of backs. Unlike the manufactured
+run it renders while cards are still drafts (a home print is not permanent)
+and it carries the rules cards, which the manufactured deck does not: 54
+faces is exactly one of MPC's tiers and five more would break it.
+
+The PDF is committed, which is unusual for a generated file and deliberate:
+the site is static and the host has no browser, so it cannot be rendered on
+request. `scripts/pnp-stamp.json` records a hash of its inputs and
+`npm run pnp:check` fails CI if the cards move on without it.
+
+## Pages
+
+| Path | What it is |
+|---|---|
+| `/` | the draw screen |
+| `/today/` | one card a day, the same for everyone sharing a date, picked client-side from the local date |
+| `/play/` | five games — the rules that turn a prompt deck into a card deck |
+| `/deck/` | every live card grouped by suit; the contents of the box, no JavaScript |
+| `/c/<id>/` | one static share page per card, with the text in the title and OG tags |
+| `/about/` | what the deck is and where it comes from |
 
 ## Deploying
 
