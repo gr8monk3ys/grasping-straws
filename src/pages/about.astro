@@ -56,9 +56,18 @@ const description =
         <p>The physical deck is coming soon.</p>
       )
     }
+    <p>
+      Until then there is a free <a href="/print-and-play.pdf">print-and-play edition</a> &mdash;
+      the whole deck and the five rules cards, four to a page with cut lines. Paper you cut
+      yourself is still paper.
+    </p>
 
     {/* owner: add a portfolio link or contact here when ready — an Astro
         comment, because an HTML one ships this note to every view-source */}
-    <p class="credit">Deck v{DECK_VERSION} &middot; Made by Lorenzo.</p>
+    <p class="credit">
+      Deck v{DECK_VERSION} &middot; <a href="/today/">Today's card</a> &middot;
+      <a href="/play/">Ways to play</a> &middot; <a href="/deck/">The deck</a> &middot; Made by
+      Lorenzo.
+    </p>
   </main>
 </Base>

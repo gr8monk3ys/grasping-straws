@@ -6,8 +6,17 @@
  * stale (a new build means new URLs); HTML and cards.json are network-first
  * so deck edits propagate promptly.
  */
-const CACHE = "grasping-straws-v1";
-const STABLE = ["/", "/about/", "/cards.json", "/favicon.svg", "/manifest.webmanifest"];
+const CACHE = "grasping-straws-v2";
+const STABLE = [
+  "/",
+  "/about/",
+  "/today/",
+  "/play/",
+  "/deck/",
+  "/cards.json",
+  "/favicon.svg",
+  "/manifest.webmanifest",
+];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
