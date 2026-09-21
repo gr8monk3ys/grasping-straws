@@ -2,11 +2,12 @@
 import Base from "../layouts/Base.astro";
 import Chrome from "../components/Chrome.astro";
 import { DECK_NAME } from "../config";
-import cards from "../../public/cards.json";
+import { liveCards } from "../deck/cards";
+import entries from "../../public/cards.json";
 
 // Same rule as the masthead tally: the first-paint count is computed from
 // cards.json (drafts excluded), never hardcoded.
-const deckSize = cards.filter((c) => !("draft" in c && c.draft)).length;
+const deckSize = liveCards(entries).length;
 const description =
   "An original deck of lateral-thinking prompts for breaking creative deadlocks. Tap to draw a card.";
 ---
@@ -14,6 +15,7 @@ const description =
 <Base title={DECK_NAME} description={description}>
   <Chrome counter />
   <main class="stage">
+    <h1 class="sr-only">{DECK_NAME}: draw a card</h1>
     {/*
       Three columns so the card stays optically centred while the discard
       pile grows beside it. The left column is the deck's own label; the
@@ -29,8 +31,8 @@ const description =
           <span class="minipile-layer"></span>
           <span class="minipile-layer"></span>
         </span>
-        <span class="pile-count" id="left-count">{deckSize}</span>
-        <span class="pile-label">in the deck</span>
+        <span class="pile-count" id="left-count">{deckSize}</span>{" "}
+        <span class="pile-label" id="left-label">in the deck</span>
       </aside>
 
       <div class="deck" id="deck" data-edges="3">
@@ -46,6 +48,7 @@ const description =
             <span class="spine spine-l" aria-hidden="true"></span>
             <span class="spine spine-r" aria-hidden="true"></span>
             <span class="face face-a" id="face-a" aria-hidden="false">
+              <span class="card-num" aria-hidden="true"></span>
               <span class="card-mark" id="card-mark">
                 <span class="glyph"></span>
                 <span class="card-wordmark">{DECK_NAME}</span>
@@ -53,6 +56,7 @@ const description =
               <span class="card-text" hidden></span>
             </span>
             <span class="face face-b" id="face-b" aria-hidden="true">
+              <span class="card-num" aria-hidden="true"></span>
               <span class="card-text"></span>
             </span>
           </span>
@@ -72,7 +76,7 @@ const description =
             <span class="minipile-layer"></span>
             <span class="minipile-layer"></span>
           </span>
-          <span class="pile-count" id="drawn-count">0</span>
+          <span class="pile-count" id="drawn-count">0</span>{" "}
           <span class="pile-label">discarded</span>
         </button>
 
@@ -85,7 +89,7 @@ const description =
             <span class="minipile-layer"></span>
             <span class="minipile-layer"></span>
           </span>
-          <span class="pile-count" id="aside-count">0</span>
+          <span class="pile-count" id="aside-count">0</span>{" "}
           {/* "kept", not "set aside": the control beside the card already
               says "set aside", and having the verb and the place share a
               label made the two read as the same thing. */}
@@ -99,10 +103,11 @@ const description =
       a drag.
     </span>
     <div class="hint-slot">
-      <p class="hint" id="hint" aria-hidden="true">
-        <span class="hint-touch">tap to draw, or throw the card</span>
-        <span class="hint-pointer">press space, click, or throw the card</span>
-      </p>
+      {/* Two hints, one per kind of input; the stylesheet shows the one
+          that applies. Two elements rather than two spans in one, so each
+          is a short label on its own. */}
+      <p class="hint hint-touch" id="hint" aria-hidden="true">tap to draw, or throw the card</p>
+      <p class="hint hint-pointer" aria-hidden="true">click, space or throw the card</p>
       <span class="card-actions">
         <button id="keep" class="share" aria-pressed="false">set aside</button>
         <button id="share" class="share">share this card</button>

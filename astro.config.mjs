@@ -20,10 +20,13 @@ export default defineConfig({
       // The draw script is the only JavaScript on the site and it is needed
       // for the first interaction, so it stays inlined rather than costing a
       // round trip. Astro inlines under Vite's asset limit, which defaults to
-      // 4 KB — the script crossed that when the card became a real object.
-      // Nothing else is bundled: fonts and the mark live in public/ and are
-      // copied verbatim, so raising this cannot base64 them into the CSS.
-      assetsInlineLimit: 16384,
+      // 4 KB — the script crossed that when the card became a real object,
+      // and 16 KB when the deck moved behind its own module. The limit here
+      // is raw bytes; the budget that matters is the gzipped one the
+      // verifier holds the page to. Nothing else is bundled: fonts and the
+      // mark live in public/ and are copied verbatim, so raising this cannot
+      // base64 them into the CSS.
+      assetsInlineLimit: 20480,
     },
   },
 });

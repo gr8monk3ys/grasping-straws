@@ -75,6 +75,9 @@ type Sheet = {
   gl: WebGLRenderingContext;
   u: Record<string, WebGLUniformLocation | null>;
   face: HTMLElement;
+  // The angle and theme this sheet was last fully painted at, so a rest
+  // that changes neither is not repainted. Null while a paint is partial.
+  painted: { angle: number; dark: number } | null;
 };
 
 function compile(gl: WebGLRenderingContext, src: string, kind: number): WebGLShader | null {
@@ -119,11 +122,12 @@ function makeSheet(face: HTMLElement): Sheet | null {
   gl.enableVertexAttribArray(loc);
   gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
 
-  face.insertBefore(canvas, face.firstChild);
+  // Left detached here: the mount attaches it once it holds real paper.
   return {
     canvas,
     gl,
     face,
+    painted: null,
     u: {
       res: gl.getUniformLocation(prog, "uRes"),
       paper: gl.getUniformLocation(prog, "uPaper"),
@@ -142,14 +146,26 @@ const rgb = (css: string): [number, number, number] => {
 
 export type Paper = { follow(): void; settle(): void; redraw(): void };
 
-export function mountPaper(faces: HTMLElement[], inner: HTMLElement): Paper | null {
-  let sheets: Sheet[];
-  try {
-    sheets = faces.map(makeSheet).filter(Boolean) as Sheet[];
-  } catch {
-    return null;
+// Work that can wait for a quiet moment. The mount is sliced into these so
+// no single task runs long enough to block a tap; each slice is short and the
+// next one waits for the browser to be idle (with a ceiling, so a busy page
+// still gets its paper within a few hundred milliseconds).
+function whenIdle(fn: () => void): void {
+  if ("requestIdleCallback" in window) {
+    (window as Window & { requestIdleCallback: (cb: () => void, o: { timeout: number }) => number })
+      .requestIdleCallback(fn, { timeout: 120 });
+  } else {
+    setTimeout(fn, 16);
   }
-  if (sheets.length !== faces.length) return null;
+}
+
+export function mountPaper(faces: HTMLElement[], inner: HTMLElement): Paper | null {
+  const sheets: Sheet[] = [];
+  // Nothing draws until every sheet is compiled, sized and painted. Until
+  // then follow/settle/redraw are no-ops and the CSS grain stays in charge;
+  // the canvases only join the DOM once they hold real paper, so a visitor
+  // never sees the buffer's initial black.
+  let ready = false;
 
   const dark = window.matchMedia("(prefers-color-scheme: dark)");
   let raf = 0;
@@ -192,6 +208,7 @@ export function mountPaper(faces: HTMLElement[], inner: HTMLElement): Paper | nu
     gl.uniform1f(u.dark, isDark);
     gl.uniform1f(u.fibre, isDark ? 0.03 : 0.016);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
+    s.painted = { angle, dark: isDark };
   }
 
   function draw(angle: number): void {
@@ -199,9 +216,18 @@ export function mountPaper(faces: HTMLElement[], inner: HTMLElement): Paper | nu
     for (const s of sheets) paint(s, angle, isDark);
   }
 
+  // Settle onto the current angle and theme. A rest that changes neither —
+  // the ResizeObserver's first callback, a settle after a mount that already
+  // painted this angle — costs nothing: the full-card draw is the one
+  // expensive thing here and must not run for no reason.
   function rest(): void {
-    resize();
-    draw(currentAngle());
+    const cleared = resize();
+    const angle = currentAngle();
+    const isDark = dark.matches ? 1 : 0;
+    for (const s of sheets) {
+      const p = s.painted;
+      if (cleared || !p || p.angle !== angle || p.dark !== isDark) paint(s, angle, isDark);
+    }
   }
 
   // Which sheet the viewer is actually looking at. The other one is behind
@@ -219,18 +245,80 @@ export function mountPaper(faces: HTMLElement[], inner: HTMLElement): Paper | nu
     raf = requestAnimationFrame(follow);
   }
 
-  const ro = new ResizeObserver(rest);
-  ro.observe(faces[0]!);
-  dark.addEventListener("change", rest);
-  for (const s of sheets) {
-    s.canvas.addEventListener("webglcontextlost", (e) => {
-      e.preventDefault();
-      document.documentElement.classList.remove("gl");
-    });
+  // The material is painted in horizontal strips, one per idle slice: five
+  // octaves of fbm over a whole card at DPR 2 is the one expensive draw in
+  // the mount, and a software renderer can take longer than a frame on it.
+  const STRIPS = 8;
+  function paintStrip(s: Sheet, i: number, angle: number, isDark: number): void {
+    const { gl, canvas } = s;
+    const h = Math.ceil(canvas.height / STRIPS);
+    gl.enable(gl.SCISSOR_TEST);
+    gl.scissor(0, i * h, canvas.width, h);
+    paint(s, angle, isDark);
+    gl.disable(gl.SCISSOR_TEST);
+    // Draw calls are queued, not executed: without this the whole card's
+    // raster lands in one task when the canvas is first composited, which
+    // is exactly the long task the strips exist to avoid. finish() makes
+    // each strip pay its own way, here, inside its own idle slice.
+    gl.finish();
+    if (i < STRIPS - 1) s.painted = null; // not whole yet
   }
 
-  rest();
-  document.documentElement.classList.add("gl");
+  // The mount, as a list of short steps: one context per slice, then one
+  // strip per slice, then attach. Any step that fails leaves the CSS grain
+  // in place and nothing else changes.
+  const steps: Array<() => boolean> = [];
+  for (const face of faces) {
+    steps.push(() => {
+      let sheet: Sheet | null = null;
+      try {
+        sheet = makeSheet(face);
+      } catch {
+        return false;
+      }
+      if (!sheet) return false;
+      sheets.push(sheet);
+      return true;
+    });
+  }
+  steps.push(() => {
+    resize();
+    return true;
+  });
+  for (let n = 0; n < faces.length; n++) {
+    for (let i = 0; i < STRIPS; i++) {
+      steps.push(() => {
+        paintStrip(sheets[n]!, i, currentAngle(), dark.matches ? 1 : 0);
+        return true;
+      });
+    }
+  }
+  steps.push(() => {
+    for (const s of sheets) {
+      s.face.insertBefore(s.canvas, s.face.firstChild);
+      s.canvas.addEventListener("webglcontextlost", (e) => {
+        e.preventDefault();
+        document.documentElement.classList.remove("gl");
+      });
+    }
+    const ro = new ResizeObserver(rest);
+    ro.observe(faces[0]!);
+    dark.addEventListener("change", rest);
+    ready = true;
+    document.documentElement.classList.add("gl");
+    // The card may have turned or resized while the sheets were being
+    // prepared; settle onto whatever is true now.
+    rest();
+    return true;
+  });
+
+  let step = 0;
+  const run = (): void => {
+    if (step >= steps.length) return;
+    if (!steps[step++]!()) return;
+    whenIdle(run);
+  };
+  whenIdle(run);
 
   // Nothing renders on its own, so an idle tab costs no GPU. The caller
   // tracks while a flip runs, settles when it ends, and asks for a single
@@ -238,10 +326,12 @@ export function mountPaper(faces: HTMLElement[], inner: HTMLElement): Paper | nu
   // is far cheaper than a rAF loop that spins whether or not the card moved.
   return {
     follow() {
+      if (!ready) return;
       cancelAnimationFrame(raf);
       follow();
     },
     settle() {
+      if (!ready) return;
       cancelAnimationFrame(raf);
       raf = 0;
       lastPainted = NaN;
@@ -251,6 +341,7 @@ export function mountPaper(faces: HTMLElement[], inner: HTMLElement): Paper | nu
     // only when the angle has actually moved. Measured at 3.3ms per event
     // before this — a fifth of a 60fps frame, spent on a face nobody can see.
     redraw() {
+      if (!ready) return;
       const angle = currentAngle();
       if (Math.abs(angle - lastPainted) < 0.0026) return; // ~0.15 degrees
       lastPainted = angle;

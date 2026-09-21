@@ -5,7 +5,8 @@
  * /c/17/ puts the card text in the title and OG tags, so a shared link
  * previews the card itself. The page needs no JavaScript.
  */
-import cards from "../../../public/cards.json";
+import entries from "../../../public/cards.json";
+import { liveCards, type Card } from "../../deck/cards";
 import Base from "../../layouts/Base.astro";
 import Chrome from "../../components/Chrome.astro";
 import { DECK_NAME, PHYSICAL_DECK_URL } from "../../config";
@@ -14,12 +15,11 @@ export function getStaticPaths() {
   // Drafts are ids reserved so the printed deck reaches a whole tier; they
   // have no text yet. Building a share page for one would publish an empty
   // card with an empty <title>.
-  return cards
-    .filter((card) => !("draft" in card && card.draft))
-    .map((card) => ({ params: { id: String(card.id) }, props: { card } }));
+  return liveCards(entries).map((card) => ({ params: { id: String(card.id) }, props: { card } }));
 }
 
-const { card } = Astro.props;
+const { card } = Astro.props as { card: Card };
+const deckSize = liveCards(entries).length;
 const title = `“${card.text}” — ${DECK_NAME}`;
 const description =
   "A card from Grasping Straws, an original deck of lateral-thinking prompts. Draw your own.";
@@ -39,14 +39,21 @@ const physicalHref = PHYSICAL_DECK_URL || "/about/#physical";
       </span>
       <span class="card-shadow card-shadow-ambient" aria-hidden="true"></span>
       <span class="card-shadow card-shadow-contact" aria-hidden="true"></span>
-      <div class="card card-static">
+      {/* The card itself is the way onto the table: it opens face up there,
+          at /#id, and the next tap deals. */}
+      <a class="card card-static" href={`/#${card.id}`} aria-label={`Open card ${card.id} on the table`}>
         <span class="card-inner">
           <span class="face face-a">
+            <span class="card-num" aria-hidden="true">#{card.id}</span>
             <span class="card-text">{card.text}</span>
           </span>
         </span>
-      </div>
+      </a>
     </div>
+    <h1 class="card-page-frame">Card {card.id} of {deckSize}</h1>
+    <p class="card-page-about">
+      One of {deckSize} original prompts for breaking a creative deadlock.
+    </p>
     <p class="hint card-page-invite">
       <a href="/">Draw your own card &rarr;</a>
     </p>

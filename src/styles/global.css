@@ -270,6 +270,10 @@ a {
   position: relative;
   width: min(82vw, 340px, calc(66dvh * 5 / 7));
   aspect-ratio: 5 / 7;
+  /* The face's type is sized against this box (cqw below), so a card that
+     the viewport's HEIGHT has made small — a laptop at 200% zoom, a phone
+     in landscape — still holds its longest card. */
+  container-type: inline-size;
 }
 
 /* ---------- the table: deck, card, discard ---------- */
@@ -412,8 +416,9 @@ button.pile {
   appearance: none;
   border: 0;
   background: none;
-  padding: 0.35rem 0.5rem;
-  margin: -0.35rem -0.5rem;
+  /* 44px tall as a target; the negative margins hand the space back. */
+  padding: 0.75rem 0.5rem;
+  margin: -0.75rem -0.5rem;
   border-radius: 4px;
   cursor: pointer;
   color: inherit;
@@ -453,6 +458,12 @@ button.pile:not([disabled]):focus-visible .pile-label {
   .table {
     grid-template-columns: 1fr;
     gap: 1.5rem;
+  }
+
+  /* One column, so the card has to centre itself: between a phone and the
+     three-column table it sat against the left edge. */
+  .deck {
+    justify-self: center;
   }
 
   .pile {
@@ -498,7 +509,9 @@ button.pile:not([disabled]):focus-visible .pile-label {
 /* A pile you can look through. The cards deal in rather than appearing, so
    opening the discard reads as spreading it across the table. */
 .spread {
-  width: min(64rem, 92vw);
+  /* Four miniature cards across at most: six cards then read as two rows of
+     three, not a row of five and an orphan. */
+  width: min(50rem, 92vw);
   max-height: 84vh;
   padding: 0;
   border: 1px solid var(--rule);
@@ -547,9 +560,10 @@ button.pile:not([disabled]):focus-visible .pile-label {
   appearance: none;
   border: 0;
   background: none;
-  padding: 0.1em 0.35em;
+  padding: 0.45em 0.5em;
+  margin: -0.45em -0.5em;
   font: inherit;
-  font-size: 1.5rem;
+  font-size: var(--t-lede);
   line-height: 1;
   color: var(--muted);
   cursor: pointer;
@@ -605,7 +619,7 @@ button.pile:not([disabled]):focus-visible .pile-label {
 .spread-card:hover,
 .spread-card:focus-visible {
   transform: translateY(-4px) rotate(-0.7deg);
-  box-shadow: 0 10px 20px -8px rgb(0 0 0 / 30%);
+  box-shadow: 0 10px 20px -8px rgb(0 0 0 / 22%);
 }
 
 .spread-card .spread-num {
@@ -958,6 +972,10 @@ button.pile:not([disabled]):focus-visible .pile-label {
 .card-text {
   font-family: var(--font-text);
   font-size: var(--t-card);
+  /* Never larger than a tenth of the card: the ratio at which the longest
+     card fits the stock at full size. The first declaration stays for
+     browsers without container units. */
+  font-size: min(var(--t-card), 10.4cqw);
   /* Fraunces carries opsz 9..144, so the browser fits the design to the
      size on its own. This is the axis EB Garamond did not have. */
   font-optical-sizing: auto;
@@ -987,7 +1005,26 @@ button.pile:not([disabled]):focus-visible .pile-label {
   font-weight: 500;
   letter-spacing: 0.2em;
   text-transform: uppercase;
-  white-space: nowrap;
+  text-align: center;
+  /* Wraps to two lines on a card narrower than the mark, rather than
+     running off the stock. */
+  text-wrap: balance;
+}
+
+/* The card's number, in the corner where the printed card carries it: the
+   same number as the share page and the spread, so a card on the screen and
+   a card in the hand can be matched without opening the discard. Empty on
+   the face-down back. */
+.card-num {
+  position: absolute;
+  top: clamp(0.8rem, 4cqw, 1.1rem);
+  left: clamp(0.9rem, 4.5cqw, 1.25rem);
+  z-index: 1;
+  font-family: var(--font-mono);
+  font-size: var(--t-mono-sm);
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
 }
 
 /* ---------- entrance & reshuffle ---------- */
@@ -1091,12 +1128,21 @@ body.entrance .card-mark {
   pointer-events: none; /* never mask the share button underneath */
 }
 
+/* Without JavaScript nothing can be drawn, and the noscript notice below
+   says so; the hint must not contradict it. */
+html:not(.js) .hint-slot .hint {
+  display: none;
+}
+
 /* share: visible only when a card is face up (has-card) and this visitor
    has drawn for themselves (has-drawn) — a deep-link visitor keeps the
    hint, which occupies the same line. */
 .share {
-  margin-top: 1.75rem;
-  padding: 0;
+  /* A 24px line of type is not a target. Padding buys the height and the
+     negative margins give the layout the same line back; the top margin is
+     what the slot's hint line uses, less the padding. */
+  margin: 1.1rem -0.4rem -0.65rem;
+  padding: 0.65rem 0.4rem;
   border: 0;
   background: none;
   color: var(--muted);
@@ -1115,6 +1161,12 @@ body.entrance .card-mark {
 
 .share:hover {
   color: var(--accent);
+}
+
+/* "link copied" is a status, not a link: no underline while it shows. */
+.share.is-status {
+  text-decoration: none;
+  cursor: default;
 }
 
 .settled .share {
@@ -1166,6 +1218,8 @@ body.entrance .card-mark {
   opacity: 0;
 }
 
+/* One hint per kind of input, stacked in the same grid cell as the share
+   control; only the one that matches is displayed. */
 .hint-pointer {
   display: none;
 }
@@ -1176,21 +1230,49 @@ body.entrance .card-mark {
   }
 
   .hint-pointer {
-    display: inline;
+    display: block;
   }
 }
 
 /* ---------- per-card share pages (/c/<id>/) ---------- */
 
 .card-static {
-  cursor: default;
   user-select: text; /* a shared card's text is there to be copied */
   -webkit-user-select: text;
+  /* a link, but it is a card: the page's link colour and rule do not apply */
+  color: var(--ink);
+  text-decoration: none;
 }
 
 /* a shared card never turns, so it never presses either */
 .card-static:active {
   transform: none;
+}
+
+/* Below the card: which card this is, then the invitation. A stranger
+   arriving from a shared link is told what they are looking at. */
+.card-page-frame {
+  margin-top: 1.75rem;
+  font-family: var(--font-mono);
+  font-size: var(--t-mono-sm);
+  font-weight: 400;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* the one sentence a stranger needs, in the reading voice, not a label */
+.card-page-about {
+  margin-top: 0.7rem;
+  max-width: 34rem;
+  font-size: var(--t-body);
+  text-align: center;
+  color: var(--muted);
+}
+
+.card-page-invite {
+  margin-top: 0.6rem;
 }
 
 /* ---------- masthead ---------- */
@@ -1216,12 +1298,21 @@ body.entrance .card-mark {
   font-weight: 500;
   letter-spacing: 0.1em;
   text-decoration: none;
+  white-space: nowrap;
+  /* the same target height as the nav links, without moving the baseline */
+  padding-block: 0.6rem;
+  margin-block: -0.6rem;
 }
 
 .chrome nav {
   display: flex;
+  flex-wrap: wrap; /* whole labels wrap; a label never breaks mid-phrase */
   align-items: baseline;
   gap: clamp(1rem, 2.5vw, 1.9rem);
+}
+
+.chrome nav a {
+  white-space: nowrap;
 }
 
 .chrome a {
@@ -1233,19 +1324,39 @@ body.entrance .card-mark {
   color: var(--accent);
 }
 
-/* the rule wipes in rather than snapping on */
-.chrome nav a {
-  background-image: linear-gradient(currentColor, currentColor);
-  background-repeat: no-repeat;
-  background-position: 0 100%;
-  background-size: 0% 1px;
-  padding-bottom: 0.25em;
-  transition: background-size 0.32s cubic-bezier(0.2, 0.7, 0.3, 1);
+/* Until the physical deck exists the link only leads to a paragraph that
+   says so. It stays, in the chrome's own voice, and stops wearing the
+   accent that promises something to get. */
+.chrome a.cta[data-soon] {
+  color: inherit;
 }
 
-.chrome nav a:hover,
-.chrome nav a:focus-visible {
-  background-size: 100% 1px;
+/* the rule wipes in rather than snapping on: a hairline drawn beneath the
+   text that grows from the left, in the link's own colour */
+.chrome nav a {
+  position: relative;
+  /* the padding is target height; the rule below sits under the text, not
+     at the bottom of the padded box */
+  padding: 0.6rem 0.2rem 0.85rem;
+  margin: -0.6rem -0.2rem;
+}
+
+.chrome nav a::after {
+  content: "";
+  position: absolute;
+  left: 0.2rem;
+  right: 0.2rem;
+  bottom: 0.6rem;
+  height: 1px;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.32s cubic-bezier(0.2, 0.7, 0.3, 1);
+}
+
+.chrome nav a:hover::after,
+.chrome nav a:focus-visible::after {
+  transform: scaleX(1);
 }
 
 /* At 390px the masthead's three groups need 400px. Rather than shrinking the
@@ -1254,19 +1365,26 @@ body.entrance .card-mark {
    and the mono step comes down one notch — still ~13px apparent. */
 @media (width < 34rem) {
   .chrome {
+    --t-mono: 0.85rem;
+  }
+
+  .theme-word {
+    display: none;
+  }
+}
+
+/* The tally takes its own row before the nav would have to wrap: at 600px
+   the toggle was dropping to a second line on its own, under the links. */
+@media (width < 40rem) {
+  .chrome {
     flex-wrap: wrap;
     gap: 0.55rem 1rem;
-    --t-mono: 0.85rem;
   }
 
   .chrome .tally {
     order: 3;
     width: 100%;
     justify-content: center;
-  }
-
-  .theme-word {
-    display: none;
   }
 }
 
@@ -1296,7 +1414,10 @@ body.entrance .card-mark {
   display: inline-flex;
   align-items: center;
   gap: 0.5em;
-  padding: 0;
+  /* Below 34rem only the disc is drawn, 10px across: the padding makes it
+     a target and the margin keeps it where it was. */
+  padding: 1.1rem 0.8rem;
+  margin: -1.1rem -0.8rem;
   border: 0;
   background: none;
   color: inherit;
@@ -1365,9 +1486,19 @@ html:not(.js) .theme {
   line-height: 1.6;
 }
 
+/* Vertical padding on an inline box changes nothing in the line and turns a
+   one-line link into a 44px target. */
+.about p a,
+.card-page-invite a {
+  padding-block: 0.7rem;
+}
+
 .about .lede {
   font-size: var(--t-lede);
-  line-height: 1.45;
+  /* 1.45 of the lede's 1.4rem, written out: the same leading, in a unit a
+     static reader resolves against the page rather than against a font
+     size it cannot see. */
+  line-height: 2.03rem;
 }
 
 .about .credit {
@@ -1376,7 +1507,7 @@ html:not(.js) .theme {
   border-top: 1px solid var(--rule);
   font-family: var(--font-mono);
   font-size: var(--t-mono-sm);
-  letter-spacing: 0.06em;
+  letter-spacing: 0.04em; /* a sentence, not a label: tracked lightly */
   color: var(--muted);
 }
 
@@ -1503,7 +1634,8 @@ html:not(.js) .theme {
     transition: none;
   }
 
-  .chrome nav a:not(.cta) {
+  .chrome nav a::after,
+  .theme-dot {
     transition: none;
   }
 

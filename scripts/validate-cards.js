@@ -7,6 +7,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { CARD_KEYS, draftSlots, liveCards } from "../src/deck/cards.ts";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const file = path.join(here, "..", "public", "cards.json");
@@ -68,13 +69,17 @@ deck.forEach((card, i) => {
     errors.push(`${where}: "draft" may only be true — remove the key rather than setting it false`);
   }
   for (const key of Object.keys(card)) {
-    if (!["id", "text", "suit", "draft", "note"].includes(key)) {
+    if (!CARD_KEYS.includes(key)) {
       warnings.push(`${where}: unknown key "${key}" (harmless — never rendered)`);
     }
   }
 });
 
-const live = deck.length - drafted.length;
+// Counted by the site's own rule, so what this reports is what the deck deals.
+const live = liveCards(deck).length;
+if (drafted.length !== draftSlots(deck).length) {
+  errors.push(`the validator and the site disagree about which entries are drafts`);
+}
 if (live < 2) {
   errors.push("deck needs at least 2 written cards for the reshuffle guarantee to mean anything");
 } else if (live < 40 || live > 64) {

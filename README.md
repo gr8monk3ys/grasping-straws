@@ -14,7 +14,7 @@ Tap, get a card, tap again.
 
 Built with [Astro](https://astro.build) as a fully static site. The built
 output ships **zero framework JavaScript** — the draw script, a hand-rolled
-WebGL paper shader and the theme toggle come to ~6 KB gzipped together,
+WebGL paper shader and the theme toggle come to ~7 KB gzipped together,
 inlined into the page. No framework, no animation library, no gesture
 library, no third-party requests at runtime.
 
@@ -80,6 +80,7 @@ npm run dev        # dev server with live reload
 npm run build      # static build into dist/
 npm run preview    # serve the built site
 npm run check      # typecheck the client script
+npm test           # the deck, the card rule and the readable-text budget, in Node
 npm run validate   # lint public/cards.json
 npm run verify     # drive the built site end to end (build + serve first)
 npm run assets     # regenerate og.png + PWA icons from favicon.svg
