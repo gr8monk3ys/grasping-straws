@@ -144,6 +144,11 @@ npm run pnp          # -> public/print-and-play.pdf
 npm run pnp:check    # is the committed PDF still in step with cards.json?
 ```
 
+The PDF is served at a stable URL, so the service worker (`public/sw.js`)
+fetches it network-first: a returning visitor gets the regenerated edition
+on the next online visit, and the cached copy only when offline. No cache
+version bump is needed after `npm run pnp`.
+
 Three things it deliberately does differently from the manufactured run:
 
 - **Drafts don't block it.** A permanent deck must not ship a placeholder, so
