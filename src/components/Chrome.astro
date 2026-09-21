@@ -5,7 +5,8 @@
  * editorial page would carry them.
  */
 import { DECK_NAME, PHYSICAL_DECK_URL } from "../config";
-import cards from "../../public/cards.json";
+import { liveCards } from "../deck/cards";
+import entries from "../../public/cards.json";
 
 interface Props {
   /* the draw screen carries a live count; other pages do not */
@@ -16,7 +17,7 @@ const physicalHref = PHYSICAL_DECK_URL || "/about/#physical";
 // Computed, not hardcoded: a literal 48 here becomes a first-paint lie the
 // moment the deck changes size — which it is about to, when the four
 // reserved print slots are written. Drafts never reach the site.
-const deckSize = cards.filter((c) => !("draft" in c && c.draft)).length;
+const deckSize = liveCards(entries).length;
 ---
 
 <header class="chrome">
@@ -25,9 +26,9 @@ const deckSize = cards.filter((c) => !("draft" in c && c.draft)).length;
   {
     counter && (
       <p class="tally" id="tally" aria-live="off">
-        <span class="tally-num" id="tally-drawn">0</span>
-        <span class="tally-sep">/</span>
-        <span class="tally-num" id="tally-total">{deckSize}</span>
+        <span class="tally-num" id="tally-drawn">0</span>{" "}
+        <span class="tally-sep">/</span>{" "}
+        <span class="tally-num" id="tally-total">{deckSize}</span>{" "}
         <span class="tally-label">drawn</span>
       </p>
     )
@@ -35,7 +36,15 @@ const deckSize = cards.filter((c) => !("draft" in c && c.draft)).length;
 
   <nav>
     <a href="/about/">About</a>
-    <a href={physicalHref} class="cta">Get the deck</a>
+    {/* "Get the deck" only while there is a deck to get. Until then the
+        link names the thing and leads to the paragraph that says when. */}
+    {
+      PHYSICAL_DECK_URL ? (
+        <a href={physicalHref} class="cta">Get the deck</a>
+      ) : (
+        <a href={physicalHref} class="cta" data-soon>Physical deck</a>
+      )
+    }
     <button id="theme" class="theme" type="button" aria-label="Switch to dark theme">
       <span class="theme-dot" aria-hidden="true"></span>
       <span class="theme-word" id="theme-word">Light</span>

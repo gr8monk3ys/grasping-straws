@@ -8,5 +8,5 @@
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "skipLibCheck": true
   },
-  "include": ["src/config.ts", "src/scripts/**/*.ts"]
+  "include": ["src/config.ts", "src/deck/**/*.ts", "src/scripts/**/*.ts"]
 }

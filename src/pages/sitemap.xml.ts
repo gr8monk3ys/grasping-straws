@@ -6,10 +6,12 @@
  * way to discover any of them.
  *
  * Drafts are ids reserved for the printed deck; they have no page and must
- * not be advertised. Same filter as getStaticPaths in c/[id].astro.
+ * not be advertised. Same rule as getStaticPaths in c/[id].astro, imported
+ * from the same place.
  */
 import type { APIRoute } from "astro";
-import cards from "../../public/cards.json";
+import { liveCards } from "../deck/cards";
+import entries from "../../public/cards.json";
 
 export const GET: APIRoute = ({ site }) => {
   // `site` comes from astro.config.mjs; the build fails loudly rather than
@@ -19,7 +21,7 @@ export const GET: APIRoute = ({ site }) => {
   const urls = [
     "/",
     "/about/",
-    ...cards.filter((c) => !("draft" in c && c.draft)).map((c) => `/c/${c.id}/`),
+    ...liveCards(entries).map((c) => `/c/${c.id}/`),
   ];
 
   const body =
