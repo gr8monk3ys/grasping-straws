@@ -36,6 +36,7 @@ const SELF_CHECK = { w: 897, h: 1497 }; // MPC's published tarot upload size
 const MPC_TAROT_TIERS = [18, 36, 54, 72, 90, 108];
 
 import { chromium } from "playwright";
+import { draftSlots, liveCards } from "../src/deck/cards.ts";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -53,8 +54,8 @@ const plex = b64("PlexMono-400-latin.woff2");
 
 /* ---------- gates: nothing reaches a printer half-written ---------- */
 
-const drafts = all.filter((c) => c.draft);
-const cards = all.filter((c) => !c.draft);
+const drafts = draftSlots(all);
+const cards = liveCards(all);
 
 // PROOF=1 renders the unwritten slots as stamped placeholders so the layout,
 // type and trim can be checked before the writing is done. The output goes to

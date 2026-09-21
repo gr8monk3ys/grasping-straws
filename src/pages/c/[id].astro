@@ -5,7 +5,8 @@
  * /c/17/ puts the card text in the title and OG tags, so a shared link
  * previews the card itself. The page needs no JavaScript.
  */
-import cards from "../../../public/cards.json";
+import entries from "../../../public/cards.json";
+import { liveCards, type Card } from "../../deck/cards";
 import Base from "../../layouts/Base.astro";
 import Chrome from "../../components/Chrome.astro";
 import { DECK_NAME, PHYSICAL_DECK_URL } from "../../config";
@@ -14,12 +15,10 @@ export function getStaticPaths() {
   // Drafts are ids reserved so the printed deck reaches a whole tier; they
   // have no text yet. Building a share page for one would publish an empty
   // card with an empty <title>.
-  return cards
-    .filter((card) => !("draft" in card && card.draft))
-    .map((card) => ({ params: { id: String(card.id) }, props: { card } }));
+  return liveCards(entries).map((card) => ({ params: { id: String(card.id) }, props: { card } }));
 }
 
-const { card } = Astro.props;
+const { card } = Astro.props as { card: Card };
 const title = `“${card.text}” — ${DECK_NAME}`;
 const description =
   "A card from Grasping Straws, an original deck of lateral-thinking prompts. Draw your own.";

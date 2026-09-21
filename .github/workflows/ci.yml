@@ -19,6 +19,8 @@ jobs:
         run: npm run validate
       - name: Typecheck
         run: npm run check
+      - name: Unit tests (the deck, in Node)
+        run: npm test
       - name: Build
         run: npm run build
       - name: Install Playwright browser

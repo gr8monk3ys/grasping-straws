@@ -1,8 +1,8 @@
 /*
  * Grasping Straws? — draw screen.
- * The bag: shuffle the whole deck, deal until empty, reshuffle so the first
- * card of the new bag never repeats the last card dealt. State persists in
- * localStorage so a returning visitor continues their deck.
+ * The cycle itself (bag, discard, shelf, the no-repeat rule, the saved
+ * shape) lives in ../deck/deck.ts; this file owns the table: the DOM, the
+ * flip, the throw, the paper and localStorage.
  *
  * The card is a real two-faced object. .face-a sits at rotateY(0) and
  * .face-b at rotateY(180deg) — they are geometric SLOTS, not fixed roles.
@@ -12,35 +12,12 @@
  */
 
 import { DECK_NAME } from "../config";
+import { liveCards } from "../deck/cards";
+import { openDeck, layersFor, type Deck } from "../deck/deck";
+import { FLIP_MS, RIFFLE_MS, WORD_MS, WORDS_START, staggerGap } from "../deck/motion";
 import { mountPaper, type Paper } from "./paper";
 
-type Card = { id: number; text: string; suit?: string; draft?: boolean };
-type SavedState = {
-  bag?: unknown;
-  last?: unknown;
-  drawn?: unknown;
-  order?: unknown; // v2: the sequence dealt this cycle, oldest first
-  aside?: unknown; // v2: ids on the shelf, kept across cycles
-};
-
 const STORAGE_KEY = "grasping-straws.v1";
-// Keep in step with --flip-ms in global.css. 520ms put the words on screen at
-// 553ms against a 560ms budget — inside the limit, but sluggish on a tool
-// built for rapid tapping, and with no headroom on slower hardware.
-const FLIP_MS = 460;
-const RIFFLE_MS = 700; // keep in step with the riffle keyframes
-// 15 put the nominal worst case at 509ms against the 560ms budget, but the
-// measured worst ran 546-561ms — frame overhead ate the margin, and the
-// deterministic longest-card check tipped 1ms over on the deployed site.
-// 13 buys back 22ms on a 12-word card; the cascade still reads as a cascade.
-const WORD_STAGGER_MS = 13;
-// Shaving that beat again (15 → 13 → 11 → …) is a losing race against frame
-// overhead — each pass buys ~20ms and dulls every card, and CI has measured
-// overhead as high as 76ms. Cap the TOTAL run instead: up to 9 words keep the
-// full beat, longer cards share the same 104ms envelope, so the worst case
-// lands at 0.4·460 + 104 + 160 = 448ms nominal with >100ms of headroom.
-const STAGGER_ENVELOPE_MS = 104; // 8 gaps at the full 13ms beat
-const WORD_MS = 160;
 
 const cardBtn = document.getElementById("card") as HTMLButtonElement;
 const inner = document.getElementById("card-inner") as HTMLElement;
@@ -70,12 +47,7 @@ const tallyDrawnEl = document.getElementById("tally-drawn") as HTMLElement | nul
 const tallyTotalEl = document.getElementById("tally-total") as HTMLElement | null;
 const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
 
-let deck: Card[] = [];
-let byId = new Map<number, Card>();
-let bag: number[] = []; // ids not yet dealt this cycle; the top of the pile is the end
-let order: number[] = []; // ids dealt this cycle, oldest first — the discard
-let aside: number[] = []; // ids on the shelf; a bookmark, not a removal
-let last: number | null = null; // id of the card currently face up
+let deck: Deck | null = null; // null until cards.json has loaded
 let busy = false;
 let flips = 0; // parity decides which slot faces the viewer
 let paper: Paper | null = null; // WebGL stock; null when unavailable
@@ -83,7 +55,10 @@ let angle = 0; // accumulated rotation in degrees
 let tiltX = 0; // pointer parallax, degrees; zero on touch and reduced motion
 let tiltY = 0;
 
-function loadState(): SavedState | null {
+// The saved shape is the deck's own, plus one table fact: whether the hint
+// has been dismissed by a draw. That is a fact about this screen, not about
+// the cycle, so it is added here rather than in the deck.
+function loadState(): { drawn?: unknown } | null {
   try {
     return JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "null");
   } catch {
@@ -92,14 +67,12 @@ function loadState(): SavedState | null {
 }
 
 function saveState(): void {
+  if (!deck) return;
   try {
     localStorage.setItem(
       STORAGE_KEY,
       JSON.stringify({
-        bag,
-        order,
-        aside,
-        last,
+        ...deck.serialize(),
         drawn: document.body.classList.contains("has-drawn"),
       })
     );
@@ -123,96 +96,42 @@ if (saved && saved.drawn) {
 }
 requestAnimationFrame(() => document.body.classList.add("settled"));
 
-function randInt(n: number): number {
-  if (window.crypto && crypto.getRandomValues) {
-    const buf = new Uint32Array(1);
-    const limit = Math.floor(0x100000000 / n) * n;
-    do {
-      crypto.getRandomValues(buf);
-    } while (buf[0]! >= limit);
-    return buf[0]! % n;
-  }
-  return Math.floor(Math.random() * n);
-}
-
-function shuffled(ids: number[]): number[] {
-  const a = ids.slice();
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = randInt(i + 1);
-    [a[i], a[j]] = [a[j]!, a[i]!];
-  }
-  return a;
-}
-
-function keepTopFresh(): void {
-  // The next deal must differ from the card currently face up.
-  if (bag.length > 1 && bag[bag.length - 1] === last) {
-    const j = randInt(bag.length - 1);
-    [bag[bag.length - 1], bag[j]] = [bag[j]!, bag[bag.length - 1]!];
-  }
-}
-
-function refillBag(): void {
-  bag = shuffled(deck.map((c) => c.id));
-  order = []; // a fresh cycle: the discard is swept back into the deck
-  keepTopFresh();
-}
-
 /* ---------- the stack beneath ---------- */
 
-// How much bag is left, read as visible card edges. Derived from `bag`,
-// which already persists — no new stored state, no storage version bump.
-// Layer thresholds are front-loaded: the first few discards should visibly
-// register, while the difference between 30 and 40 drawn does not need its
-// own layer. A linear mapping would make the first ten draws look inert.
-const DISCARD_STEPS = [1, 3, 6, 12, 24, 40];
-
-const layersFor = (n: number): string => String(DISCARD_STEPS.filter((step) => n >= step).length);
-
+// Every count on the table is a view of the deck's counts; nothing here is
+// stored separately.
 function updateDeckDepth(): void {
-  const ratio = deck.length === 0 ? 0 : bag.length / deck.length;
-  deckEl.dataset.edges = String(ratio > 0.6 ? 3 : ratio > 0.3 ? 2 : 1);
-
-  // The discard is now `order`, not `deck.length - bag.length`. The two agree
-  // — every id leaves the bag exactly as it joins the order — but only
-  // `order` also knows the SEQUENCE, which is what makes the pile browsable.
-  const drawn = order.length;
-  if (leftCountEl) leftCountEl.textContent = String(bag.length);
+  if (!deck) return;
+  const { left, drawn, aside, total } = deck.counts();
+  deckEl.dataset.edges = String(deck.edges());
+  if (leftCountEl) leftCountEl.textContent = String(left);
   if (drawnCountEl) drawnCountEl.textContent = String(drawn);
-  if (asideCountEl) asideCountEl.textContent = String(aside.length);
+  if (asideCountEl) asideCountEl.textContent = String(aside);
   if (tallyDrawnEl) tallyDrawnEl.textContent = String(drawn);
-  if (tallyTotalEl) tallyTotalEl.textContent = String(deck.length);
-  if (discardEl) discardEl.dataset.layers = layersFor(drawn);
-  if (asideEl) asideEl.dataset.layers = layersFor(aside.length);
+  if (tallyTotalEl) tallyTotalEl.textContent = String(total);
+  if (discardEl) discardEl.dataset.layers = String(layersFor(drawn));
+  if (asideEl) asideEl.dataset.layers = String(layersFor(aside));
   // The deck's mini pile thins on the same thresholds, read from the other
   // end, so the two piles are always legible as halves of one deck.
-  if (deckMiniEl) deckMiniEl.dataset.layers = layersFor(bag.length);
+  if (deckMiniEl) deckMiniEl.dataset.layers = String(layersFor(left));
 
   // An empty pile is not something you can pick up.
   if (discardOpenEl) discardOpenEl.disabled = drawn === 0;
-  if (asideOpenEl) asideOpenEl.disabled = aside.length === 0;
+  if (asideOpenEl) asideOpenEl.disabled = aside === 0;
 }
 
 /* ---------- the shelf ---------- */
 
-// Set-aside is a bookmark, not a removal: the card stays in the cycle and the
-// counts are untouched. Taking it out of play instead would mean refillBag
-// had to exclude it, an all-aside deck would be unshuffleable, and "how many
-// are left" would stop meaning one thing.
+// Set-aside is a bookmark, not a removal (docs/adr/0001): the card stays in
+// the cycle and the counts are untouched.
 function updateKeep(): void {
-  keepBtn.setAttribute("aria-pressed", String(last !== null && aside.includes(last)));
+  keepBtn.setAttribute("aria-pressed", String(!!deck && deck.isAside(deck.last)));
 }
 
 function toggleAside(): void {
-  if (last === null || !byId.has(last)) return;
-  const at = aside.indexOf(last);
-  if (at >= 0) {
-    aside.splice(at, 1);
-    liveEl.textContent = "Taken off the shelf.";
-  } else {
-    aside.push(last);
-    liveEl.textContent = "Set aside.";
-  }
+  const now = deck?.toggleAside();
+  if (!now) return;
+  liveEl.textContent = now === "kept" ? "Set aside." : "Taken off the shelf.";
   updateKeep();
   updateDeckDepth();
   saveState();
@@ -224,11 +143,11 @@ function toggleAside(): void {
 // entry turns that card face up on the table; it does NOT deal it, so the
 // bag and the discard are unchanged — you are looking through cards you
 // already drew, not drawing again.
-function openSpread(title: string, ids: number[]): void {
+function openSpread(title: string, ids: readonly number[]): void {
   spreadListEl.textContent = "";
 
   for (const [i, id] of [...ids].reverse().entries()) {
-    const card = byId.get(id);
+    const card = deck?.card(id);
     if (!card) continue; // edited out of cards.json since it was drawn
     const li = document.createElement("li");
     const btn = document.createElement("button");
@@ -242,11 +161,7 @@ function openSpread(title: string, ids: number[]): void {
     btn.append(num);
     btn.addEventListener("click", () => {
       spreadEl.close();
-      last = id;
-      keepTopFresh();
-      show(id, { keepHint: true });
-      updateKeep();
-      saveState();
+      turnUp(id, { keepHint: true });
     });
     li.append(btn);
     spreadListEl.append(li);
@@ -332,7 +247,7 @@ function writeFace(slot: HTMLElement, text: string): HTMLElement[] {
 }
 
 function show(id: number, { instant = false, keepHint = false } = {}): void {
-  const card = byId.get(id);
+  const card = deck?.card(id);
   if (!card) return;
   if (!keepHint) document.body.classList.add("has-drawn");
   history.replaceState(null, "", "#" + id);
@@ -428,10 +343,7 @@ function show(id: number, { instant = false, keepHint = false } = {}): void {
   // inside a capped envelope so the longest card cannot outgrow the 560ms
   // budget (see STAGGER_ENVELOPE_MS). It is a real constraint, not a taste
   // knob.
-  const gap =
-    words.length > 1
-      ? Math.min(WORD_STAGGER_MS, STAGGER_ENVELOPE_MS / (words.length - 1))
-      : 0;
+  const gap = staggerGap(words.length);
   words.forEach((word, i) =>
     word.animate(
       [
@@ -440,7 +352,7 @@ function show(id: number, { instant = false, keepHint = false } = {}): void {
       ],
       {
         duration: WORD_MS,
-        delay: FLIP_MS * 0.4 + i * gap,
+        delay: FLIP_MS * WORDS_START + i * gap,
         easing: "cubic-bezier(0.2, 0.7, 0.3, 1)",
         fill: "backwards",
       }
@@ -458,18 +370,26 @@ function show(id: number, { instant = false, keepHint = false } = {}): void {
     });
 }
 
+// The ONLY two ways a card comes face up. Every path that changes the
+// face-up card must resync the set-aside button and save, or the toggle
+// INVERTS: deep-linking to a card already on the shelf once showed "set
+// aside" unpressed, and pressing it removed the card while appearing to add
+// it. Routing every path through here is what makes that unrepeatable.
+function turnUp(id: number, how: { instant?: boolean; keepHint?: boolean } = {}): void {
+  if (!deck?.turnUp(id)) return;
+  show(id, how);
+  updateKeep();
+  saveState();
+}
+
 function draw(): void {
-  if (busy || deck.length === 0) return;
-  // init() fills the bag before the first draw, so reaching zero HERE always
-  // means the whole deck has been dealt. That makes the riffle self-
-  // triggering: no separate reshuffle event to detect.
-  if (bag.length === 0) {
-    refillBag();
-    riffle();
-  }
-  last = bag.pop()!;
-  order.push(last); // straight from the bag onto the discard, in sequence
-  show(last);
+  if (busy || !deck) return;
+  const dealt = deck.draw();
+  if (!dealt) return;
+  // The deck reshuffles itself when the bag runs out, so the riffle is
+  // self-triggering: no separate reshuffle event to detect.
+  if (dealt.reshuffled) riffle();
+  show(dealt.card.id);
   updateDeckDepth();
   updateKeep();
   saveState();
@@ -624,7 +544,7 @@ const shareLabel = shareBtn.textContent;
 let shareLabelTimer: ReturnType<typeof setTimeout> | undefined;
 
 async function shareCard(): Promise<void> {
-  const card = last === null ? undefined : byId.get(last);
+  const card = deck && deck.last !== null ? deck.card(deck.last) : undefined;
   if (!card) return;
   const url = location.origin + "/c/" + card.id + "/";
   if (navigator.share) {
@@ -657,70 +577,30 @@ async function shareCard(): Promise<void> {
 }
 
 async function init(): Promise<void> {
+  let cards;
   try {
     const res = await fetch("/cards.json");
     // Drafts are ids held open so the PRINTED deck reaches one of MPC's
     // fixed tiers. They carry no text and must never be dealt.
-    deck = ((await res.json()) as Card[]).filter((c) => !c.draft);
+    cards = liveCards((await res.json()) as unknown[]);
   } catch {
     writeFace(facingSlot(), "The deck failed to load. Refresh to try again.");
     return;
   }
-  byId = new Map(deck.map((c) => [c.id, c]));
-
-  // Cards removed from cards.json since the last visit simply vanish from
-  // every list; new cards join at the next reshuffle.
-  const live = (id: unknown): id is number => typeof id === "number" && byId.has(id);
-  if (saved && Array.isArray(saved.bag)) {
-    bag = saved.bag.filter(live);
-    last = live(saved.last) ? saved.last : null;
-    aside = Array.isArray(saved.aside) ? [...new Set(saved.aside.filter(live))] : [];
-
-    if (Array.isArray(saved.order)) {
-      order = [...new Set(saved.order.filter(live))];
-    } else {
-      // Saved before the discard became browsable. The sequence was never
-      // stored, but the SET is recoverable: anything in the deck and not in
-      // the bag was dealt this cycle. So a returning visitor's discard is
-      // faithful in content and arbitrary only in the middle of its order —
-      // and the one position that is actually visible, the most recent card,
-      // is the one position v1 did record.
-      const inBag = new Set(bag);
-      order = deck.map((c) => c.id).filter((id) => !inBag.has(id) && id !== last);
-      if (last !== null) order.push(last);
-      // Freeze it. The reconstruction reads cards.json's order for the part
-      // it cannot know, so leaving it unsaved would let the discard reshuffle
-      // itself every load if the file is ever reordered.
-      saveState();
-    }
-  }
-  if (bag.length === 0) refillBag();
+  deck = openDeck(cards, saved);
+  // Written back at once: a v1 shape has just had its discard rebuilt from
+  // cards.json's order, and leaving that unsaved would let the discard
+  // reshuffle itself on every load if the file is ever reordered.
+  saveState();
   updateDeckDepth();
   updateKeep();
 
   // #<id> deep link: show that card face up, then rejoin the normal bag.
-  const hashId = Number(location.hash.slice(1));
-  if (byId.has(hashId)) {
-    last = hashId;
-    keepTopFresh();
-    show(hashId, { instant: true, keepHint: true });
-    // Every path that changes `last` must resync the set-aside button, or
-    // the toggle INVERTS: deep-linking to a card already on the shelf showed
-    // "set aside" unpressed, and pressing it removed the card while
-    // appearing to add it.
-    updateKeep();
-    saveState();
-  }
+  turnUp(Number(location.hash.slice(1)), { instant: true, keepHint: true });
 
   window.addEventListener("hashchange", () => {
     const id = Number(location.hash.slice(1));
-    if (byId.has(id) && id !== last) {
-      last = id;
-      keepTopFresh();
-      show(id, { keepHint: true });
-      updateKeep(); // same invariant as the deep link above
-      saveState();
-    }
+    if (id !== deck?.last) turnUp(id, { keepHint: true });
   });
 
   // Progressive enhancement: the CSS grain layer stays if this returns null.
@@ -741,8 +621,8 @@ async function init(): Promise<void> {
   cardBtn.addEventListener("pointercancel", () => endDrag(false));
 
   keepBtn.addEventListener("click", toggleAside);
-  discardOpenEl?.addEventListener("click", () => openSpread("the discard", order));
-  asideOpenEl?.addEventListener("click", () => openSpread("set aside", aside));
+  discardOpenEl?.addEventListener("click", () => openSpread("the discard", deck?.order ?? []));
+  asideOpenEl?.addEventListener("click", () => openSpread("set aside", deck?.aside ?? []));
   spreadCloseEl.addEventListener("click", () => spreadEl.close());
   // Clicks on a modal dialog's backdrop are reported against the dialog.
   spreadEl.addEventListener("click", (e) => {

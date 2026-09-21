@@ -10,6 +10,9 @@
  * Screenshots go to SHOTS_DIR if set, else a temp directory.
  */
 import { chromium } from "playwright";
+import { liveCards, draftSlots } from "../src/deck/cards.ts";
+import { edgesFor } from "../src/deck/deck.ts";
+import { FLIP_MS, READABLE_BUDGET_MS } from "../src/deck/motion.ts";
 import fs from "node:fs";
 import zlib from "node:zlib";
 import os from "node:os";
@@ -20,24 +23,23 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const BASE = process.env.BASE_URL || "http://127.0.0.1:8317";
 const SHOTS = process.env.SHOTS_DIR || fs.mkdtempSync(path.join(os.tmpdir(), "gs-shots-"));
 // Drafts are ids reserved so the PRINTED deck reaches one of MakePlayingCards'
-// fixed tiers; they carry no text, and both the deck script and the /c/<id>/
-// page builder filter them out. Reading them here instead made five checks
-// fail against a deck size the site never had.
+// fixed tiers; they carry no text and never reach the site. The rule that
+// says so is the site's own (src/deck/cards.ts), not a copy of it.
 const allCards = JSON.parse(
   fs.readFileSync(path.join(here, "..", "public", "cards.json"), "utf8")
 );
-const cards = allCards.filter((c) => !c.draft);
-const drafts = allCards.filter((c) => c.draft);
+const cards = liveCards(allCards);
+const drafts = draftSlots(allCards);
 const byIdText = (id) => (cards.find((c) => c.id === id) || {}).text || null;
 
 const results = [];
 const check = (name, cond, extra = "") =>
   results.push(`${cond ? "PASS" : "FAIL"}  ${name}${extra ? "  [" + extra + "]" : ""}`);
 
-// Must stay above FLIP_MS in src/scripts/app.ts (460ms) — the busy guard
-// swallows input for the whole flip, so padding below it makes the
-// full-cycle test flake rather than fail honestly.
-const FLIP_SETTLE_MS = 620;
+// Must stay above FLIP_MS — the busy guard swallows input for the whole
+// flip, so padding below it makes the full-cycle test flake rather than fail
+// honestly. Derived, so a retuned flip cannot leave this behind.
+const FLIP_SETTLE_MS = FLIP_MS + 160;
 
 async function drawOnce(page, viaKey) {
   const prev = await page.evaluate(() => location.hash);
@@ -156,10 +158,9 @@ await page.screenshot({ path: path.join(SHOTS, "shot-2-faceup-light.png") });
 const ids = [id1];
 const wrongText = []; // parity regression: an even draw showing the mark, not a card
 const wrongEdges = [];
-const expectedEdges = (left) => {
-  const r = left / cards.length;
-  return r > 0.6 ? 3 : r > 0.3 ? 2 : 1;
-};
+// The site's own rule, not a copy: the check is that the DOM shows what the
+// deck computes, not that two restatements of the ratio agree.
+const expectedEdges = (left) => edgesFor(left, cards.length);
 for (let i = 1; i < cards.length; i++) {
   const id = await drawOnce(page, true);
   ids.push(id);
@@ -406,8 +407,8 @@ for (let i = 0; i < 12; i++) {
 const valid = samples.filter((s) => s.ms > 0);
 const worst = valid.reduce((a, b) => (b.ms > a.ms ? b : a), valid[0]);
 check(
-  "tap to readable text <= 560ms across 12 draws",
-  valid.length === samples.length && worst.ms <= 560,
+  `tap to readable text <= ${READABLE_BUDGET_MS}ms across 12 draws`,
+  valid.length === samples.length && worst.ms <= READABLE_BUDGET_MS,
   `worst ${Math.round(worst.ms)}ms at ${worst.words} words`
 );
 // The budget exists FOR the longest card, so the longest card has to be
@@ -451,8 +452,8 @@ check(
   `${worstCase.words} words`
 );
 check(
-  "worst-case card still readable within 560ms",
-  worstCase.ms > 0 && worstCase.ms <= 560,
+  `worst-case card still readable within ${READABLE_BUDGET_MS}ms`,
+  worstCase.ms > 0 && worstCase.ms <= READABLE_BUDGET_MS,
   `${Math.round(worstCase.ms)}ms at ${worstCase.words} words`
 );
 
