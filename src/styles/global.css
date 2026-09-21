@@ -1387,13 +1387,16 @@ html:not(.js) .theme {
 
 /* Who a game is for, riding on the section head that names it. The head is
    already mono/uppercase/muted, so this is the same voice one notch down and
-   un-capitalised — it reads as a caption, not a second heading. */
+   un-capitalised — it reads as a caption, not a second heading.
+   The step down is size and case only, never opacity: at ~11px mono the
+   caption is small text, and --muted on --bg sits at 5.07:1 light / 6.83:1
+   dark, which a 0.75 opacity dragged under AA (3.10 / 4.37). */
 .players {
   margin-left: 0.75em;
   font-size: 0.85em;
   letter-spacing: 0.1em;
   text-transform: none;
-  opacity: 0.75;
+  color: var(--muted);
 }
 
 .about .suit-block {
