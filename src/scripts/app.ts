@@ -34,6 +34,7 @@ const discardEl = document.getElementById("discard") as HTMLElement | null;
 const deckMiniEl = document.getElementById("deck-mini") as HTMLElement | null;
 const asideEl = document.getElementById("aside") as HTMLElement | null;
 const leftCountEl = document.getElementById("left-count") as HTMLElement | null;
+const leftLabelEl = document.getElementById("left-label") as HTMLElement | null;
 const drawnCountEl = document.getElementById("drawn-count") as HTMLElement | null;
 const asideCountEl = document.getElementById("aside-count") as HTMLElement | null;
 const discardOpenEl = document.getElementById("discard-open") as HTMLButtonElement | null;
@@ -105,6 +106,9 @@ function updateDeckDepth(): void {
   const { left, drawn, aside, total } = deck.counts();
   deckEl.dataset.edges = String(deck.edges());
   if (leftCountEl) leftCountEl.textContent = String(left);
+  // The end of a cycle is a state, not a surprise: at zero the pile says
+  // what the next draw does.
+  if (leftLabelEl) leftLabelEl.textContent = left === 0 ? "reshuffles next" : "in the deck";
   if (drawnCountEl) drawnCountEl.textContent = String(drawn);
   if (asideCountEl) asideCountEl.textContent = String(aside);
   if (tallyDrawnEl) tallyDrawnEl.textContent = String(drawn);
@@ -233,10 +237,13 @@ function setWords(el: HTMLElement, text: string): HTMLElement[] {
 // Writes a card into a slot and moves the accessibility exposure with it.
 // backface-visibility is purely visual — without this, a screen reader would
 // announce both faces.
-function writeFace(slot: HTMLElement, text: string): HTMLElement[] {
+function writeFace(slot: HTMLElement, card: { id: number; text: string }): HTMLElement[] {
   const textEl = slot.querySelector(".card-text") as HTMLElement;
-  const words = setWords(textEl, text);
+  const words = setWords(textEl, card.text);
   textEl.hidden = false;
+  // The number in the corner, as the printed card carries it.
+  const numEl = slot.querySelector(".card-num");
+  if (numEl) numEl.textContent = "#" + card.id;
   // The mark lives in face-a and is only needed before the first draw;
   // nothing ever turns the card back over.
   if (slot === faceA) markEl.hidden = true;
@@ -256,22 +263,26 @@ function show(id: number, { instant = false, keepHint = false } = {}): void {
   // A deep link arrives already face up: write into whichever slot is
   // currently facing the viewer rather than leaving the card mid-turn.
   if (instant || !inner.animate) {
-    writeFace(facingSlot(), card.text);
+    writeFace(facingSlot(), card);
     return;
   }
 
   if (reducedMotion.matches) {
+    // The face crossfades, not the whole card: fading .card-inner showed
+    // the stack's edges through the gap as complete rectangles, which read
+    // as the card vanishing rather than changing.
     busy = true;
-    inner
+    const slot = facingSlot();
+    slot
       .animate([{ opacity: 1 }, { opacity: 0 }], { duration: 90, easing: "ease-in" })
       .finished.then(() => {
-        writeFace(facingSlot(), card.text);
-        return inner.animate([{ opacity: 0 }, { opacity: 1 }], {
+        writeFace(slot, card);
+        return slot.animate([{ opacity: 0 }, { opacity: 1 }], {
           duration: 140,
           easing: "ease-out",
         }).finished;
       })
-      .catch(() => writeFace(facingSlot(), card.text))
+      .catch(() => writeFace(slot, card))
       .finally(() => {
         busy = false;
       });
@@ -280,7 +291,7 @@ function show(id: number, { instant = false, keepHint = false } = {}): void {
 
   busy = true;
   const incoming = flips % 2 === 0 ? faceB : faceA;
-  const words = writeFace(incoming, card.text);
+  const words = writeFace(incoming, card);
   flips += 1;
 
   const from = angle;
@@ -390,6 +401,9 @@ function draw(): void {
   // self-triggering: no separate reshuffle event to detect.
   if (dealt.reshuffled) riffle();
   show(dealt.card.id);
+  // A reshuffle is announced, not only riffled: the discard has just
+  // emptied and a listener would otherwise hear nothing but the next card.
+  if (dealt.reshuffled) liveEl.textContent = "Reshuffled. " + dealt.card.text;
   updateDeckDepth();
   updateKeep();
   saveState();
@@ -560,6 +574,8 @@ async function shareCard(): Promise<void> {
   try {
     await navigator.clipboard.writeText(url);
     shareBtn.textContent = "link copied";
+    shareBtn.classList.add("is-status");
+    liveEl.textContent = "Link copied.";
     shareBtn.animate(
       [
         { opacity: 0, transform: "translateY(3px)" },
@@ -570,6 +586,7 @@ async function shareCard(): Promise<void> {
     clearTimeout(shareLabelTimer);
     shareLabelTimer = setTimeout(() => {
       shareBtn.textContent = shareLabel;
+      shareBtn.classList.remove("is-status");
     }, 1800);
   } catch {
     /* no clipboard either (e.g. insecure context) — leave the label be */
@@ -584,7 +601,9 @@ async function init(): Promise<void> {
     // fixed tiers. They carry no text and must never be dealt.
     cards = liveCards((await res.json()) as unknown[]);
   } catch {
-    writeFace(facingSlot(), "The deck failed to load. Refresh to try again.");
+    writeFace(facingSlot(), { id: 0, text: "The deck failed to load. Refresh to try again." });
+    const numEl = facingSlot().querySelector(".card-num");
+    if (numEl) numEl.textContent = "";
     return;
   }
   deck = openDeck(cards, saved);

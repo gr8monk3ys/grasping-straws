@@ -932,7 +932,10 @@ if (fs.existsSync(path.join(distDir, "index.html"))) {
   const orphans = [...declared].filter((c) => !new RegExp(`[\\s"'\`.]${c}[\\s"'\`.]`).test(markup));
   check("every class rule still matches something", orphans.length === 0, orphans.join(", "));
 
-  check("all client JS <= 7 KB gzipped (draw + shader + theme + table)", jsGz <= 7168, `${jsGz} B gz`);
+  // 7 KB held until the polish pass: the card's corner number, the
+  // reshuffle and copy announcements and the end-of-cycle label bought 25
+  // bytes over it. Half a kilobyte of room, deliberately, not a trend.
+  check("all client JS <= 7.5 KB gzipped (draw + shader + theme + table)", jsGz <= 7680, `${jsGz} B gz`);
   check("total CSS <= 6 KB gzipped", cssGz <= 6144, `${cssGz} B gz`);
   // Raised with the editorial pass (masthead, piles, two type ramps).
   // The draw script is the only JavaScript on the site and it is inlined, so

@@ -19,6 +19,7 @@ export function getStaticPaths() {
 }
 
 const { card } = Astro.props as { card: Card };
+const deckSize = liveCards(entries).length;
 const title = `“${card.text}” — ${DECK_NAME}`;
 const description =
   "A card from Grasping Straws, an original deck of lateral-thinking prompts. Draw your own.";
@@ -38,14 +39,21 @@ const physicalHref = PHYSICAL_DECK_URL || "/about/#physical";
       </span>
       <span class="card-shadow card-shadow-ambient" aria-hidden="true"></span>
       <span class="card-shadow card-shadow-contact" aria-hidden="true"></span>
-      <div class="card card-static">
+      {/* The card itself is the way onto the table: it opens face up there,
+          at /#id, and the next tap deals. */}
+      <a class="card card-static" href={`/#${card.id}`} aria-label={`Open card ${card.id} on the table`}>
         <span class="card-inner">
           <span class="face face-a">
+            <span class="card-num" aria-hidden="true">#{card.id}</span>
             <span class="card-text">{card.text}</span>
           </span>
         </span>
-      </div>
+      </a>
     </div>
+    <h1 class="card-page-frame">Card {card.id} of {deckSize}</h1>
+    <p class="card-page-about">
+      One of {deckSize} original prompts for breaking a creative deadlock.
+    </p>
     <p class="hint card-page-invite">
       <a href="/">Draw your own card &rarr;</a>
     </p>

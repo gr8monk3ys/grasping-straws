@@ -26,9 +26,9 @@ const deckSize = liveCards(entries).length;
   {
     counter && (
       <p class="tally" id="tally" aria-live="off">
-        <span class="tally-num" id="tally-drawn">0</span>
-        <span class="tally-sep">/</span>
-        <span class="tally-num" id="tally-total">{deckSize}</span>
+        <span class="tally-num" id="tally-drawn">0</span>{" "}
+        <span class="tally-sep">/</span>{" "}
+        <span class="tally-num" id="tally-total">{deckSize}</span>{" "}
         <span class="tally-label">drawn</span>
       </p>
     )
@@ -36,7 +36,15 @@ const deckSize = liveCards(entries).length;
 
   <nav>
     <a href="/about/">About</a>
-    <a href={physicalHref} class="cta">Get the deck</a>
+    {/* "Get the deck" only while there is a deck to get. Until then the
+        link names the thing and leads to the paragraph that says when. */}
+    {
+      PHYSICAL_DECK_URL ? (
+        <a href={physicalHref} class="cta">Get the deck</a>
+      ) : (
+        <a href={physicalHref} class="cta" data-soon>Physical deck</a>
+      )
+    }
     <button id="theme" class="theme" type="button" aria-label="Switch to dark theme">
       <span class="theme-dot" aria-hidden="true"></span>
       <span class="theme-word" id="theme-word">Light</span>

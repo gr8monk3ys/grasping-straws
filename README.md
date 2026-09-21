@@ -14,7 +14,7 @@ Tap, get a card, tap again.
 
 Built with [Astro](https://astro.build) as a fully static site. The built
 output ships **zero framework JavaScript** — the draw script, a hand-rolled
-WebGL paper shader and the theme toggle come to ~6 KB gzipped together,
+WebGL paper shader and the theme toggle come to ~7 KB gzipped together,
 inlined into the page. No framework, no animation library, no gesture
 library, no third-party requests at runtime.
 

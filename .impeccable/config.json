@@ -1,0 +1,24 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "overused-font",
+        "value": "fraunces",
+        "createdAt": "2026-09-21T19:14:53.678Z",
+        "reason": "owner's committed display face: chosen in the 'warm editorial pass' commit over EB Garamond for its optical-size axis, self-hosted as a latin subset, and the verifier asserts the opsz axis works; swapping it is a redesign, not a refinement"
+      },
+      {
+        "rule": "cream-palette",
+        "value": "*",
+        "files": [
+          "dist/**",
+          "src/**"
+        ],
+        "createdAt": "2026-09-21T19:39:51.726Z",
+        "reason": "owner's committed ground: the site is paper stock; the warm neutral is the Two Stocks Rule in DESIGN.md, not a category default"
+      }
+    ]
+  }
+}

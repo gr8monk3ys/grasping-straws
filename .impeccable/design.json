@@ -1,0 +1,619 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-21T19:20:01.518Z",
+  "title": "Design System: Grasping Straws?",
+  "extensions": {
+    "colorMeta": {
+      "warm-paper": {
+        "role": "neutral",
+        "displayName": "Warm Paper",
+        "canonical": "#f5efe3",
+        "theme": "light",
+        "oklch": "oklch(95.4% 0.017 85)",
+        "tonalRamp": [
+          "oklch(15.0% 0.015 85)",
+          "oklch(26.4% 0.017 85)",
+          "oklch(37.9% 0.017 85)",
+          "oklch(49.3% 0.017 85)",
+          "oklch(60.7% 0.017 85)",
+          "oklch(72.1% 0.017 85)",
+          "oklch(83.6% 0.017 85)",
+          "oklch(95.0% 0.015 85)"
+        ]
+      },
+      "card-stock": {
+        "role": "neutral",
+        "displayName": "Card Stock",
+        "canonical": "#fdfaf3",
+        "theme": "light",
+        "oklch": "oklch(98.5% 0.010 87)",
+        "tonalRamp": [
+          "oklch(15.0% 0.009 87)",
+          "oklch(26.4% 0.010 87)",
+          "oklch(37.9% 0.010 87)",
+          "oklch(49.3% 0.010 87)",
+          "oklch(60.7% 0.010 87)",
+          "oklch(72.1% 0.010 87)",
+          "oklch(83.6% 0.010 87)",
+          "oklch(95.0% 0.009 87)"
+        ]
+      },
+      "walnut-ink": {
+        "role": "neutral",
+        "displayName": "Walnut Ink",
+        "canonical": "#241e16",
+        "theme": "light",
+        "oklch": "oklch(23.9% 0.017 75)",
+        "tonalRamp": [
+          "oklch(15.0% 0.015 75)",
+          "oklch(26.4% 0.017 75)",
+          "oklch(37.9% 0.017 75)",
+          "oklch(49.3% 0.017 75)",
+          "oklch(60.7% 0.017 75)",
+          "oklch(72.1% 0.017 75)",
+          "oklch(83.6% 0.017 75)",
+          "oklch(95.0% 0.015 75)"
+        ]
+      },
+      "faded-ink": {
+        "role": "neutral",
+        "displayName": "Faded Ink",
+        "canonical": "#6e6455",
+        "theme": "light",
+        "oklch": "oklch(50.8% 0.026 78)",
+        "tonalRamp": [
+          "oklch(15.0% 0.023 78)",
+          "oklch(26.4% 0.026 78)",
+          "oklch(37.9% 0.026 78)",
+          "oklch(49.3% 0.026 78)",
+          "oklch(60.7% 0.026 78)",
+          "oklch(72.1% 0.026 78)",
+          "oklch(83.6% 0.026 78)",
+          "oklch(95.0% 0.023 78)"
+        ]
+      },
+      "forest-green": {
+        "role": "primary",
+        "displayName": "Forest Green",
+        "canonical": "#2c6e4f",
+        "theme": "light",
+        "oklch": "oklch(48.6% 0.084 160)",
+        "tonalRamp": [
+          "oklch(15.0% 0.074 160)",
+          "oklch(26.4% 0.084 160)",
+          "oklch(37.9% 0.084 160)",
+          "oklch(49.3% 0.084 160)",
+          "oklch(60.7% 0.084 160)",
+          "oklch(72.1% 0.084 160)",
+          "oklch(83.6% 0.084 160)",
+          "oklch(95.0% 0.074 160)"
+        ]
+      },
+      "deep-forest": {
+        "role": "primary",
+        "displayName": "Deep Forest",
+        "canonical": "#184e35",
+        "theme": "light",
+        "oklch": "oklch(38.1% 0.071 160)",
+        "tonalRamp": [
+          "oklch(15.0% 0.062 160)",
+          "oklch(26.4% 0.071 160)",
+          "oklch(37.9% 0.071 160)",
+          "oklch(49.3% 0.071 160)",
+          "oklch(60.7% 0.071 160)",
+          "oklch(72.1% 0.071 160)",
+          "oklch(83.6% 0.071 160)",
+          "oklch(95.0% 0.062 160)"
+        ]
+      },
+      "deckle-line": {
+        "role": "neutral",
+        "displayName": "Deckle Line",
+        "canonical": "#dcd2be",
+        "theme": "light",
+        "oklch": "oklch(86.6% 0.029 85)",
+        "tonalRamp": [
+          "oklch(15.0% 0.025 85)",
+          "oklch(26.4% 0.029 85)",
+          "oklch(37.9% 0.029 85)",
+          "oklch(49.3% 0.029 85)",
+          "oklch(60.7% 0.029 85)",
+          "oklch(72.1% 0.029 85)",
+          "oklch(83.6% 0.029 85)",
+          "oklch(95.0% 0.025 85)"
+        ]
+      },
+      "editorial-hairline": {
+        "role": "neutral",
+        "displayName": "Editorial Hairline",
+        "canonical": "rgb(36 30 22 / 0.16)",
+        "theme": "light",
+        "note": "alpha hairline over the ground; ramp derived from its ink",
+        "tonalRamp": [
+          "oklch(15.0% 0.015 75)",
+          "oklch(26.4% 0.017 75)",
+          "oklch(37.9% 0.017 75)",
+          "oklch(49.3% 0.017 75)",
+          "oklch(60.7% 0.017 75)",
+          "oklch(72.1% 0.017 75)",
+          "oklch(83.6% 0.017 75)",
+          "oklch(95.0% 0.015 75)"
+        ]
+      },
+      "under-card": {
+        "role": "neutral",
+        "displayName": "Under-card",
+        "canonical": "#f7f1e4",
+        "theme": "light",
+        "oklch": "oklch(95.9% 0.018 86)",
+        "tonalRamp": [
+          "oklch(15.0% 0.016 86)",
+          "oklch(26.4% 0.018 86)",
+          "oklch(37.9% 0.018 86)",
+          "oklch(49.3% 0.018 86)",
+          "oklch(60.7% 0.018 86)",
+          "oklch(72.1% 0.018 86)",
+          "oklch(83.6% 0.018 86)",
+          "oklch(95.0% 0.016 86)"
+        ]
+      },
+      "cut-edge": {
+        "role": "neutral",
+        "displayName": "Cut Edge",
+        "canonical": "#e9dfca",
+        "theme": "light",
+        "oklch": "oklch(90.6% 0.030 86)",
+        "tonalRamp": [
+          "oklch(15.0% 0.026 86)",
+          "oklch(26.4% 0.030 86)",
+          "oklch(37.9% 0.030 86)",
+          "oklch(49.3% 0.030 86)",
+          "oklch(60.7% 0.030 86)",
+          "oklch(72.1% 0.030 86)",
+          "oklch(83.6% 0.030 86)",
+          "oklch(95.0% 0.026 86)"
+        ]
+      },
+      "night-desk": {
+        "role": "neutral",
+        "displayName": "Night Desk",
+        "canonical": "#171310",
+        "theme": "dark",
+        "oklch": "oklch(19.0% 0.009 59)",
+        "tonalRamp": [
+          "oklch(15.0% 0.008 59)",
+          "oklch(26.4% 0.009 59)",
+          "oklch(37.9% 0.009 59)",
+          "oklch(49.3% 0.009 59)",
+          "oklch(60.7% 0.009 59)",
+          "oklch(72.1% 0.009 59)",
+          "oklch(83.6% 0.009 59)",
+          "oklch(95.0% 0.008 59)"
+        ]
+      },
+      "night-stock": {
+        "role": "neutral",
+        "displayName": "Night Stock",
+        "canonical": "#201b16",
+        "theme": "dark",
+        "oklch": "oklch(22.6% 0.012 67)",
+        "tonalRamp": [
+          "oklch(15.0% 0.011 67)",
+          "oklch(26.4% 0.012 67)",
+          "oklch(37.9% 0.012 67)",
+          "oklch(49.3% 0.012 67)",
+          "oklch(60.7% 0.012 67)",
+          "oklch(72.1% 0.012 67)",
+          "oklch(83.6% 0.012 67)",
+          "oklch(95.0% 0.011 67)"
+        ]
+      },
+      "cream-ink": {
+        "role": "neutral",
+        "displayName": "Cream Ink",
+        "canonical": "#eae3d4",
+        "theme": "dark",
+        "oklch": "oklch(91.7% 0.021 86)",
+        "tonalRamp": [
+          "oklch(15.0% 0.019 86)",
+          "oklch(26.4% 0.021 86)",
+          "oklch(37.9% 0.021 86)",
+          "oklch(49.3% 0.021 86)",
+          "oklch(60.7% 0.021 86)",
+          "oklch(72.1% 0.021 86)",
+          "oklch(83.6% 0.021 86)",
+          "oklch(95.0% 0.019 86)"
+        ]
+      },
+      "faded-cream": {
+        "role": "neutral",
+        "displayName": "Faded Cream",
+        "canonical": "#a79c8a",
+        "theme": "dark",
+        "oklch": "oklch(69.7% 0.029 80)",
+        "tonalRamp": [
+          "oklch(15.0% 0.025 80)",
+          "oklch(26.4% 0.029 80)",
+          "oklch(37.9% 0.029 80)",
+          "oklch(49.3% 0.029 80)",
+          "oklch(60.7% 0.029 80)",
+          "oklch(72.1% 0.029 80)",
+          "oklch(83.6% 0.029 80)",
+          "oklch(95.0% 0.025 80)"
+        ]
+      },
+      "emerald": {
+        "role": "primary",
+        "displayName": "Emerald",
+        "canonical": "#42a979",
+        "theme": "dark",
+        "oklch": "oklch(66.2% 0.120 160)",
+        "tonalRamp": [
+          "oklch(15.0% 0.105 160)",
+          "oklch(26.4% 0.120 160)",
+          "oklch(37.9% 0.120 160)",
+          "oklch(49.3% 0.120 160)",
+          "oklch(60.7% 0.120 160)",
+          "oklch(72.1% 0.120 160)",
+          "oklch(83.6% 0.120 160)",
+          "oklch(95.0% 0.105 160)"
+        ]
+      },
+      "mint": {
+        "role": "primary",
+        "displayName": "Mint",
+        "canonical": "#6cc39a",
+        "theme": "dark",
+        "oklch": "oklch(75.1% 0.104 162)",
+        "tonalRamp": [
+          "oklch(15.0% 0.091 162)",
+          "oklch(26.4% 0.104 162)",
+          "oklch(37.9% 0.104 162)",
+          "oklch(49.3% 0.104 162)",
+          "oklch(60.7% 0.104 162)",
+          "oklch(72.1% 0.104 162)",
+          "oklch(83.6% 0.104 162)",
+          "oklch(95.0% 0.091 162)"
+        ]
+      },
+      "night-line": {
+        "role": "neutral",
+        "displayName": "Night Line",
+        "canonical": "#3a322a",
+        "theme": "dark",
+        "oklch": "oklch(32.3% 0.018 67)",
+        "tonalRamp": [
+          "oklch(15.0% 0.016 67)",
+          "oklch(26.4% 0.018 67)",
+          "oklch(37.9% 0.018 67)",
+          "oklch(49.3% 0.018 67)",
+          "oklch(60.7% 0.018 67)",
+          "oklch(72.1% 0.018 67)",
+          "oklch(83.6% 0.018 67)",
+          "oklch(95.0% 0.016 67)"
+        ]
+      },
+      "night-hairline": {
+        "role": "neutral",
+        "displayName": "Night Hairline",
+        "canonical": "rgb(234 227 212 / 0.16)",
+        "theme": "dark",
+        "note": "alpha hairline over the ground; ramp derived from its ink",
+        "tonalRamp": [
+          "oklch(15.0% 0.019 86)",
+          "oklch(26.4% 0.021 86)",
+          "oklch(37.9% 0.021 86)",
+          "oklch(49.3% 0.021 86)",
+          "oklch(60.7% 0.021 86)",
+          "oklch(72.1% 0.021 86)",
+          "oklch(83.6% 0.021 86)",
+          "oklch(95.0% 0.019 86)"
+        ]
+      },
+      "night-under-card": {
+        "role": "neutral",
+        "displayName": "Night Under-card",
+        "canonical": "#272019",
+        "theme": "dark",
+        "oklch": "oklch(24.9% 0.017 67)",
+        "tonalRamp": [
+          "oklch(15.0% 0.015 67)",
+          "oklch(26.4% 0.017 67)",
+          "oklch(37.9% 0.017 67)",
+          "oklch(49.3% 0.017 67)",
+          "oklch(60.7% 0.017 67)",
+          "oklch(72.1% 0.017 67)",
+          "oklch(83.6% 0.017 67)",
+          "oklch(95.0% 0.015 67)"
+        ]
+      },
+      "night-cut-edge": {
+        "role": "neutral",
+        "displayName": "Night Cut Edge",
+        "canonical": "#33291f",
+        "theme": "dark",
+        "oklch": "oklch(28.9% 0.023 67)",
+        "tonalRamp": [
+          "oklch(15.0% 0.020 67)",
+          "oklch(26.4% 0.023 67)",
+          "oklch(37.9% 0.023 67)",
+          "oklch(49.3% 0.023 67)",
+          "oklch(60.7% 0.023 67)",
+          "oklch(72.1% 0.023 67)",
+          "oklch(83.6% 0.023 67)",
+          "oklch(95.0% 0.020 67)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display (card face)",
+        "purpose": "The card text only; Fraunces at auto optical size, balanced and centred, sized to fit the longest card."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "The About page h1; the only bold serif on the site."
+      },
+      "lede": {
+        "displayName": "Lede",
+        "purpose": "The About page opening paragraph."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Running prose and notices; 34rem measure on the About page."
+      },
+      "label": {
+        "displayName": "Label (mono)",
+        "purpose": "Masthead, tally, nav, hints, and text controls; uppercase Plex Mono with 0.06-0.1em tracking."
+      },
+      "label-sm": {
+        "displayName": "Label small (mono)",
+        "purpose": "Pile counts and labels, spread numbers, wordmark, About section headings, credit; the type floor."
+      }
+    },
+    "shadows": [
+      {
+        "name": "ambient",
+        "value": "0 14px 36px -14px rgb(36 30 22 / 0.28)",
+        "dark": "0 16px 40px -14px rgb(0 0 0 / 0.6)",
+        "purpose": "The card's broad ground shadow; scales up and fades on hover."
+      },
+      {
+        "name": "contact",
+        "value": "0 1px 2px rgb(36 30 22 / 0.08), 0 3px 8px -4px rgb(36 30 22 / 0.2)",
+        "dark": "0 1px 2px rgb(0 0 0 / 0.4), 0 3px 10px -4px rgb(0 0 0 / 0.5)",
+        "purpose": "The card's tight seat shadow; shrinks on hover, dims on press."
+      },
+      {
+        "name": "edge-cast",
+        "value": "0 -1px 3px -1px rgb(36 30 22 / 0.16)",
+        "dark": "0 -2px 5px -2px rgb(0 0 0 / 0.6)",
+        "purpose": "Upward cast on each deck edge so the stack reads as separate cards."
+      },
+      {
+        "name": "face-bevel",
+        "value": "inset 0 1px 0 rgb(255 255 255 / 0.6), inset 0 -1px 0 rgb(36 30 22 / 0.07)",
+        "dark": "inset 0 1px 0 rgb(255 255 255 / 0.075), inset 0 -1px 0 rgb(0 0 0 / 0.36)",
+        "purpose": "One-pixel light top and shaded bottom inside every card face."
+      },
+      {
+        "name": "spread-card",
+        "value": "0 2px 5px -2px rgb(0 0 0 / 22%)",
+        "purpose": "Resting shadow of a card in a spread; hover becomes 0 10px 20px -8px rgb(0 0 0 / 30%)."
+      },
+      {
+        "name": "dialog",
+        "value": "0 30px 70px -30px rgb(0 0 0 / 45%)",
+        "purpose": "The spread dialog set down over the table, above a rgb(20 16 11 / 62%) 4px-blurred backdrop."
+      },
+      {
+        "name": "minipile-layer",
+        "value": "0 1px 0 var(--rule)",
+        "purpose": "A single hairline drop so stacked mini-pile layers are countable."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease-settle",
+        "value": "cubic-bezier(0.2, 0.7, 0.3, 1)",
+        "purpose": "Default easing for lifts, deals, pile layers, nav underline wipe, and the theme disc."
+      },
+      {
+        "name": "ease-press",
+        "value": "cubic-bezier(0.3, 0.7, 0.4, 1)",
+        "purpose": "The card's 0.18s press/hover transform."
+      },
+      {
+        "name": "ease-entrance",
+        "value": "cubic-bezier(0.16, 0.84, 0.28, 1)",
+        "purpose": "First-visit entrance: deck 0.9s, stack 0.7s at +0.18s, mark fade 0.7s ease-out at +0.36s."
+      },
+      {
+        "name": "ease-riffle",
+        "value": "cubic-bezier(0.3, 0.8, 0.3, 1)",
+        "purpose": "The 0.7s stack riffle after a reshuffle."
+      },
+      {
+        "name": "flip",
+        "value": "460ms",
+        "purpose": "--flip-ms: the card turn and the specular sheen that rides its first half; a crossfade under reduced motion."
+      },
+      {
+        "name": "deal-in",
+        "value": "0.34s, 26ms stagger, capped at 12",
+        "purpose": "Cards dealing into a spread, oldest first."
+      },
+      {
+        "name": "fade-hint",
+        "value": "0.8s ease",
+        "purpose": "Hint fades out and the text controls fade in on the same line after the first deal."
+      },
+      {
+        "name": "hover-lift",
+        "value": "translateY(-2px) piles, -3px card, -4px rotate(-0.7deg) spread cards",
+        "purpose": "Fine-pointer hover only; removed under reduced motion."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "controls",
+        "value": "26rem",
+        "purpose": "Below: card controls tighten to a 1rem gap and the small mono step."
+      },
+      {
+        "name": "masthead",
+        "value": "34rem",
+        "purpose": "Below: masthead wraps, tally takes its own row, theme word hides, --t-mono drops to 0.85rem."
+      },
+      {
+        "name": "table",
+        "value": "46rem",
+        "purpose": "Below: the three-column table collapses to one column and mini-piles hide."
+      }
+    ],
+    "material": {
+      "grain": {
+        "light": "opacity 0.034, mix-blend-mode multiply",
+        "dark": "opacity 0.055, mix-blend-mode overlay",
+        "source": "160px fractal-noise SVG tile as a background image, never a live filter; superseded by a WebGL fibre shader when a context links."
+      },
+      "thickness": "3px card stock (--thickness), rendered as two side spines.",
+      "stack": "Three deck edges at translateY 7/16/25px, scale 0.99/0.978/0.966, opacity 1/0.88/0.74."
+    }
+  },
+  "components": [
+    {
+      "name": "The Card",
+      "kind": "card",
+      "refersTo": "card-face",
+      "description": "The dealt card: 5:7 stock with bevel, grain, 1px line border, and the two-layer shadow beneath.",
+      "html": "<div class=\"ds-deck\"><span class=\"ds-shadow ds-shadow-ambient\"></span><span class=\"ds-shadow ds-shadow-contact\"></span><button class=\"ds-card\"><span class=\"ds-face\"><span class=\"ds-card-text\">Turn the mistake into the method.</span></span></button></div>",
+      "css": ".ds-deck{position:relative;width:min(82vw,260px);aspect-ratio:5/7;margin:24px auto}.ds-shadow{position:absolute;inset:0;border-radius:14px;pointer-events:none;transition:transform .28s cubic-bezier(.2,.7,.3,1),opacity .28s ease}.ds-shadow-ambient{box-shadow:var(--shadow-ambient,0 14px 36px -14px rgb(36 30 22/.28))}.ds-shadow-contact{box-shadow:var(--shadow-contact,0 1px 2px rgb(36 30 22/.08),0 3px 8px -4px rgb(36 30 22/.2))}.ds-card{position:relative;width:100%;height:100%;padding:0;border:0;background:none;color:inherit;font:inherit;cursor:grab;border-radius:14px;transition:transform .18s cubic-bezier(.3,.7,.4,1)}.ds-card:hover{transform:translateY(-3px)}.ds-card:active{transform:scale(.985)}.ds-card:focus-visible{outline:2px solid var(--accent,#2c6e4f);outline-offset:3px}.ds-face{position:absolute;inset:0;display:grid;place-items:center;padding:clamp(1.25rem,6vw,2rem);border:1px solid var(--line,#dcd2be);border-radius:14px;background:var(--card,#fdfaf3);box-shadow:inset 0 1px 0 var(--edge-light,rgb(255 255 255/.6)),inset 0 -1px 0 var(--edge-shade,rgb(36 30 22/.07));overflow:hidden}.ds-card-text{font-family:var(--font-text,\"Fraunces\",\"Iowan Old Style\",Georgia,serif);font-size:clamp(1.55rem,1rem + 2.05vw,2.25rem);font-optical-sizing:auto;font-weight:400;line-height:1.28;letter-spacing:-.012em;text-align:center;text-wrap:balance;color:var(--ink,#241e16)}"
+    },
+    {
+      "name": "Card back",
+      "kind": "custom",
+      "refersTo": "card-face",
+      "description": "Face-down state: the straw-bundle glyph over the wordmark, both in Faded Ink.",
+      "html": "<div class=\"ds-face-back\"><span class=\"ds-mark\"><svg viewBox=\"0 0 64 64\" width=\"64\" height=\"64\" aria-hidden=\"true\"><g fill=\"none\" stroke=\"currentColor\" stroke-width=\"3.5\" stroke-linecap=\"round\"><path d=\"M14 15v38\"/><path d=\"M23 11v42\"/><path d=\"M32 16v37\"/><path d=\"M50 13v40\"/><path d=\"M42.5 53 41 25\"/></g><path fill=\"currentColor\" d=\"M40.6 8.5 44.7 15.1 41.2 22.3 37.1 15.7Z\"/></svg><span class=\"ds-wordmark\">Grasping Straws?</span></span></div>",
+      "css": ".ds-face-back{width:min(82vw,260px);aspect-ratio:5/7;margin:24px auto;display:grid;place-items:center;border:1px solid var(--line,#dcd2be);border-radius:14px;background:var(--card,#fdfaf3);box-shadow:inset 0 1px 0 var(--edge-light,rgb(255 255 255/.6)),inset 0 -1px 0 var(--edge-shade,rgb(36 30 22/.07))}.ds-mark{display:grid;justify-items:center;gap:1.4rem;color:var(--muted,#6e6455)}.ds-mark svg{width:clamp(56px,26%,84px);height:auto}.ds-wordmark{font-family:var(--font-mono,\"Plex Mono\",ui-monospace,Menlo,monospace);font-size:.8rem;font-weight:500;letter-spacing:.2em;text-transform:uppercase;white-space:nowrap}"
+    },
+    {
+      "name": "Masthead",
+      "kind": "nav",
+      "refersTo": "nav-link",
+      "description": "The running head: wordmark, tally, nav links with a wiping underline, CTA in green, theme disc.",
+      "html": "<header class=\"ds-chrome\"><a class=\"ds-deck-name\" href=\"#\">Grasping Straws?</a><p class=\"ds-tally\"><span class=\"ds-tally-num\">7</span><span class=\"ds-tally-sep\">/</span><span class=\"ds-tally-num\">48</span><span class=\"ds-tally-label\">drawn</span></p><nav class=\"ds-nav\"><a href=\"#\">About</a><a href=\"#\" class=\"ds-cta\">Get the deck</a><button class=\"ds-theme\" type=\"button\"><span class=\"ds-theme-dot\"></span><span>Light</span></button></nav></header>",
+      "css": ".ds-chrome{display:flex;align-items:baseline;justify-content:space-between;gap:1.5rem;padding:1.15rem clamp(1rem,3.5vw,2.25rem);border-bottom:1px solid var(--rule,rgb(36 30 22/.16));font-family:var(--font-mono,\"Plex Mono\",ui-monospace,Menlo,monospace);font-size:.95rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted,#6e6455)}.ds-deck-name{color:var(--ink,#241e16);font-weight:500;letter-spacing:.1em;text-decoration:none}.ds-tally{display:flex;align-items:baseline;gap:.4em;margin:0;font-variant-numeric:tabular-nums;letter-spacing:.08em}.ds-tally-num{color:var(--ink,#241e16);font-weight:500}.ds-nav{display:flex;align-items:baseline;gap:clamp(1rem,2.5vw,1.9rem)}.ds-nav a{color:inherit;text-decoration:none;background-image:linear-gradient(currentColor,currentColor);background-repeat:no-repeat;background-position:0 100%;background-size:0% 1px;padding-bottom:.25em;transition:background-size .32s cubic-bezier(.2,.7,.3,1)}.ds-nav a:hover,.ds-nav a:focus-visible{background-size:100% 1px}.ds-nav a.ds-cta{color:var(--accent,#2c6e4f)}.ds-nav a:focus-visible,.ds-theme:focus-visible{outline:2px solid var(--accent,#2c6e4f);outline-offset:3px;border-radius:2px}.ds-theme{display:inline-flex;align-items:center;gap:.5em;padding:0;border:0;background:none;color:inherit;font:inherit;letter-spacing:inherit;text-transform:inherit;cursor:pointer}.ds-theme-dot{width:.72em;height:.72em;border:1px solid currentColor;border-radius:50%;background:linear-gradient(to right,currentColor 50%,transparent 50%);transition:transform .4s cubic-bezier(.2,.7,.3,1)}.ds-theme:hover .ds-theme-dot{transform:rotate(180deg)}"
+    },
+    {
+      "name": "Text control",
+      "kind": "button",
+      "refersTo": "text-button",
+      "description": "The only button style: an underlined uppercase mono word. Pressed state goes green, drops the underline, and gains a check.",
+      "html": "<span class=\"ds-actions\"><button class=\"ds-text-btn\" aria-pressed=\"true\">set aside</button><button class=\"ds-text-btn\">share this card</button></span>",
+      "css": ".ds-actions{display:flex;align-items:baseline;gap:1.6rem}.ds-text-btn{padding:0;border:0;background:none;color:var(--muted,#6e6455);font-family:var(--font-mono,\"Plex Mono\",ui-monospace,Menlo,monospace);font-size:.95rem;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:.18em}.ds-text-btn:hover{color:var(--accent,#2c6e4f)}.ds-text-btn:focus-visible{outline:2px solid var(--accent,#2c6e4f);outline-offset:3px;border-radius:2px}.ds-text-btn[aria-pressed=\"true\"]{color:var(--accent,#2c6e4f);text-decoration:none}.ds-text-btn[aria-pressed=\"true\"]::before{content:\"\\2713\\00a0\"}"
+    },
+    {
+      "name": "Pile button",
+      "kind": "button",
+      "refersTo": "pile-button",
+      "description": "A browsable pile: stacked mini-cards, count, and label, with the chrome stripped. Discard variant tints toward the accent.",
+      "html": "<button class=\"ds-pile\" type=\"button\"><span class=\"ds-minipile ds-is-discard\"><span class=\"ds-layer\"></span><span class=\"ds-layer\"></span><span class=\"ds-layer\"></span><span class=\"ds-layer\"></span></span><span class=\"ds-pile-count\">4</span><span class=\"ds-pile-label\">discarded</span></button>",
+      "css": ".ds-pile{display:flex;flex-direction:column;align-items:center;gap:.45rem;appearance:none;border:0;background:none;padding:.35rem .5rem;border-radius:4px;cursor:pointer;font-family:var(--font-mono,\"Plex Mono\",ui-monospace,Menlo,monospace);font-size:.8rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted,#6e6455);text-align:center;transition:opacity .3s ease,transform .3s cubic-bezier(.2,.7,.3,1)}.ds-pile:hover,.ds-pile:focus-visible{transform:translateY(-2px)}.ds-pile:hover .ds-pile-label,.ds-pile:focus-visible .ds-pile-label{color:var(--accent,#2c6e4f)}.ds-pile:focus-visible{outline:2px solid var(--accent,#2c6e4f);outline-offset:3px}.ds-pile[disabled]{cursor:default;opacity:.42}.ds-minipile{position:relative;display:block;width:clamp(38px,7vw,58px);aspect-ratio:5/7;margin-bottom:.55rem}.ds-layer{position:absolute;inset:0;border:1px solid var(--edge-rim,rgb(36 30 22/.22));border-radius:3px;background:var(--edge-face,#f7f1e4);box-shadow:0 1px 0 var(--rule,rgb(36 30 22/.16))}.ds-is-discard .ds-layer{background:color-mix(in srgb,var(--accent,#2c6e4f) 12%,var(--edge-face,#f7f1e4));border-color:color-mix(in srgb,var(--accent,#2c6e4f) 34%,var(--edge-rim,rgb(36 30 22/.22)))}.ds-layer:nth-child(1){transform:translateY(0) rotate(-1.4deg)}.ds-layer:nth-child(2){transform:translateY(-2.5px) rotate(1deg)}.ds-layer:nth-child(3){transform:translateY(-5px) rotate(-.5deg)}.ds-layer:nth-child(4){transform:translateY(-7.5px) rotate(1.5deg)}.ds-pile-count{color:var(--ink,#241e16);font-weight:500;font-size:.95rem;font-variant-numeric:tabular-nums;line-height:1}"
+    },
+    {
+      "name": "Spread card",
+      "kind": "card",
+      "refersTo": "spread-card",
+      "description": "The card in miniature inside a picked-up pile; lifts and tilts on hover.",
+      "html": "<ul class=\"ds-spread-list\"><li class=\"ds-spread-card\" tabindex=\"0\">Turn the mistake into the method.<span class=\"ds-spread-num\">17</span></li><li class=\"ds-spread-card\" tabindex=\"0\">Ask the quietest instrument.<span class=\"ds-spread-num\">03</span></li></ul>",
+      "css": ".ds-spread-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(11rem,44%),1fr));gap:clamp(.7rem,1.6vw,1.1rem);margin:0;padding:clamp(1rem,3vw,2rem);list-style:none;background:var(--bg,#f5efe3)}.ds-spread-card{position:relative;display:flex;aspect-ratio:5/7;align-items:center;justify-content:center;padding:1.15rem 1rem 1.6rem;border:1px solid var(--edge-rim,rgb(36 30 22/.22));border-radius:5px;background:var(--card,#fdfaf3);box-shadow:0 2px 5px -2px rgb(0 0 0/22%);font-family:var(--font-text,\"Fraunces\",\"Iowan Old Style\",Georgia,serif);font-size:.98rem;line-height:1.32;text-align:center;text-wrap:balance;color:var(--ink,#241e16);cursor:pointer;transition:transform .28s cubic-bezier(.2,.7,.3,1),box-shadow .28s ease}.ds-spread-card:hover,.ds-spread-card:focus-visible{transform:translateY(-4px) rotate(-.7deg);box-shadow:0 10px 20px -8px rgb(0 0 0/30%)}.ds-spread-card:focus-visible{outline:2px solid var(--accent,#2c6e4f);outline-offset:3px}.ds-spread-num{position:absolute;bottom:.6rem;left:0;right:0;font-family:var(--font-mono,\"Plex Mono\",ui-monospace,Menlo,monospace);font-size:.8rem;letter-spacing:.12em;color:var(--muted,#6e6455)}"
+    },
+    {
+      "name": "Spread dialog head",
+      "kind": "custom",
+      "refersTo": "spread-dialog",
+      "description": "The head of a picked-up pile: hairline-ruled, mono uppercase title, bare close mark.",
+      "html": "<div class=\"ds-spread\"><div class=\"ds-spread-head\"><h2 class=\"ds-spread-title\">Discarded</h2><button class=\"ds-spread-close\" type=\"button\" aria-label=\"close\">&times;</button></div></div>",
+      "css": ".ds-spread{border:1px solid var(--rule,rgb(36 30 22/.16));border-radius:6px;background:var(--bg,#f5efe3);color:var(--ink,#241e16);box-shadow:0 30px 70px -30px rgb(0 0 0/45%);overflow:hidden}.ds-spread-head{display:flex;align-items:baseline;justify-content:space-between;gap:1rem;padding:1.35rem clamp(1rem,3vw,2rem) 1rem;border-bottom:1px solid var(--rule,rgb(36 30 22/.16))}.ds-spread-title{margin:0;font-family:var(--font-mono,\"Plex Mono\",ui-monospace,Menlo,monospace);font-size:.95rem;font-weight:400;letter-spacing:.1em;text-transform:uppercase;color:var(--muted,#6e6455)}.ds-spread-close{appearance:none;border:0;background:none;padding:.1em .35em;font:inherit;font-size:1.5rem;line-height:1;color:var(--muted,#6e6455);cursor:pointer;border-radius:3px}.ds-spread-close:hover,.ds-spread-close:focus-visible{color:var(--accent,#2c6e4f)}.ds-spread-close:focus-visible{outline:2px solid var(--accent,#2c6e4f);outline-offset:3px}"
+    },
+    {
+      "name": "Section label",
+      "kind": "custom",
+      "refersTo": "section-label",
+      "description": "About-page section heading: small uppercase mono in Faded Ink above serif prose.",
+      "html": "<div class=\"ds-prose\"><h2 class=\"ds-section-label\">Lineage</h2><p class=\"ds-p\">The debt is to the form, not the words: every card here is original. <a href=\"#\" class=\"ds-link\">Oblique Strategies</a></p></div>",
+      "css": ".ds-prose{max-width:34rem;font-family:var(--font-text,\"Fraunces\",\"Iowan Old Style\",Georgia,serif);font-size:1.16rem;color:var(--ink,#241e16)}.ds-section-label{margin:0 0 .7em;font-family:var(--font-mono,\"Plex Mono\",ui-monospace,Menlo,monospace);font-size:.8rem;font-weight:500;letter-spacing:.16em;text-transform:uppercase;color:var(--muted,#6e6455)}.ds-p{margin:0 0 .9em;line-height:1.6}.ds-link{color:var(--accent,#2c6e4f);text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:.18em}.ds-link:focus-visible{outline:2px solid var(--accent,#2c6e4f);outline-offset:3px;border-radius:2px}"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Card Table in Lamplight",
+    "overview": "<!-- The Creative North Star and the colour names below were inferred from the shipped code (src/styles/global.css and the page sources) without an owner interview; rename freely. -->\n\nOne object sits at the centre of every screen: a tarot-proportion card (5:7) on warm paper stock, with a visible thickness, a stack of spent edges beneath it, and two shadows that behave like a real card lifting from a desk. Everything else on the page is quiet furniture around that object. The masthead is a running head in small-caps mono, the piles are miniature stacks of the same stock, and the dialogs are the same paper set down over the table. Nothing competes with the deal.\n\nThe material is paper, not glass. Surfaces carry grain (a fractal-noise tile at 3.4% multiply in light, 5.5% overlay in dark, or a WebGL fibre shader when available), hairline rules rather than borders, and a single green accent borrowed from the owner's site. Density is low and the rhythm is editorial: generous vertical air, one serif for reading and one mono for labels, and a type scale sized by apparent x-height so the two families read at the same optical size. Dark mode is not an inversion but a second stock: near-black warm paper whose lower card edges catch rim light instead of falling into shadow.\n\nMotion is physical and short: a 460ms flip that reads as a solid turning in space, a specular sheen that rides the first half of the turn, cards that deal into a spread with a capped stagger, and a hover that lifts by pixels. Every effect degrades: reduced motion removes decoration and keeps feedback; no JavaScript hides controls that would not work.",
+    "keyCharacteristics": [
+      "One card, optically centred, is the composition; flanking piles reserve symmetric columns so it never shifts.",
+      "Paper-warm neutrals in both themes; a single forest/emerald accent used for links, focus, selection, and the discard tint only.",
+      "Two type registers: Fraunces (optically sized serif) for the card and prose, Plex Mono uppercase with wide tracking for every label and control.",
+      "Hairlines (`--rule`, 16% ink) instead of solid borders on chrome and dialogs; 1px `--line` borders only on card stock.",
+      "Two-layer elevation (ambient + contact) on the card; everything else is flat or tonal.",
+      "Controls are text, not chips: underlined mono words with no box, no fill, no glyph icons."
+    ],
+    "rules": [
+      {
+        "name": "The One Green Rule",
+        "body": "Green is the only hue on the page and it means \"interactive or chosen\": links, focus, selection, hover, the pressed shelf state, the CTA, and the discard tint. It never fills a surface and never colours a heading or body text.",
+        "section": "colors"
+      },
+      {
+        "name": "The Two Stocks Rule",
+        "body": "Dark mode is a second paper, not an inverted palette. Every token has a dark twin defined twice (media query and `[data-theme=\"dark\"]`) and the two blocks must stay byte-identical; grain switches from multiply to overlay and lower edges switch from shadow to rim light.",
+        "section": "colors"
+      },
+      {
+        "name": "The Apparent-Size Rule",
+        "body": "The two families have separate ramps because their x-heights differ (Fraunces 0.436em, Plex Mono 0.516em). Never share one size token between serif and mono; a mono element on the serif ramp lands ~20% too large.",
+        "section": "typography"
+      },
+      {
+        "name": "The Type Floor Rule",
+        "body": "Nothing renders under ~11.5px apparent size. `label-sm` (0.8rem) is the smallest step and it is not to be scaled down further with `em` multipliers.",
+        "section": "typography"
+      },
+      {
+        "name": "The Uppercase Mono Rule",
+        "body": "Every label, control, and running-head element is uppercase Plex Mono with tracking of at least 0.06em. Serif is never uppercased or tracked out; mono is never used for reading text.",
+        "section": "typography"
+      },
+      {
+        "name": "The Two-Shadow Rule",
+        "body": "A lifted card always carries both an ambient and a contact shadow on separate layers. One shadow cannot express weight because lift and spread change at different rates.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Only-the-Card-Lifts Rule",
+        "body": "Shadows belong to card stock (the card, spread cards, mini-pile layers, the dialog as a sheet). Chrome, links, text controls, and headings never cast shadows; they separate with hairlines.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do put one card at the centre and keep everything else in Faded Ink mono around it; the card text is the only serif on the draw screen.",
+      "Do use Forest Green (Emerald on dark) for every interactive or chosen state and nothing else: links, focus ring, selection, hover, pressed, CTA, discard tint.",
+      "Do separate chrome with 1px `--rule` hairlines (16% ink) and reserve 1px `--line` borders for card stock.",
+      "Do give every lifted sheet both shadows (ambient + contact) on separate layers, and the 14px card radius scaled down with the object (5px, 3px).",
+      "Do size mono and serif on their own ramps (`--t-mono` 0.95rem / `--t-mono-sm` 0.8rem vs `--t-body` 1.16rem) and keep every label uppercase with ≥0.06em tracking.",
+      "Do define any new colour token twice for dark mode (in the media query and in `[data-theme=\"dark\"]`) with identical values, and provide a plain fallback before any `color-mix()`.",
+      "Do honour `prefers-reduced-motion` by removing decorative animation entirely and keeping state feedback (colour, opacity, shadow).",
+      "Do keep controls as underlined words; the theme disc is the one non-text affordance."
+    ],
+    "donts": [
+      "Don't add a filled, outlined, or pill button; no such control exists and the world is text controls on paper.",
+      "Don't introduce a second hue; every non-neutral colour on the page is the green family.",
+      "Don't put shadows on chrome, text, headings, or links; only card stock casts.",
+      "Don't apply grain as a live CSS filter or outside a face's own stacking context; it is a tiled background image at `--grain-opacity` with `--grain-blend`.",
+      "Don't set type below the 0.8rem mono step or scale labels with `em` fractions; the floor is ~11.5px apparent.",
+      "Don't use `font: inherit` on a mono control without restating `font-family: var(--font-mono)`; the shorthand silently drops the pile labels to the serif.",
+      "Don't render card text into a canvas or texture; it stays real DOM above the paper layer.",
+      "Don't use glyph icons or icon fonts; the only marks are the straw-bundle glyph (CSS mask of `favicon.svg`), the `×` close, the `←`/`→` arrows, and the `✓` pressed prefix, all as text."
+    ]
+  }
+}
