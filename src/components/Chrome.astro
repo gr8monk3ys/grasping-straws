@@ -35,6 +35,10 @@ const deckSize = liveCards(entries).length;
   }
 
   <nav>
+    {/* One extra masthead link, not three: /play/ is the door to the other
+        two — it links on to /deck/ and /today/ — and the masthead already
+        needs a second row at 390px with the links it has. */}
+    <a href="/play/">Play</a>
     <a href="/about/">About</a>
     {/* "Get the deck" only while there is a deck to get. Until then the
         link names the thing and leads to the paragraph that says when. */}

@@ -1511,6 +1511,79 @@ html:not(.js) .theme {
   color: var(--muted);
 }
 
+/* ---------- ways to play (/play/) and the contents page (/deck/) ---------- */
+
+/* Both pages reuse the about page's editorial column (bodyClass="about").
+   Only what they add is styled here. */
+
+/* Who a game is for, riding on the section head that names it. The head is
+   already mono/uppercase/muted, so this is the same voice one notch down and
+   un-capitalised — it reads as a caption, not a second heading.
+   The step down is size and case only, never opacity: at ~11px mono the
+   caption is small text, and --muted on --bg sits at 5.07:1 light / 6.83:1
+   dark, which a 0.75 opacity dragged under AA (3.10 / 4.37). */
+.players {
+  margin-left: 0.75em;
+  /* The same size as the head: at 0.85em the caption sat under the type
+     floor (~10.7px apparent). Case and colour alone make the step down. */
+  font-size: 1em;
+  letter-spacing: 0.04em; /* mixed case: tracked like a sentence, not a label */
+  text-transform: none;
+  color: var(--muted);
+}
+
+.about .suit-block {
+  margin-top: 2.6em;
+}
+
+/* The suit head belongs to its block, so it must not re-add the 2.6em the
+   block already carries. */
+.about .suit-block h2 {
+  margin-top: 0;
+}
+
+.about .suit-blurb {
+  color: var(--muted);
+  margin-bottom: 1.2em;
+}
+
+/* Numbers hang in their own column so the card texts share one left edge —
+   a ragged left made 52 short lines read as noise. Printed numbering, not a
+   list marker: the id is what is on the card and in /c/<id>/. */
+.deck-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.deck-list li {
+  display: grid;
+  grid-template-columns: 2.25rem 1fr;
+  gap: 0.5rem;
+  align-items: baseline;
+  padding: 0.55rem 0;
+  border-top: 1px solid var(--rule);
+  line-height: 1.5;
+}
+
+.deck-list li:last-child {
+  border-bottom: 1px solid var(--rule);
+}
+
+.deck-num {
+  font-family: var(--font-mono);
+  font-size: var(--t-mono-sm);
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+
+/* The daily card's two controls sit side by side under the frame line. */
+.today-links {
+  display: flex;
+  justify-content: center;
+  gap: 1.6rem;
+}
+
 /* ---------- about: scroll-driven reveals ---------- */
 
 /* Native scroll-driven animation — no observer, no client bundle, zero

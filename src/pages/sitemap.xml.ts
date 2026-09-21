@@ -21,6 +21,9 @@ export const GET: APIRoute = ({ site }) => {
   const urls = [
     "/",
     "/about/",
+    "/today/",
+    "/play/",
+    "/deck/",
     ...liveCards(entries).map((c) => `/c/${c.id}/`),
   ];
 

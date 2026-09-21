@@ -1,0 +1,78 @@
+---
+/*
+ * The daily card: one card per calendar day, the same for everyone who
+ * shares a date. The pick happens client-side (src/scripts/today.ts) — a
+ * static page can't know the visitor's date, and "today" should mean the
+ * visitor's today, not the build machine's.
+ *
+ * The card is the same object as the draw screen's and the share pages':
+ * the deck shell, one face, and .card-static so it never turns. It starts
+ * showing the deck's back mark and swaps to the text once the date is
+ * known, which is also the no-JavaScript state.
+ */
+import Base from "../layouts/Base.astro";
+import Chrome from "../components/Chrome.astro";
+import { DECK_NAME } from "../config";
+import { liveCards } from "../deck/cards";
+import entries from "../../public/cards.json";
+
+// The deck is baked into the page, sorted by id (stable against reordering
+// in cards.json), so the pick needs no fetch and the page script shares no
+// module with the draw screen's — a shared module would be split into its
+// own chunk and neither script could stay inlined.
+const deck = liveCards(entries)
+  .slice()
+  .sort((a, b) => a.id - b.id)
+  .map((c) => [c.id, c.text]);
+
+const description =
+  "One card a day from Grasping Straws, an original deck of lateral-thinking prompts. Same card for everyone, until midnight.";
+---
+
+<Base title={`Today's card — ${DECK_NAME}`} description={description}>
+  <Chrome />
+  <main class="stage">
+    <div class="deck" data-edges="3">
+      <span class="deck-stack" aria-hidden="true">
+        <span class="deck-edge"></span>
+        <span class="deck-edge"></span>
+        <span class="deck-edge"></span>
+      </span>
+      <span class="card-shadow card-shadow-ambient" aria-hidden="true"></span>
+      <span class="card-shadow card-shadow-contact" aria-hidden="true"></span>
+      <div class="card card-static">
+        <span class="card-inner">
+          <span class="face face-a">
+            <span class="card-num" id="today-num" aria-hidden="true"></span>
+            <span class="card-mark" id="today-mark">
+              <span class="glyph"></span>
+              <span class="card-wordmark">{DECK_NAME}</span>
+            </span>
+            <span class="card-text" id="today-text" hidden></span>
+          </span>
+        </span>
+      </div>
+    </div>
+
+    {/* The frame, in the reading voice: which day this is and who else
+        holds it. Then two short mono controls. */}
+    <p class="card-page-about">
+      The card for <span id="today-date">today</span>. Everyone who shares the date holds this one.
+    </p>
+    <p class="hint card-page-invite today-links">
+      <a id="today-share" href="/">share this card</a>
+      <a href="/">draw a card &rarr;</a>
+    </p>
+    <noscript>
+      <p class="hint">
+        Today's card needs JavaScript to know your today &mdash; the cards themselves are just{" "}
+        <a href="/cards.json">a JSON file</a>.
+      </p>
+    </noscript>
+  </main>
+</Base>
+
+<script type="application/json" id="today-deck" set:html={JSON.stringify(deck)} />
+<script>
+  import "../scripts/today";
+</script>
