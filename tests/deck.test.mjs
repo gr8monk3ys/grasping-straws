@@ -149,6 +149,8 @@ test("a v1 shape (bag and last only) has its discard rebuilt, face-up card last"
   assert.deepEqual(new Set(s.order), new Set([1, 2, 3, 4, 5]));
   assert.deepEqual(s.aside, []);
   assert.deepEqual(deck.counts(), { left: 15, drawn: 5, aside: 0, total: 20 });
+  assert.equal(deck.rebuiltDiscard, true);
+  assert.equal(openDeck(all, s, seeded()).rebuiltDiscard, false, "a v2 shape needs no rebuild");
 });
 
 test("garbage in storage is the same as nothing in storage", () => {

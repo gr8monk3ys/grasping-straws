@@ -804,9 +804,17 @@ const contrast = await pu.evaluate(() => {
 check("accent clears AA against its ground (dark)", contrast.dark >= 4.5, contrast.dark.toFixed(2) + ":1");
 
 // ---- the paper shader, and its fallback ----------------------------------
+// The paper mounts on the first sign of intent (a pointer over the deck, a
+// press, focus, a key), never at load: a visitor who only looks pays nothing
+// for two WebGL canvases. So the tests announce themselves before looking.
 const ctxGl = await browser.newContext({ viewport: { width: 390, height: 844 } });
 const pg = await ctxGl.newPage();
 await pg.goto(BASE + "/", { waitUntil: "networkidle" });
+await pg.waitForTimeout(300);
+check("the paper is not mounted for a visitor who has not yet reached for the deck",
+  !(await pg.evaluate(() => document.documentElement.classList.contains("gl"))) &&
+    (await pg.locator("canvas.paper").count()) === 0);
+await pg.hover("#deck");
 await pg.waitForTimeout(700);
 const glState = await pg.evaluate(() => ({
   mounted: document.documentElement.classList.contains("gl"),
@@ -830,6 +838,7 @@ await ctxNoGl.addInitScript(() => {
 });
 const png = await ctxNoGl.newPage();
 await png.goto(BASE + "/", { waitUntil: "networkidle" });
+await png.hover("#deck");
 await png.waitForTimeout(500);
 const fallback = await png.evaluate(() => ({
   mounted: document.documentElement.classList.contains("gl"),
@@ -853,6 +862,7 @@ check("the card still tilts without WebGL", Math.abs(fbTilt - fbFlat) > 0.01, `$
 // reduced motion never mounts it at all
 const prNoGl = await ctxRM.newPage();
 await prNoGl.goto(BASE + "/", { waitUntil: "networkidle" });
+await prNoGl.hover("#deck");
 await prNoGl.waitForTimeout(500);
 check(
   "reduced motion skips the shader entirely",

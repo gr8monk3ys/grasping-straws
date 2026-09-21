@@ -77,6 +77,7 @@ npm run dev        # dev server with live reload
 npm run build      # static build into dist/
 npm run preview    # serve the built site
 npm run check      # typecheck the client script
+npm test           # the deck, the card rule and the readable-text budget, in Node
 npm run validate   # lint public/cards.json
 npm run verify     # drive the built site end to end (build + serve first)
 npm run assets     # regenerate og.png + PWA icons from favicon.svg

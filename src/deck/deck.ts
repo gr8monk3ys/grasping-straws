@@ -65,6 +65,10 @@ export class Deck {
   private _aside: number[] = [];
   private _last: number | null = null;
   private rng: Rng;
+  // True when restore() had to rebuild the discard from a shape that never
+  // recorded it. The caller should write the rebuilt shape back at once,
+  // or the discard would be rebuilt (and reordered) on every load.
+  rebuiltDiscard = false;
 
   constructor(cards: readonly Card[], rng: Rng) {
     this.cards = cards;
@@ -202,6 +206,7 @@ export class Deck {
       const last = this._last;
       this._order = this.cards.map((c) => c.id).filter((id) => !inBag.has(id) && id !== last);
       if (last !== null) this._order.push(last);
+      this.rebuiltDiscard = true;
     }
     if (this.bag.length === 0) this.refill();
   }

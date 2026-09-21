@@ -588,10 +588,11 @@ async function init(): Promise<void> {
     return;
   }
   deck = openDeck(cards, saved);
-  // Written back at once: a v1 shape has just had its discard rebuilt from
-  // cards.json's order, and leaving that unsaved would let the discard
-  // reshuffle itself on every load if the file is ever reordered.
-  saveState();
+  // A v1 shape has just had its discard rebuilt from cards.json's order;
+  // written back at once, or the discard would reshuffle itself on every
+  // load if the file were ever reordered. Only then: a fresh visitor's
+  // state is not saved until they draw.
+  if (deck.rebuiltDiscard) saveState();
   updateDeckDepth();
   updateKeep();
 
@@ -604,7 +605,27 @@ async function init(): Promise<void> {
   });
 
   // Progressive enhancement: the CSS grain layer stays if this returns null.
-  if (!reducedMotion.matches) paper = mountPaper([faceA, faceB], inner);
+  // Mounted on the first sign of intent rather than at load. At rest the CSS
+  // grain already is the resting look; the shader earns its place in motion
+  // (the specular band during a turn, the tilt under a pointer), and both
+  // begin with an event. Compositing two WebGL canvases is the one expensive
+  // thing this page does, and a visitor who only reads the card face down
+  // should not pay for it. The mount itself is sliced into idle steps, so a
+  // pointer arriving over the deck is not made to wait for it.
+  if (!reducedMotion.matches) {
+    let armed = false;
+    const armPaper = (): void => {
+      if (armed) return;
+      armed = true;
+      paper = mountPaper([faceA, faceB], inner);
+    };
+    const once = { once: true, passive: true };
+    deckEl.addEventListener("pointerenter", armPaper, once);
+    cardBtn.addEventListener("pointerdown", armPaper, once);
+    cardBtn.addEventListener("focus", armPaper, once);
+    document.addEventListener("keydown", armPaper, once);
+    window.addEventListener("hashchange", armPaper, once);
+  }
 
   // pointerup fires before click, so a throw has already dealt by the time
   // the click arrives; and a drag that sprang back was not a tap either.
