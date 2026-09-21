@@ -1524,8 +1524,10 @@ html:not(.js) .theme {
    dark, which a 0.75 opacity dragged under AA (3.10 / 4.37). */
 .players {
   margin-left: 0.75em;
-  font-size: 0.85em;
-  letter-spacing: 0.1em;
+  /* The same size as the head: at 0.85em the caption sat under the type
+     floor (~10.7px apparent). Case and colour alone make the step down. */
+  font-size: 1em;
+  letter-spacing: 0.04em; /* mixed case: tracked like a sentence, not a label */
   text-transform: none;
   color: var(--muted);
 }
@@ -1575,11 +1577,11 @@ html:not(.js) .theme {
   color: var(--muted);
 }
 
-/* The daily card carries two hint lines: which day this card is, then the
-   invitation to draw your own. They are one block, so the second sits tight
-   under the first rather than a second full .hint gap away. */
-.today-line + .card-page-invite {
-  margin-top: 0.5rem;
+/* The daily card's two controls sit side by side under the frame line. */
+.today-links {
+  display: flex;
+  justify-content: center;
+  gap: 1.6rem;
 }
 
 /* ---------- about: scroll-driven reveals ---------- */

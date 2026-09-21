@@ -13,6 +13,17 @@
 import Base from "../layouts/Base.astro";
 import Chrome from "../components/Chrome.astro";
 import { DECK_NAME } from "../config";
+import { liveCards } from "../deck/cards";
+import entries from "../../public/cards.json";
+
+// The deck is baked into the page, sorted by id (stable against reordering
+// in cards.json), so the pick needs no fetch and the page script shares no
+// module with the draw screen's — a shared module would be split into its
+// own chunk and neither script could stay inlined.
+const deck = liveCards(entries)
+  .slice()
+  .sort((a, b) => a.id - b.id)
+  .map((c) => [c.id, c.text]);
 
 const description =
   "One card a day from Grasping Straws, an original deck of lateral-thinking prompts. Same card for everyone, until midnight.";
@@ -32,6 +43,7 @@ const description =
       <div class="card card-static">
         <span class="card-inner">
           <span class="face face-a">
+            <span class="card-num" id="today-num" aria-hidden="true"></span>
             <span class="card-mark" id="today-mark">
               <span class="glyph"></span>
               <span class="card-wordmark">{DECK_NAME}</span>
@@ -42,14 +54,14 @@ const description =
       </div>
     </div>
 
-    <p class="hint today-line">
-      {/* The separator is glued to the date with a nbsp: on a narrow phone the
-          line wraps between them and the bullet starts the next line. */}
-      the card for <span id="today-date">today</span>&nbsp;&middot;{" "}
-      <a id="today-share" href="/">share this card</a>
+    {/* The frame, in the reading voice: which day this is and who else
+        holds it. Then two short mono controls. */}
+    <p class="card-page-about">
+      The card for <span id="today-date">today</span>. Everyone who shares the date holds this one.
     </p>
-    <p class="hint card-page-invite">
-      <a href="/">Draw your own card &rarr;</a>
+    <p class="hint card-page-invite today-links">
+      <a id="today-share" href="/">share this card</a>
+      <a href="/">draw a card &rarr;</a>
     </p>
     <noscript>
       <p class="hint">
@@ -60,6 +72,7 @@ const description =
   </main>
 </Base>
 
+<script type="application/json" id="today-deck" set:html={JSON.stringify(deck)} />
 <script>
   import "../scripts/today";
 </script>

@@ -5,10 +5,23 @@
  * in cards.json). No backend, no state — the date is the seed.
  */
 
-import { FAILURE_TEXT, loadDeck } from "./deck";
+type Entry = [id: number, text: string];
+
+// The deck, baked into the page by today.astro (already live cards only,
+// sorted by id). Read here rather than fetched, so the pick is ready as soon
+// as the script runs and the script shares no module with the draw screen.
+function readDeck(): Entry[] {
+  try {
+    const parsed = JSON.parse(document.getElementById("today-deck")?.textContent ?? "null") as unknown;
+    return Array.isArray(parsed) && parsed.length > 0 ? (parsed as Entry[]) : [];
+  } catch {
+    return [];
+  }
+}
 
 const markEl = document.getElementById("today-mark") as HTMLElement;
 const textEl = document.getElementById("today-text") as HTMLElement;
+const numEl = document.getElementById("today-num") as HTMLElement;
 const dateEl = document.getElementById("today-date") as HTMLElement;
 const shareEl = document.getElementById("today-share") as HTMLAnchorElement;
 
@@ -39,30 +52,30 @@ function fmix32(h: number): number {
   return h >>> 0;
 }
 
-async function init(): Promise<void> {
-  const deck = await loadDeck();
-  if (!deck) {
+function init(): void {
+  const deck = readDeck();
+  if (deck.length === 0) {
     markEl.hidden = true;
     textEl.hidden = false;
-    textEl.textContent = FAILURE_TEXT;
+    textEl.textContent = "The deck failed to load. Refresh to try again.";
     return;
   }
 
   const now = new Date();
   const pad = (n: number) => String(n).padStart(2, "0");
   const key = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
-  const sorted = deck.slice().sort((a, b) => a.id - b.id);
-  const card = sorted[fmix32(fnv1a(key)) % sorted.length]!;
+  const [id, text] = deck[fmix32(fnv1a(key)) % deck.length]!;
 
   markEl.hidden = true;
   textEl.hidden = false;
-  textEl.textContent = card.text;
+  textEl.textContent = text;
+  numEl.textContent = "#" + id; // the corner number, as on every face-up card
   dateEl.textContent = now.toLocaleDateString(undefined, {
     day: "numeric",
     month: "long",
     year: "numeric",
   });
-  shareEl.href = "/c/" + card.id + "/";
+  shareEl.href = "/c/" + id + "/";
 }
 
 init();

@@ -9,7 +9,8 @@
  * Built from public/cards.json like everything else, so a card edit lands
  * here at the next build with nothing to keep in step. No JavaScript.
  */
-import cards from "../../public/cards.json";
+import entries from "../../public/cards.json";
+import { liveCards } from "../deck/cards";
 import Base from "../layouts/Base.astro";
 import Chrome from "../components/Chrome.astro";
 import { DECK_NAME, DECK_VERSION, PHYSICAL_DECK_URL } from "../config";
@@ -20,8 +21,8 @@ const physicalHref = PHYSICAL_DECK_URL || "/about/#physical";
 
 // Drafts are reserved ids with no text, held so the printed deck reaches
 // one of the printer's fixed tiers. They are not part of the deck anyone
-// has, so they are not listed — the same filter the share pages use.
-const deck = cards.filter((c) => !("draft" in c && c.draft));
+// has, so they are not listed — the same rule the share pages use.
+const deck = liveCards(entries);
 
 // Suits in order of first appearance in cards.json, which is the deck's own
 // order. Cards with no suit are collected last so none can go unlisted.

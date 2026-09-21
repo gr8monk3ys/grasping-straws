@@ -1106,6 +1106,10 @@ const deckScripts = await pdeck.locator("script").count();
 const aboutScripts = await pa.locator("script").count();
 check("/deck/ ships no JavaScript of its own", deckScripts === aboutScripts, `${deckScripts} vs ${aboutScripts} on /about/`);
 await pdeck.screenshot({ path: path.join(SHOTS, "shot-12-deck.png"), fullPage: true });
+// The two editorial pages are held to the same type floor as the rest.
+for (const { where, list } of [await tooSmall(pplay, "/play/"), await tooSmall(pdeck, "/deck/")]) {
+  check(`no text under ~11.5px apparent on ${where}`, list.length === 0, list.join(" "));
+}
 
 // ---- the free print-and-play PDF ----------------------------------------
 const resPdf = await pdeck.request.get(BASE + "/print-and-play.pdf");
