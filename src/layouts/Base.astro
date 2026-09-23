@@ -64,6 +64,8 @@ const { title, description, bodyClass } = Astro.props;
     </script>
   </head>
   <body class={bodyClass}>
+    {/* First stop for a keyboard: past the masthead to the page itself. */}
+    <a class="skip-link" href="#main">Skip to content</a>
     <slot />
     <script>
       import "../scripts/theme";

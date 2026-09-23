@@ -28,7 +28,7 @@ const physicalHref = PHYSICAL_DECK_URL || "/about/#physical";
 
 <Base title={title} description={description}>
   <Chrome />
-  <main class="stage">
+  <main id="main" class="stage">
     {/* Same deck shell as the draw screen, minus the second face — a shared
         card is already face up and never turns. */}
     <div class="deck" data-edges="3">
@@ -55,7 +55,7 @@ const physicalHref = PHYSICAL_DECK_URL || "/about/#physical";
       One of {deckSize} original prompts for breaking a creative deadlock.
     </p>
     <p class="hint card-page-invite">
-      <a href="/">Draw your own card &rarr;</a>
+      <a href="/">Draw your own card <span aria-hidden="true">&rarr;</span></a>
     </p>
   </main>
 </Base>

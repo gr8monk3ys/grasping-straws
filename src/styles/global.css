@@ -230,6 +230,39 @@ a {
   border-radius: 2px;
 }
 
+/* Taps act at once: no double-tap-to-zoom delay on anything you press. The
+   card sets its own touch-action (pan-y, for the throw) and its own
+   transparent highlight, and both selectors are more specific than these. */
+a,
+button,
+summary {
+  touch-action: manipulation;
+}
+
+html {
+  -webkit-tap-highlight-color: color-mix(in srgb, var(--accent) 16%, transparent);
+}
+
+/* Off-screen until focused, then the first thing on the page. */
+.skip-link {
+  position: absolute;
+  top: 0.75rem;
+  left: 0.75rem;
+  z-index: 100;
+  padding: 0.5rem 0.85rem;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: var(--t-mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  transform: translateY(-200%);
+}
+
+.skip-link:focus {
+  transform: none;
+}
+
 .sr-only {
   position: absolute;
   width: 1px;
@@ -576,6 +609,8 @@ button.pile:not([disabled]):focus-visible .pile-label {
 }
 
 .spread-list {
+  /* A scroll inside the modal ends inside the modal. */
+  overscroll-behavior: contain;
   display: grid;
   /* min(11rem, 44%) rather than a bare 11rem: at 390px the track plus the
      gap overshoots the available width by a few pixels, the grid drops to a
