@@ -31,7 +31,8 @@ const description =
 
 <Base title={`Today’s card — ${DECK_NAME}`} description={description}>
   <Chrome />
-  <main class="stage">
+  <main id="main" class="stage">
+    <h1 class="sr-only">Today’s card</h1>
     <div class="deck" data-edges="3">
       <span class="deck-stack" aria-hidden="true">
         <span class="deck-edge"></span>
@@ -61,7 +62,7 @@ const description =
     </p>
     <p class="hint card-page-invite today-links">
       <a id="today-share" href="/">share this card</a>
-      <a href="/">draw a card &rarr;</a>
+      <a href="/">draw a card <span aria-hidden="true">&rarr;</span></a>
     </p>
     <noscript>
       <p class="hint">
