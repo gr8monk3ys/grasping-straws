@@ -193,10 +193,16 @@ function openSpread(title: string, ids: readonly number[]): void {
 
 function riffle(): void {
   if (reducedMotion.matches) return;
+  // Restart the riffle by letting one frame render without the class rather
+  // than forcing a synchronous reflow (reading offsetWidth between the two
+  // class writes), which the Web Interface Guidelines ask to avoid.
   deckStack.classList.remove("riffling");
-  void deckStack.offsetWidth; // reflow, so re-adding the class restarts it
-  deckStack.classList.add("riffling");
-  setTimeout(() => deckStack.classList.remove("riffling"), RIFFLE_MS + 50);
+  requestAnimationFrame(() =>
+    requestAnimationFrame(() => {
+      deckStack.classList.add("riffling");
+      setTimeout(() => deckStack.classList.remove("riffling"), RIFFLE_MS + 50);
+    })
+  );
 }
 
 /* ---------- faces ---------- */

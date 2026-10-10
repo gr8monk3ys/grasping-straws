@@ -4,12 +4,13 @@ import Chrome from "../components/Chrome.astro";
 import { DECK_NAME } from "../config";
 ---
 
-<Base title={`Not found — ${DECK_NAME}`} description="This page doesn't exist.">
+<Base title={`Not found — ${DECK_NAME}`} description="This page doesn’t exist.">
   <Chrome />
-  <main>
+  <main id="main">
+    <h1 class="sr-only">Page not found</h1>
     <span class="glyph"></span>
     <p>Nothing here. Not every reach finds a straw.</p>
-    <a href="/">&larr; Back to the deck</a>
+    <a href="/"><span aria-hidden="true">&larr;</span> Back to the deck</a>
   </main>
 </Base>
 
