@@ -18,6 +18,10 @@ _Avoid_: placeholder, reserved card, empty card
 Every card the site deals: the entries of cards.json that are not drafts.
 _Avoid_: pack, set
 
+**Edition**:
+A printed deck with its own box and its own range of card ids. There are two. The Paper edition (ids 1–52) works on the piece in front of you and is the deck the site deals. The Night edition (ids 101–152) works on the person making it and exists only in print.
+_Avoid_: version (DECK_VERSION counts printings of an edition), light deck, dark deck, volume
+
 ### The cycle
 
 **Cycle**:

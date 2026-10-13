@@ -1,29 +1,34 @@
 /*
  * Regenerates the raster brand assets in public/ from the single vector
- * source (public/favicon.svg) and the site palette:
+ * source (public/favicon.svg) and the site palette (src/deck/palette.ts):
  *
  *   public/og.png               1200x630 link-preview image
  *   public/icon-192.png         PWA icon
  *   public/icon-512.png         PWA icon (maskable-safe: mark inside 80%)
  *   public/apple-touch-icon.png 180x180
  *
- * Run after changing the glyph: npm run assets
+ * Run after changing the glyph or the palette: npm run assets
  */
 import { chromium } from "playwright";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { PAPER } from "../src/deck/palette.ts";
+import { mark } from "./mark.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const pub = path.join(here, "..", "public");
 
-const BG = "#f5efe3";
-const CARD = "#fdfaf3";
-const INK = "#241e16";
-const MUTED = "#6e6455";
-const LINE = "#dcd2be";
+// These are link previews and home-screen icons: they are always Paper,
+// whatever theme the visitor's device is in.
+const { ground: BG, card: CARD, ink: INK, muted: MUTED, hairline: LINE } = PAPER;
+// The card's shadow is its ink, thinned (global.css does the same by hand).
+const INK_RGB = [1, 3, 5].map((i) => parseInt(INK.slice(i, i + 2), 16)).join(" ");
 
-const svg = fs.readFileSync(path.join(pub, "favicon.svg"), "utf8");
+// The mark in the palette's ink. favicon.svg colours itself, and inlined
+// into a page its own rules win over any colour set here; mark() writes the
+// colour onto the shapes instead (see scripts/mark.js).
+const svg = mark(INK);
 const font = fs.readFileSync(path.join(pub, "fonts", "Fraunces-latin.woff2")).toString("base64");
 // The wordmark on a card BACK is Plex Mono everywhere else — the masthead
 // and the printed deck. The OG image is the same object and must not be the
@@ -50,7 +55,7 @@ const baseCss = `
 const ogHtml = `<!doctype html><style>${baseCss}
   .card { width: 336px; height: 470px; background: ${CARD};
           border: 2px solid ${LINE}; border-radius: 20px;
-          box-shadow: 0 2px 4px rgb(36 30 22 / 0.08), 0 28px 72px -28px rgb(36 30 22 / 0.28);
+          box-shadow: 0 2px 4px rgb(${INK_RGB} / 0.08), 0 28px 72px -28px rgb(${INK_RGB} / 0.28);
           display: grid; place-items: center; }
   .mark { display: grid; justify-items: center; gap: 34px; color: ${MUTED}; }
   .mark svg { width: 120px; height: 120px; }
@@ -65,7 +70,9 @@ const iconHtml = (size) => `<!doctype html><style>${baseCss}
   svg { width: ${Math.round(size * 0.58)}px; height: ${Math.round(size * 0.58)}px; color: ${INK}; }
 </style><body>${svg}</body>`;
 
-const browser = await chromium.launch();
+// PW_CHANNEL=chrome renders with the installed Chrome instead of Playwright's
+// pinned download, for hosts where that download will not install.
+const browser = await chromium.launch({ channel: process.env.PW_CHANNEL || undefined });
 const shots = [
   { file: "og.png", width: 1200, height: 630, html: ogHtml },
   { file: "icon-512.png", width: 512, height: 512, html: iconHtml(512) },

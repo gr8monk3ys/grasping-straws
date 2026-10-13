@@ -20,6 +20,8 @@ import { chromium } from "playwright";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { PAPER } from "../src/deck/palette.ts";
+import { mark as tint } from "./mark.js";
 import { RULES_CARDS } from "./rules-cards.js";
 import { pnpStamp, STAMP_PATH } from "./pnp-stamp.js";
 
@@ -30,25 +32,17 @@ const pdfPath = path.join(pub, "print-and-play.pdf");
 const all = JSON.parse(fs.readFileSync(path.join(pub, "cards.json"), "utf8"));
 // Drafts are reserved ids with no text. The manufactured run refuses to
 // render while any remain; the free edition does not, because it is not
-// permanent — someone printing at home today should get today's 48 cards
+// permanent — someone printing at home today should get today's cards
 // rather than nothing.
 const cards = all.filter((c) => !c.draft);
-const svg = fs.readFileSync(path.join(pub, "favicon.svg"), "utf8");
 const b64 = (f) => fs.readFileSync(path.join(pub, "fonts", f)).toString("base64");
 const fraunces = b64("Fraunces-latin.woff2");
 const plex = b64("PlexMono-400-latin.woff2");
 
-const CARD = "#fdfaf3";
-const INK = "#241e16";
-const MUTED = "#6e6455";
-const ACCENT = "#2c6e4f";
+// The free edition is the Paper edition, in the same colours as the printed one.
+const { card: CARD, ink: INK, muted: MUTED, accent: ACCENT, moss: RULE } = PAPER;
 
 const esc = (s) => s.replaceAll("&", "&amp;").replaceAll("<", "&lt;");
-
-// favicon.svg hardcodes its ink and carries a prefers-color-scheme: dark
-// branch that would print a near-white mark on cream. Same treatment as the
-// manufactured run: replace both hexes so either branch says the same thing.
-const tint = (color) => svg.replaceAll("#241E16", color).replaceAll("#EAE3D4", color);
 
 // text-wrap: balance evens out line lengths and has no idea where a sentence
 // ends, which strands the second sentence's first word on the previous line.
@@ -85,7 +79,7 @@ const titleFace = `<div class="cell">
 </div>`;
 
 const backFace = `<div class="cell back"><div class="backart">
-  <div class="mark">${tint(MUTED)}</div>
+  <div class="mark">${tint(ACCENT)}</div>
   <div class="wordmark">Grasping&nbsp;Straws?</div>
 </div></div>`;
 
@@ -126,7 +120,7 @@ const html = `<!doctype html><meta charset="utf-8"><style>
   .num { font-family: "Plex Mono", monospace; font-size: 7.5pt; letter-spacing: 0.16em;
          color: ${MUTED}; min-height: 1em; }
   .mid { display: grid; place-items: center; }
-  .rule { justify-self: center; width: 0.4in; height: 1pt; background: ${ACCENT}; opacity: 0.65; }
+  .rule { justify-self: center; width: 0.4in; height: 1pt; background: ${RULE}; }
   /* 15.5pt on a 2.23in text column holds the longest card (62 characters) in
      three lines, and matches the proportion the site sets the face at. */
   .prompt { font-size: 15.5pt; line-height: 1.32; text-align: center; text-wrap: balance;

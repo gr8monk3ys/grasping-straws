@@ -2,9 +2,12 @@
   "inputs": [
     "public/cards.json",
     "scripts/rules-cards.js",
-    "scripts/print-and-play.js"
+    "scripts/print-and-play.js",
+    "scripts/mark.js",
+    "public/favicon.svg",
+    "src/deck/palette.ts"
   ],
-  "sha256": "561fd8264a7576cfa55f2c45104b8e03459ee4aa47b08d682da6e93fff4f181b",
-  "bytes": 340839,
-  "faces": 54
+  "sha256": "fa2f8ae88e2b364f87e2b5db99756a2084f2d2abe24f72dd5fa0b1a688d3aa50",
+  "bytes": 252806,
+  "faces": 58
 }

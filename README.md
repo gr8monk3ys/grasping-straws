@@ -7,9 +7,9 @@ Peter Schmidt's Oblique Strategies. All card text here is original.
 Tap, get a card, tap again.
 
 <p align="center">
-  <img src="docs/screenshot-light.png" alt="The face-down card showing the straw-bundle mark, paper-warm light theme" width="42%">
+  <img src="docs/screenshot-light.png" alt="The face-down card showing the straw-bundle mark, in the light theme on off-white paper" width="42%">
   &nbsp;&nbsp;
-  <img src="docs/screenshot-dark.png" alt="A drawn card reading &quot;Translate it into plain speech; keep the ghost.&quot; in the near-black dark theme, with the deck, discard and kept counts below it" width="42%">
+  <img src="docs/screenshot-dark.png" alt="A drawn card reading &quot;Translate it into plain speech; keep the ghost.&quot; in the dark theme, with the deck, discard and kept counts below it" width="42%">
 </p>
 
 Built with [Astro](https://astro.build) as a fully static site. The built
@@ -48,8 +48,8 @@ Edit **`public/cards.json`** and nothing else. It's an array of
   still list, just unannotated.
 - `draft: true` reserves an id without publishing it. Drafts are filtered
   out of the dealt deck and get no share page, and `npm run print` refuses
-  to run while any remain. They exist because MakePlayingCards prints tarot
-  decks in fixed tiers and the deck has to reach one — see
+  to run while any remain. They exist so an id can be claimed for the
+  printed deck before its text is written — see
   [docs/printing.md](docs/printing.md).
 
 Removed cards vanish from visitors' in-progress decks automatically; added
@@ -84,27 +84,40 @@ npm test           # the deck, the card rule and the readable-text budget, in No
 npm run validate   # lint public/cards.json
 npm run verify     # drive the built site end to end (build + serve first)
 npm run assets     # regenerate og.png + PWA icons from favicon.svg
-npm run print      # render 300 DPI print files into print/final/ (see below)
+npm run print      # render 300 DPI print files into print/final/<edition>/ (see below)
+npm run print:box  # lay an edition's box artwork onto the printer's dieline
+npm run mockup     # stage the print files as cards and boxes, into print/mockup/
 npm run pnp        # render the free print-and-play PDF into public/
 npm run pnp:check  # is the committed PDF still in step with cards.json?
 npm run validate:rules  # do /play/ and the printed rules cards list the same games?
 ```
 
-## Print files (physical deck)
+## Print files (physical decks)
 
-`npm run print` renders all 54 faces, the shared back and a contact sheet
-into `print/final/` at **897 × 1497 px, 300 DPI** — MakePlayingCards'
-published tarot upload size, taken from their own FAQ rather than a
+There are two printed editions, declared in `src/deck/editions.ts`. The
+**Paper edition** (ids 1–52) is the deck this site deals and works on the
+piece in front of you. The **Night edition** (ids 101–152, in
+`src/deck/night.json`) works on the person making it and exists only in
+print. Both are set in the palette of lscaturchio.xyz, held in
+`src/deck/palette.ts`.
+
+`npm run print` renders the Paper edition and `EDITION=night npm run print`
+the Night edition: all 54 faces, the shared back and a contact sheet
+into `print/final/<edition>/` at **822 × 1122 px, 300 DPI** — MakePlayingCards'
+published poker upload size, taken from their own FAQ rather than a
 third-party template. The script self-checks that figure and refuses to run
-if it drifts, if any card is still a draft, or if the face count isn't one
-of MPC's tiers. It also measures every face as it renders and fails if any
+if it drifts, if any card is still a draft, or if there are more faces than
+MPC's largest deck. It also measures every face as it renders and fails if any
 text crosses the safe line, which is the mistake that costs a reprint.
 
 `PROOF=1 npm run print` renders the unwritten slots stamped UNWRITTEN into a
 separate directory so layout can be checked before the writing is done.
 `GUIDES=1` overlays the bleed and safe outlines.
 
-Full ordering steps, including what is still unresolved about the tuck box:
+`npm run mockup` folds the rendered files into pictures of the cards and
+their boxes, to judge the object before paying for one.
+
+Full ordering steps, including the box:
 **[docs/printing.md](docs/printing.md)**.
 
 ### The free print-and-play edition
@@ -159,7 +172,8 @@ printed deck carries the URL too — `scripts/print-cards.js`.
   card text in the title and OG tags so shared links preview the card
   itself (`#`-fragments never reach link scrapers). Each page invites the
   visitor to draw their own.
-- **Themes**: light (paper-warm) and dark (near-black), following
+- **Themes**: light (warm off-white paper) and dark (a cool night page), in
+  the palette of lscaturchio.xyz, following
   `prefers-color-scheme` by default with a masthead toggle that overrides it
   and persists. Both AA contrast, including the green accent.
 - **Type**: Fraunces for the card face and prose, IBM Plex Mono for the

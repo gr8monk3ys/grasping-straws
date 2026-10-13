@@ -12,7 +12,9 @@
 import { chromium } from "playwright";
 import { liveCards, draftSlots } from "../src/deck/cards.ts";
 import { edgesFor } from "../src/deck/deck.ts";
+import { EDITIONS } from "../src/deck/editions.ts";
 import { FLIP_MS, READABLE_BUDGET_MS } from "../src/deck/motion.ts";
+import { NIGHT } from "../src/deck/palette.ts";
 import fs from "node:fs";
 import zlib from "node:zlib";
 import os from "node:os";
@@ -20,6 +22,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
+const root = path.join(here, "..");
 const BASE = process.env.BASE_URL || "http://127.0.0.1:8317";
 const SHOTS = process.env.SHOTS_DIR || fs.mkdtempSync(path.join(os.tmpdir(), "gs-shots-"));
 // Drafts are ids reserved so the PRINTED deck reaches one of MakePlayingCards'
@@ -105,7 +108,10 @@ check("glyph mask resolves to favicon.svg", await page
   .evaluate((el) => getComputedStyle(el).maskImage.includes("favicon.svg") || getComputedStyle(el).webkitMaskImage.includes("favicon.svg")));
 check("hint visible pre-draw", (await page.locator("#hint").evaluate((el) => getComputedStyle(el).opacity)) === "1");
 check("Fraunces loaded", await page.evaluate(() => document.fonts.check('16px "Fraunces"')));
-check("Plex Mono loaded", await page.evaluate(() => document.fonts.check('16px "Plex Mono"')));
+// Weight 500, named: every label on the draw screen is a wall label now, so
+// 500 is the only Plex Mono file this page draws with. An unweighted check
+// asks about 400, which the page no longer uses and so never loads.
+check("Plex Mono loaded", await page.evaluate(() => document.fonts.check('500 16px "Plex Mono"')));
 // The axis EB Garamond lacked. If this stops varying, the card face is being
 // scaled rather than optically sized and the swap bought nothing.
 check("Fraunces exposes a working optical-size axis", await page.evaluate(() => {
@@ -291,7 +297,11 @@ check("desktop hint offers space/click", await pd.locator(".hint-pointer").isVis
 await pd.screenshot({ path: path.join(SHOTS, "shot-4-facedown-dark-desktop.png") });
 await drawOnce(pd, true);
 await pd.screenshot({ path: path.join(SHOTS, "shot-5-faceup-dark-desktop.png") });
-check("dark theme applied", (await pd.evaluate(() => getComputedStyle(document.body).backgroundColor)) === "rgb(23, 19, 16)");
+// Night, from the palette rather than written out a second time here: the
+// ground is the website's cool night page, not the warm desk it used to be.
+const nightGround = `rgb(${[1, 3, 5].map((i) => parseInt(NIGHT.ground.slice(i, i + 2), 16)).join(", ")})`;
+const darkBg = await pd.evaluate(() => getComputedStyle(document.body).backgroundColor);
+check("dark theme applied", darkBg === nightGround, `${darkBg}, expected ${nightGround}`);
 
 // ---- reduced motion ----------------------------------------------------
 const ctxRM = await browser.newContext({ reducedMotion: "reduce", viewport: { width: 390, height: 844 } });
@@ -502,19 +512,33 @@ check("remaining count tracks the bag exactly", after.left === after.bag, `${aft
 check("the discard thickens as the deck thins", after.discardLayers > 0 && after.deckLayers <= 6, JSON.stringify(after));
 await pu.screenshot({ path: path.join(SHOTS, "shot-12-table-light.png") });
 
-// --- reserved print slots never reach the site ----------------------------
-check("there are reserved draft slots to test", drafts.length > 0, `${drafts.length}`);
-check("drafts are excluded from the dealt deck", await pu.evaluate(
-  async () => (await (await fetch("/cards.json")).json()).filter((c) => c.draft).length > 0
-) && (await pileState()).left + (await pileState()).drawn === cards.length);
-const draftRes = await pu.request.get(BASE + "/c/" + drafts[0].id + "/");
-check("a draft gets no share page", draftRes.status() === 404, `/c/${drafts[0].id}/ -> ${draftRes.status()}`);
-check("a draft id in the hash is ignored", await pu.evaluate(async (id) => {
-  location.hash = "#" + id;
-  await new Promise((r) => setTimeout(r, 300));
-  const el = document.querySelector('.face[aria-hidden="false"] .card-text');
-  return !!el.textContent.trim();
-}, drafts[0].id));
+// --- what the site does not deal never reaches the site --------------------
+// Two kinds of id must stay off it: a draft (a slot reserved for print with
+// no text yet, when the deck has any) and every card of the Night edition,
+// which is print only. The deck may have no drafts at all; it always has a
+// Night card to try.
+const nightIds = JSON.parse(fs.readFileSync(path.join(root, EDITIONS.night.file), "utf8")).map((c) => c.id);
+const served = await pu.evaluate(async () => await (await fetch("/cards.json")).json());
+check("drafts are excluded from the dealt deck",
+  served.filter((c) => c.draft).length === drafts.length &&
+    (await pileState()).left + (await pileState()).drawn === cards.length,
+  `${drafts.length} draft(s)`);
+check("no Night edition card is served in cards.json",
+  nightIds.length > 0 && served.every((c) => !nightIds.includes(c.id)), `${nightIds.length} Night ids`);
+const nightFile = await pu.request.get(BASE + "/" + path.basename(EDITIONS.night.file));
+check("the Night deck's file is not served", nightFile.status() === 404, `${nightFile.status()}`);
+for (const [what, id] of [["a draft", drafts[0]?.id], ["a Night edition card", nightIds[0]]]) {
+  if (id == null) continue;
+  const res = await pu.request.get(BASE + "/c/" + id + "/");
+  check(`${what} gets no share page`, res.status() === 404, `/c/${id}/ -> ${res.status()}`);
+  check(`${what}'s id in the hash is ignored`, await pu.evaluate(async (id) => {
+    const before = document.querySelector('.face[aria-hidden="false"] .card-text').textContent;
+    location.hash = "#" + id;
+    await new Promise((r) => setTimeout(r, 300));
+    const el = document.querySelector('.face[aria-hidden="false"] .card-text');
+    return !!el.textContent.trim() && el.textContent === before;
+  }, id));
+}
 
 // --- picking a pile up ----------------------------------------------------
 // The discard is now a real pile: it knows the sequence, not just the count.
@@ -777,7 +801,7 @@ await pu.screenshot({ path: path.join(SHOTS, "shot-13-table-dark.png") });
 // The dark tokens are written twice — once in the media query for no-JS, once
 // on the attribute for the override. This fails if they ever drift apart.
 const viaAttr = await pu.evaluate(() => {
-  const names = ["--bg", "--card", "--ink", "--muted", "--accent", "--line", "--edge-face", "--spine"];
+  const names = ["--bg", "--card", "--ink", "--muted", "--accent", "--accent-strong", "--moss", "--line", "--rule", "--edge-face", "--spine"];
   const read = () => Object.fromEntries(names.map((n) => [n, getComputedStyle(document.documentElement).getPropertyValue(n).trim()]));
   document.documentElement.dataset.theme = "dark";
   return read();
@@ -786,7 +810,7 @@ const ctxDarkOs = await browser.newContext({ colorScheme: "dark", viewport: { wi
 const pdo = await ctxDarkOs.newPage();
 await pdo.goto(BASE + "/", { waitUntil: "networkidle" });
 const viaMedia = await pdo.evaluate(() => {
-  const names = ["--bg", "--card", "--ink", "--muted", "--accent", "--line", "--edge-face", "--spine"];
+  const names = ["--bg", "--card", "--ink", "--muted", "--accent", "--accent-strong", "--moss", "--line", "--rule", "--edge-face", "--spine"];
   return Object.fromEntries(names.map((n) => [n, getComputedStyle(document.documentElement).getPropertyValue(n).trim()]));
 });
 const drift = Object.keys(viaAttr).filter((k) => viaAttr[k] !== viaMedia[k]);

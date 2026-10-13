@@ -39,16 +39,20 @@ const { title, description, bodyClass } = Astro.props;
         indexable surface — canonical keeps crawlers from splitting them. */}
     {Astro.site && <link rel="canonical" href={new URL(Astro.url.pathname, Astro.site).href} />}
     <meta name="color-scheme" content="light dark" />
-    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f5efe3" />
-    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#171310" />
+    {/* Paper and Night: the page grounds in src/deck/palette.ts, held to it
+        by tests/palette.test.mjs. */}
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f9f8f5" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#111317" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="preload" href="/fonts/Fraunces-latin.woff2" as="font" type="font/woff2" crossorigin />
-    <link rel="preload" href="/fonts/PlexMono-400-latin.woff2" as="font" type="font/woff2" crossorigin />
-    {/* The masthead wordmark and tally are weight 500 and render at first
-        paint on EVERY page — leaving this one out preloaded the two other
-        files and let the most visible text on the page swap in late. */}
+    {/* Every label on the site is a wall label, and a wall label is weight
+        500: the masthead, the tally, the piles, the hint. This is the mono
+        file every page paints with first. Plex Mono 400 is NOT preloaded:
+        since the labels moved to 500 it sets only the credit line at the
+        foot of the three editorial pages, and preloading it cost the draw
+        screen 10 KB for a face it never draws. It loads when it is used. */}
     <link rel="preload" href="/fonts/PlexMono-500-latin.woff2" as="font" type="font/woff2" crossorigin />
     {/* Synchronous on purpose: a stored theme has to land before first paint
         or the page flashes the other one. Also marks that JS is running, so

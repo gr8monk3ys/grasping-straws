@@ -24,7 +24,7 @@ page with no context. (inferred from the /c/‹id›/ share pages)
 
 ## Product Purpose
 
-Deal one card at a time from an original deck of 48 lateral-thinking
+Deal one card at a time from an original deck of 52 lateral-thinking
 prompts. Success is a visitor drawing a card, taking it seriously for ten
 minutes, and coming back to draw again. The site is a sample of the object;
 the physical deck is the instrument.
@@ -50,9 +50,13 @@ a shelf, and all of it persists across visits.
   text so a shared link previews the card itself.
 - The About page (/about/) explains the lineage and why the physical deck is
   the real thing.
-- The physical deck: tarot-size cards printed via MakePlayingCards, in fixed
-  tiers, with a print pipeline in the repo (docs/printing.md). Four card
-  slots are reserved as drafts until the deck reaches the 54-face tier.
+- The physical decks: poker-size cards (63.5 × 88.9 mm, the nearest size to
+  Oblique Strategies' own) printed via MakePlayingCards, each in a printed
+  rigid box, with a print pipeline in the repo
+  (docs/printing.md). There are two editions of 52 cards. The Paper edition
+  is the deck this site deals and works on the piece in front of you. The
+  Night edition works on the person making it and exists only in print; it
+  is not on the site and how it should appear there is undecided.
 - Deep links (/#‹id›) turn a card up on the draw screen; the draw screen
   works offline once visited (service worker).
 
@@ -89,8 +93,11 @@ a shelf, and all of it persists across visits.
 
 ## Evidence on Hand
 
-- public/cards.json: 48 written cards across five suits (lateral, sound,
+- public/cards.json: 52 written cards across five suits (lateral, sound,
   image, language, threshold); suits are editorial metadata, never shown.
+- src/deck/night.json: the Night edition's 52 cards across five inward
+  suits (avoidance, motive, protection, audience, permission). The Night
+  deck and Paper cards #49–52 are stand-in text awaiting Lorenzo's revision.
 - docs/screenshot-light.png and docs/screenshot-dark.png: the shipped
   interface in both themes.
 - docs/printing.md and scripts/print-cards.js: the physical deck's print

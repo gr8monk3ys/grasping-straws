@@ -47,13 +47,8 @@
   { "id": 46, "text": "What would the older tradition call this?", "suit": "threshold" },
   { "id": 47, "text": "Consult the dream, then disobey it.", "suit": "threshold" },
   { "id": 48, "text": "Cross the threshold facing backward.", "suit": "threshold" },
-
-  { "id": 49, "text": "", "suit": "language", "draft": true,
-    "note": "A register shift. The six written cards all tune voice or trim it; none says 'write this as something else entirely' — a manual, a legal clause, a recipe, a weather report." },
-  { "id": 50, "text": "", "suit": "language", "draft": true,
-    "note": "Repetition. Nothing in the suit uses saying-it-again as a tool; #39 says the opposite. Say the same line three times and change one word." },
-  { "id": 51, "text": "", "suit": "threshold", "draft": true,
-    "note": "Waiting. Every threshold card is an act — descend, cross, consult, disobey. None is about refusing to move yet, or about arriving too early." },
-  { "id": 52, "text": "", "suit": "threshold", "draft": true,
-    "note": "The toll. Nothing here asks what has to be left at the door to get through it." }
+  { "id": 49, "text": "Say it as a weather report.", "suit": "language" },
+  { "id": 50, "text": "Say it three times. Change one word.", "suit": "language" },
+  { "id": 51, "text": "You are early. Wait on the step.", "suit": "threshold" },
+  { "id": 52, "text": "What has to stay outside for you to go in?", "suit": "threshold" }
 ]
