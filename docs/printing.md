@@ -54,6 +54,11 @@ npm run validate          # both card files; ids must be unique across editions
 Use typographic apostrophes (`’`, not `'`). Validation enforces this — at
 24pt on card stock a typewriter apostrophe is conspicuous.
 
+No em dashes anywhere in the deck's printed text: cards, title and
+instructions cards, rules cards, box and the free PDF. Use a colon, a comma
+or a second sentence. `npm run validate` and `npm run validate:rules` reject
+one in the source, and every print script rejects one in what it renders.
+
 To see the layout while slots are still drafts:
 
 ```sh
@@ -189,9 +194,13 @@ card: this is the last look before the deck is permanent.
 ## The free print-and-play edition
 
 `npm run pnp` renders `public/print-and-play.pdf`: the whole live deck plus
-the five rules cards and a title card, four to a US Letter page at true
-tarot size, with a cover sheet of instructions and a page of backs for
-optional duplexing. It is linked from the About page and served as a static
+the five rules cards and a title card, nine to a US Letter page at the
+manufactured card's true size, with a cover sheet of instructions and a page
+of backs for optional duplexing. The card's size comes from
+`scripts/card-spec.js`, the same file the manufactured run reads, and every
+size on a face scales from it. The sheet leaves a quarter inch clear on
+every side, and the cover tells the reader to print at 100%, because “fit
+to page” would shrink the cards. It is linked from the About page and served as a static
 asset.
 
 ```sh
@@ -216,9 +225,6 @@ Three things it deliberately does differently from the manufactured run:
   deck and no longer fits the 55-card box. The five games are on `/play/`,
   printed in the free edition, and out of the manufactured deck until the
   deck is deliberately resized.
-- **It is still tarot size.** The free edition was laid out four to a page
-  at 2.75" × 4.75" before the manufactured deck moved to poker size, and has
-  not been redrawn. The words are the same; the card is taller.
 - **The PDF is committed.** It is a generated artifact in git, which is
   normally the wrong thing: the site is static files on a host with no
   browser, so it cannot be rendered on request, and the About page links it.

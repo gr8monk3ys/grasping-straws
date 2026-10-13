@@ -44,6 +44,13 @@ test("each edition is printed in its own palette", () => {
   assert.equal(EDITIONS.night.reversed, true);
 });
 
+test("nothing an edition prints carries an em dash", () => {
+  for (const ed of all) {
+    const printed = [ed.name, ed.blurb, ...ed.subtitle, ...ed.instructions, ...read(ed).map((c) => c.text ?? "")];
+    assert.deepEqual(printed.filter((s) => s.includes("—")), [], ed.name);
+  }
+});
+
 test("edition() defaults to Paper and refuses a name it does not know", () => {
   assert.equal(edition(undefined), EDITIONS.paper);
   assert.equal(edition("night"), EDITIONS.night);

@@ -24,12 +24,13 @@ const root = path.join(here, "..");
 export const STAMP_PATH = path.join(here, "pnp-stamp.json");
 
 // The card texts (drafts excluded — the PDF does not print them), the rules
-// cards, the generator itself, and what it draws with: the palette and the
-// mark. Anything that changes a printed face.
+// cards, the generator itself, and what it draws with: the card's size, the
+// palette and the mark. Anything that changes a printed face.
 const INPUTS = [
   "public/cards.json",
   "scripts/rules-cards.js",
   "scripts/print-and-play.js",
+  "scripts/card-spec.js",
   "scripts/mark.js",
   "public/favicon.svg",
   "src/deck/palette.ts",

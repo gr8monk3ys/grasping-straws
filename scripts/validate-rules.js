@@ -4,7 +4,7 @@
  * Every other text in Grasping Straws has a single source: the cards come
  * from public/cards.json, the mark from public/favicon.svg. The games are
  * the exception — full prose on /play/, condensed on the printed rules
- * cards — because a tarot card cannot hold a paragraph. Two texts of the
+ * cards — because a card cannot hold a paragraph. Two texts of the
  * same five games will drift, and the printed set is the copy nobody
  * re-reads, so CI checks that the two at least describe the same games.
  *
@@ -60,6 +60,14 @@ if (!errors.length && pageTitles.join("|") !== cardTitles.join("|")) {
     `same games, different order — page: ${pageTitles.join(", ")}; cards: ${cardTitles.join(", ")}. ` +
       "The printed deck is read in order; keep the two sequences identical.",
   );
+}
+
+// House style for the deck: no em dashes in printed text. This covers the
+// rules cards only; the prose on /play/ is the site's, not the deck's.
+for (const c of RULES_CARDS) {
+  if ([c.title, c.players, c.body].some((s) => s.includes("—"))) {
+    errors.push(`"${c.title}" has an em dash on its printed rules card; the deck uses none`);
+  }
 }
 
 if (errors.length) {

@@ -180,7 +180,7 @@ const back = shell(`<div class="safe" style="place-content:center; justify-items
 
 const title = shell(`<div class="safe" style="place-content:center; justify-items:center; gap:${u(90)}px; text-align:center;">
   <div style="width:${u(220)}px;">${tint(ACCENT)}</div>
-  <div style="font-size:${u(88)}px; white-space:nowrap; font-variation-settings:'opsz' ${pt(u(88)).toFixed(0)},'wght' 600;">Grasping Straws?</div>
+  <div style="font-size:${u(84)}px; white-space:nowrap; font-variation-settings:'opsz' ${pt(u(84)).toFixed(0)},'wght' 600;">Grasping Straws?</div>
   <div style="font-size:${u(38)}px; font-style:italic; color:${MUTED};">${ed.subtitle.map(esc).join("<br>")}</div>
   <div class="num" style="font-size:${u(28)}px; text-transform:uppercase;">${esc(ed.name)}</div>
 </div>`);
@@ -212,6 +212,7 @@ const written = [];
 // and a full-width line of type blur into each other. Measured instead, on
 // every face, with a hard stop. This is the check that a reprint costs.
 const overflows = [];
+const dashes = [];
 
 async function shoot(html, file) {
   await page.setContent(html, { waitUntil: "load" });
@@ -240,6 +241,11 @@ async function shoot(html, file) {
     return out;
   }, inset);
   if (bad.length) overflows.push({ file, bad });
+
+  // House style: nothing printed carries an em dash. The validator checks
+  // card text; this checks the face as rendered, which also covers the title
+  // and instructions cards.
+  if ((await page.evaluate(() => document.body.innerText)).includes("—")) dashes.push(file);
 
   await page.screenshot({ path: path.join(out, file) });
   written.push(file);
@@ -301,6 +307,15 @@ if (overflows.length) {
         .join("\n") +
       `\n\nThe files were still written so you can look at them, but do NOT upload them.` +
       `\nGUIDES=1 draws the bleed and safe outlines on the cards.\n`
+  );
+  process.exitCode = 1;
+}
+
+if (dashes.length) {
+  console.error(
+    `\n${dashes.length} face(s) carry an em dash, and the deck uses none:\n` +
+      dashes.map((f) => `  ${f}`).join("\n") +
+      `\n\nReword with a colon, a comma or a second sentence. Do NOT upload these.\n`
   );
   process.exitCode = 1;
 }

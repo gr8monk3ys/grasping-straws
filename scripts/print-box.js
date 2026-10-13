@@ -98,6 +98,7 @@ async function load(html) {
 }
 
 await load(page(false));
+const dashed = (await tab.evaluate(() => document.body.innerText)).includes("—");
 
 // Lettering that crosses a fold lands on the wrong face of the box. Measured
 // per panel, with a margin, and a hard stop: the same check the cards get.
@@ -157,6 +158,12 @@ if (overflows.length) {
       overflows.map((o) => `  ${o.panel}: +${o.over}px  "${o.text}"`).join("\n") +
       `\n\nThe files were still written so you can look at them, but do NOT upload them.\n`
   );
+  process.exitCode = 1;
+}
+
+// House style: nothing the deck prints carries an em dash, the box included.
+if (dashed) {
+  console.error(`\nThe box lettering carries an em dash, and the deck uses none. Do NOT upload it.\n`);
   process.exitCode = 1;
 }
 

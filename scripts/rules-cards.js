@@ -2,7 +2,7 @@
  * The games, condensed to card length — the printed rules cards.
  *
  * The full prose versions live in src/pages/play.astro; these are the same
- * games cut down to fit a tarot card. Two texts of the same rules is a
+ * games cut down to fit a card. Two texts of the same rules is a
  * deliberate duplication (a card cannot hold a paragraph), so it is guarded
  * rather than eliminated: scripts/validate-rules.js fails the build if the
  * set of games here stops matching the set on the page. Renaming a game,
@@ -12,9 +12,9 @@
  * Consumed by scripts/print-and-play.js (renders them into the free PDF)
  * and scripts/validate-rules.js (checks them against the page).
  *
- * NOT part of the manufactured deck: MakePlayingCards prints tarot decks in
- * fixed tiers and the deck already sits exactly on 54 faces (52 prompts +
- * title + instructions). Five more would be 59, which is not a tier — see
+ * NOT part of the manufactured deck: it is 54 faces (52 prompts + title +
+ * instructions), ordered as a deck of up to 55 in a box made for 55. Five
+ * more would be 59, which needs the next deck size and a bigger box — see
  * docs/printing.md.
  */
 export const RULES_CARDS = [
@@ -22,7 +22,7 @@ export const RULES_CARDS = [
     title: "Ten Minutes",
     players: "solo",
     body:
-      "Draw one card. Obey it — literally, not approximately — for ten minutes. " +
+      "Draw one card. Obey it for ten minutes, literally, not approximately. " +
       "No second draw. Keep the result or throw it away, but look at it first.",
   },
   {
@@ -36,7 +36,7 @@ export const RULES_CARDS = [
     title: "First & Last",
     players: "solo · one session",
     body:
-      "Draw before you begin and work under the card. When you believe you're " +
+      "Draw before you begin and work under the card. When you believe you’re " +
       "done, draw exactly one more and let it edit the ending.",
   },
   {
