@@ -123,11 +123,12 @@ Full ordering steps, including the box:
 ### The free print-and-play edition
 
 `npm run pnp` renders `public/print-and-play.pdf` — the live deck plus the
-five rules cards, four to a US Letter page at true tarot size, with cut
-lines, a cover of instructions and a page of backs. Unlike the manufactured
+five rules cards, nine to a US Letter page at the manufactured card's true
+size (poker, 2.5 × 3.5 in), with cut lines, a cover of instructions and a
+page of backs. Unlike the manufactured
 run it renders while cards are still drafts (a home print is not permanent)
-and it carries the rules cards, which the manufactured deck does not: 54
-faces is exactly one of MPC's tiers and five more would break it.
+and it carries the rules cards, which the manufactured deck does not: its
+54 faces fill a 55-card box and five more would not fit.
 
 The PDF is committed, which is unusual for a generated file and deliberate:
 the site is static and the host has no browser, so it cannot be rendered on

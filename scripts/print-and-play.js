@@ -1,8 +1,8 @@
 /*
  * Print-and-play generator: the whole deck as a free, cut-lines PDF for
  * home printing — every live prompt, the five rules cards and a title card
- * at true tarot size (2.75in x 4.75in), four to a US Letter page, plus a
- * sheet of backs for optional duplexing.
+ * at the true size of the manufactured card (scripts/card-spec.js), as many
+ * to a US Letter page as fit, plus a sheet of backs for optional duplexing.
  *
  *   npm run pnp
  *
@@ -21,6 +21,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { PAPER } from "../src/deck/palette.ts";
+import { CARD as SPEC } from "./card-spec.js";
 import { mark as tint } from "./mark.js";
 import { RULES_CARDS } from "./rules-cards.js";
 import { pnpStamp, STAMP_PATH } from "./pnp-stamp.js";
@@ -41,6 +42,19 @@ const plex = b64("PlexMono-400-latin.woff2");
 
 // The free edition is the Paper edition, in the same colours as the printed one.
 const { card: CARD, ink: INK, muted: MUTED, accent: ACCENT, moss: RULE } = PAPER;
+
+// The sheet: as many cards as fit on US Letter with a quarter inch clear on
+// every side, which is as close to the edge as a home printer reliably
+// prints. At poker size that is three across and three down.
+const SHEET = { w: 8.5, h: 11, margin: 0.25 };
+const COLS = Math.floor((SHEET.w - 2 * SHEET.margin) / SPEC.widthIn);
+const ROWS = Math.floor((SHEET.h - 2 * SHEET.margin) / SPEC.heightIn);
+const PER_SHEET = COLS * ROWS;
+
+// Every size on a face is written as the value it had on the 2.75in wide
+// card this layout was drawn on. `z` scales it to the card being printed,
+// so the face keeps its proportions when the card changes size.
+const z = (n) => +((n * SPEC.widthIn) / 2.75).toFixed(2);
 
 const esc = (s) => s.replaceAll("&", "&amp;").replaceAll("<", "&lt;");
 
@@ -85,21 +99,23 @@ const backFace = `<div class="cell back"><div class="backart">
 
 const faces = [titleFace, ...cards.map(promptFace), ...RULES_CARDS.map(rulesFace)];
 const sheets = [];
-for (let i = 0; i < faces.length; i += 4) sheets.push(faces.slice(i, i + 4).join(""));
+for (let i = 0; i < faces.length; i += PER_SHEET) sheets.push(faces.slice(i, i + PER_SHEET).join(""));
 
 const cover = `<section class="page cover">
   <div class="mark">${tint(ACCENT)}</div>
   <h1>Grasping Straws?</h1>
-  <p class="tag">an original deck of lateral-thinking prompts &mdash; print-and-play edition</p>
+  <p class="tag">an original deck of lateral-thinking prompts, print-and-play edition</p>
   <ol>
+    <li>Print at 100% (&ldquo;actual size&rdquo;), not &ldquo;fit to page&rdquo;: the cards are the true size of the
+        manufactured deck, ${SPEC.widthIn} &times; ${SPEC.heightIn} inches, ${PER_SHEET} to a sheet.</li>
     <li>Print pages 2&ndash;${sheets.length + 1} single-sided, on the heaviest stock your printer accepts.</li>
     <li>Optional backs: put the printed sheets back in and print the last page on the reverse of each (long-edge flip).</li>
     <li>Cut along the lines. A ruler and a blade beat scissors.</li>
-    <li>Shuffle. The ${RULES_CARDS.length} rules cards at the end are ways to play; the deck doesn't negotiate.</li>
+    <li>Shuffle. The ${RULES_CARDS.length} rules cards at the end are ways to play; the deck doesn&rsquo;t negotiate.</li>
   </ol>
-  <p class="fine">This free edition is for your own studio. The manufactured deck &mdash; real card
-  stock, shuffled by your own hands &mdash; is the instrument; straws.lscaturchio.xyz has the
-  details, the whole deck to read, and a card a day. Card texts &copy; the deck's author.</p>
+  <p class="fine">This free edition is for your own studio. The manufactured deck, on real card
+  stock and shuffled by your own hands, is the instrument; straws.lscaturchio.xyz has the
+  details, the whole deck to read, and a card a day. Card texts &copy; the deck&rsquo;s author.</p>
 </section>`;
 
 const html = `<!doctype html><meta charset="utf-8"><style>
@@ -111,35 +127,36 @@ const html = `<!doctype html><meta charset="utf-8"><style>
   body { font-family: "Fraunces", serif; color: ${INK}; font-optical-sizing: none; }
   svg { display: block; width: 100%; height: auto; }
   .page { width: 8.5in; height: 11in; break-after: page; display: grid;
-          grid-template-columns: 2.75in 2.75in; grid-auto-rows: 4.75in;
+          grid-template-columns: repeat(${COLS}, ${SPEC.widthIn}in); grid-auto-rows: ${SPEC.heightIn}in;
           justify-content: center; align-content: center; }
   /* The border IS the cut line — 0.5pt lands as a hairline on a home
      printer, thin enough that the blade takes it with the trim. */
   .cell { border: 0.5pt solid #9c9384; background: ${CARD}; overflow: hidden;
-          padding: 0.26in; display: grid; grid-template-rows: auto 1fr auto; }
-  .num { font-family: "Plex Mono", monospace; font-size: 7.5pt; letter-spacing: 0.16em;
+          padding: ${z(0.26)}in; display: grid; grid-template-rows: auto 1fr auto; }
+  .num { font-family: "Plex Mono", monospace; font-size: ${z(7.5)}pt; letter-spacing: 0.16em;
          color: ${MUTED}; min-height: 1em; }
   .mid { display: grid; place-items: center; }
-  .rule { justify-self: center; width: 0.4in; height: 1pt; background: ${RULE}; }
-  /* 15.5pt on a 2.23in text column holds the longest card (62 characters) in
-     three lines, and matches the proportion the site sets the face at. */
-  .prompt { font-size: 15.5pt; line-height: 1.32; text-align: center; text-wrap: balance;
-            font-variation-settings: 'opsz' 16, 'wght' 400; }
-  .rules { display: grid; justify-items: center; gap: 9pt; text-align: center; }
-  .rules-title { font-family: "Plex Mono", monospace; font-size: 9pt; letter-spacing: 0.18em;
+  .rule { justify-self: center; width: ${z(0.4)}in; height: 1pt; background: ${RULE}; }
+  /* 15.5pt on the 2.75in card, scaled: the proportion the site sets the face
+     at. The longest card (62 characters) sets in four lines at poker size. */
+  .prompt { font-size: ${z(15.5)}pt; line-height: 1.32; text-align: center; text-wrap: balance;
+            font-variation-settings: 'opsz' ${Math.round(z(15.5))}, 'wght' 400; }
+  .rules { display: grid; justify-items: center; gap: ${z(9)}pt; text-align: center; }
+  .rules-title { font-family: "Plex Mono", monospace; font-size: ${z(9)}pt; letter-spacing: 0.18em;
                  text-transform: uppercase; }
-  .rules-players { font-size: 9pt; font-style: italic; color: ${MUTED}; margin-top: -6pt; }
-  .rules-body { font-size: 11pt; line-height: 1.45; text-wrap: balance; }
-  .titlecard { display: grid; justify-items: center; gap: 16pt; text-align: center; }
-  .titlecard .mark { width: 0.7in; }
-  .titlecard .name { font-size: 20pt; font-variation-settings: 'opsz' 20, 'wght' 600; }
-  .titlecard .sub { font-size: 9.5pt; font-style: italic; color: ${MUTED}; line-height: 1.4; }
+  .rules-players { font-size: ${z(9)}pt; font-style: italic; color: ${MUTED}; margin-top: ${z(-6)}pt; }
+  .rules-body { font-size: ${z(11)}pt; line-height: 1.45; text-wrap: balance; }
+  .titlecard { display: grid; justify-items: center; gap: ${z(16)}pt; text-align: center; }
+  .titlecard .mark { width: ${z(0.7)}in; }
+  .titlecard .name { font-size: ${z(18.5)}pt; white-space: nowrap;
+                     font-variation-settings: 'opsz' ${Math.round(z(18.5))}, 'wght' 600; }
+  .titlecard .sub { font-size: ${z(9.5)}pt; font-style: italic; color: ${MUTED}; line-height: 1.4; }
   /* The back has one child, not the face's three rows — without collapsing
      the template it lands in the first (auto) row and prints top-aligned. */
   .back { grid-template-rows: 1fr; place-items: center; }
-  .backart { display: grid; justify-items: center; gap: 22pt; color: ${MUTED}; }
-  .backart .mark { width: 0.8in; }
-  .backart .wordmark { font-family: "Plex Mono", monospace; font-size: 8.5pt;
+  .backart { display: grid; justify-items: center; gap: ${z(22)}pt; color: ${MUTED}; }
+  .backart .mark { width: ${z(0.8)}in; }
+  .backart .wordmark { font-family: "Plex Mono", monospace; font-size: ${z(8.5)}pt;
                        letter-spacing: 0.22em; text-transform: uppercase; white-space: nowrap; }
   .cover { display: block; padding: 1.2in 1.1in; }
   .cover .mark { width: 0.6in; margin-bottom: 0.35in; }
@@ -150,7 +167,7 @@ const html = `<!doctype html><meta charset="utf-8"><style>
 </style><body>
 ${cover}
 ${sheets.map((cells) => `<section class="page">${cells}</section>`).join("\n")}
-<section class="page">${backFace.repeat(4)}</section>
+<section class="page">${backFace.repeat(PER_SHEET)}</section>
 </body>`;
 
 const browser = await chromium.launch(
@@ -163,11 +180,26 @@ await page.setContent(html, { waitUntil: "load" });
 await page.evaluate(() => document.fonts.ready);
 
 // A card whose text spills past its cell is silently clipped by overflow:
-// hidden, and at four-to-a-page it is easy to miss on screen. Measured, on
-// every cell, before the PDF is written.
+// hidden, and at several to a page it is easy to miss on screen. Measured, on
+// every cell, before the PDF is written: downward, where a long prompt runs
+// out of card, and sideways, where a line that may not wrap (the name on the
+// title card) runs into the margin without ever growing the cell.
 const clipped = await page.evaluate(() =>
   [...document.querySelectorAll(".cell")]
-    .map((cell, i) => ({ i, over: Math.round(cell.scrollHeight - cell.clientHeight) }))
+    .map((cell, i) => {
+      const s = getComputedStyle(cell);
+      const left = cell.getBoundingClientRect().left + parseFloat(s.paddingLeft);
+      const right = cell.getBoundingClientRect().right - parseFloat(s.paddingRight);
+      let wide = 0;
+      const walk = document.createTreeWalker(cell, NodeFilter.SHOW_TEXT);
+      const range = document.createRange();
+      for (let n = walk.nextNode(); n; n = walk.nextNode()) {
+        if (!n.textContent.trim()) continue;
+        range.selectNodeContents(n);
+        for (const b of range.getClientRects()) wide = Math.max(wide, left - b.left, b.right - right);
+      }
+      return { i, over: Math.round(Math.max(cell.scrollHeight - cell.clientHeight, wide)) };
+    })
     .filter((c) => c.over > 1)
 );
 if (clipped.length) {
@@ -177,6 +209,14 @@ if (clipped.length) {
       clipped.map((c) => `  face index ${c.i}  +${c.over}px`).join("\n") +
       `\n\nShorten the text, or drop a type size in scripts/print-and-play.js.\n`
   );
+  process.exit(1);
+}
+
+// House style: nothing the deck prints carries an em dash. Checked on the
+// rendered document, so it covers the cover sheet as well as every card.
+if ((await page.evaluate(() => document.body.innerText)).includes("—")) {
+  await browser.close();
+  console.error(`\nThe PDF's text carries an em dash, and the deck uses none. Reword it and run again.\n`);
   process.exit(1);
 }
 
@@ -192,6 +232,6 @@ fs.writeFileSync(STAMP_PATH, JSON.stringify(stamp, null, 2) + "\n");
 
 console.log(
   `wrote public/print-and-play.pdf — ${faces.length} faces ` +
-    `(${cards.length} prompts + ${RULES_CARDS.length} rules + title) on ${sheets.length} sheets ` +
+    `(${cards.length} prompts + ${RULES_CARDS.length} rules + title), ${PER_SHEET} to a sheet, on ${sheets.length} sheets ` +
     `+ cover + backs page (${(stamp.bytes / 1024).toFixed(0)} KB)`
 );

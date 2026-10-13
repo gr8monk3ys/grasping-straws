@@ -49,7 +49,7 @@ export const EDITIONS: Record<EditionKey, Edition> = {
     instructions: [
       "Stuck? Shuffle. Draw one card. Read it once.",
       "Apply it to the thing in front of you, however literally you can bear. The prompt that seems wrong is usually the one doing the work.",
-      "Deal through the deck before reshuffling — no card twice in a cycle.",
+      "Deal through the deck before reshuffling: no card twice in a cycle.",
     ],
     box: {
       lid: PAPER.accent,

@@ -73,6 +73,11 @@ function validate(ed) {
     if (typeof card.text === "string" && /['"]/.test(card.text)) {
       errors.push(`${where}: use typographic quotes (’ “ ”), not ' or "`);
     }
+    // House style for the deck: no em dashes anywhere in printed text. A card
+    // that wants one wants a colon, a comma, or two sentences.
+    if (typeof card.text === "string" && card.text.includes("—")) {
+      errors.push(`${where}: no em dashes in the deck. Use a colon, a comma or a second sentence`);
+    }
     if ("suit" in card && typeof card.suit !== "string") {
       errors.push(`${where}: optional "suit" must be a string`);
     }
