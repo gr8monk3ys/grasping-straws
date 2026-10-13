@@ -1,6 +1,6 @@
 ---
 name: Grasping Straws?
-description: A tarot-size deck of lateral-thinking prompts, dealt one card at a time on a page from the lscaturchio.xyz notebook.
+description: A poker-size deck of lateral-thinking prompts, dealt one card at a time on a page from the lscaturchio.xyz notebook.
 colors:
   paper: "#f9f8f5"
   paper-card: "#fbfaf9"
@@ -248,7 +248,7 @@ Every rounded corner is a card corner. The card, its shadows, faces, and deck ed
 
 Borders are 1px. Flat surfaces and the card's own outline use Hairline (`--line` on card stock, `--rule` on the masthead, the dialog and the contents list; the same value). Stock that has to be told apart from the stock beneath it uses the rim (`--edge-rim`, Ink at 22%, white at 15% on night): spread cards, mini-pile layers, and the bottom border of each deck edge, which is what makes the stack read as separate cards. An empty pile is a 1px dashed hairline ghost of one card, never a filled placeholder.
 
-Recurring silhouettes: the 5:7 tarot proportion appears at three scales (the card, spread cards, mini-piles), always with a slight alternating rotation in stacks (±0.4° to ±1.5°) so piles read as paper rather than stripes. The card has a 3px spine on each side so it is a solid, not two planes.
+Recurring silhouettes: the 5:7 proportion of the printed card appears at three scales (the card, spread cards, mini-piles), always with a slight alternating rotation in stacks (±0.4° to ±1.5°) so piles read as paper rather than stripes. The card has a 3px spine on each side so it is a solid, not two planes.
 
 ## Components
 

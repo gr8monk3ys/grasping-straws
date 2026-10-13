@@ -294,3 +294,10 @@ Where the work departed from this document:
   as the website's overlays do.
 - **Not done:** building the cart. That waits for Lorenzo's pass over the
   card text and a signed-in MPC session.
+- **Poker size, not tarot.** After checking Oblique Strategies' own card (70 × 90
+  mm), the manufactured decks moved to MPC's 2.5" × 3.5" card and its 55-card
+  rigid box: the nearest size they make, a box the deck fills, and about $35
+  an edition against $48. Everything above about tarot dimensions, the 78-card
+  box and the shallow lid describes the first build; `docs/printing.md` and
+  `scripts/card-spec.js` describe what is there now. The free print-and-play
+  PDF has not been redrawn and is still tarot size.

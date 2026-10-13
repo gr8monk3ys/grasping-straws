@@ -50,8 +50,9 @@ a shelf, and all of it persists across visits.
   text so a shared link previews the card itself.
 - The About page (/about/) explains the lineage and why the physical deck is
   the real thing.
-- The physical decks: tarot-size cards printed via MakePlayingCards, in fixed
-  tiers, each in a printed rigid box, with a print pipeline in the repo
+- The physical decks: poker-size cards (63.5 × 88.9 mm, the nearest size to
+  Oblique Strategies' own) printed via MakePlayingCards, each in a printed
+  rigid box, with a print pipeline in the repo
   (docs/printing.md). There are two editions of 52 cards. The Paper edition
   is the deck this site deals and works on the piece in front of you. The
   Night edition works on the person making it and exists only in print; it

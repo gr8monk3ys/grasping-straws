@@ -48,8 +48,8 @@ Edit **`public/cards.json`** and nothing else. It's an array of
   still list, just unannotated.
 - `draft: true` reserves an id without publishing it. Drafts are filtered
   out of the dealt deck and get no share page, and `npm run print` refuses
-  to run while any remain. They exist because MakePlayingCards prints tarot
-  decks in fixed tiers and the deck has to reach one — see
+  to run while any remain. They exist so an id can be claimed for the
+  printed deck before its text is written — see
   [docs/printing.md](docs/printing.md).
 
 Removed cards vanish from visitors' in-progress decks automatically; added
@@ -103,11 +103,11 @@ print. Both are set in the palette of lscaturchio.xyz, held in
 
 `npm run print` renders the Paper edition and `EDITION=night npm run print`
 the Night edition: all 54 faces, the shared back and a contact sheet
-into `print/final/<edition>/` at **897 × 1497 px, 300 DPI** — MakePlayingCards'
-published tarot upload size, taken from their own FAQ rather than a
+into `print/final/<edition>/` at **822 × 1122 px, 300 DPI** — MakePlayingCards'
+published poker upload size, taken from their own FAQ rather than a
 third-party template. The script self-checks that figure and refuses to run
-if it drifts, if any card is still a draft, or if the face count isn't one
-of MPC's tiers. It also measures every face as it renders and fails if any
+if it drifts, if any card is still a draft, or if there are more faces than
+MPC's largest deck. It also measures every face as it renders and fails if any
 text crosses the safe line, which is the mistake that costs a reprint.
 
 `PROOF=1 npm run print` renders the unwritten slots stamped UNWRITTEN into a

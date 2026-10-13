@@ -7,38 +7,13 @@
  *   EDITION=night npm run print    # the Night edition -> print/final/night/
  *   GUIDES=1 npm run print         # overlays bleed/safe outlines for proofing
  *
- * The numbers below are MakePlayingCards' published tarot figures, not
- * estimates. From their upload FAQ (makeplayingcards.com/faq-photo.aspx):
- *
- *   tarot upload   897 x 1497 px at 300 DPI
- *   bleed          "36 pixels each side based on a 300DPI image" is cut off
- *   safe area      a further 36 px in, marked by their red dotted line
- *
- * 36 px is 0.12", NOT the 1/8" (0.125") their prose rounds it to. Building
- * to 0.125" yields 900x1500, which MPC accepts and silently rescales — every
- * card lands ~0.3% off register. SELF_CHECK below fails the run if the
- * computed size ever drifts from what they actually want.
- *
- * If you switch printers, replace all four numbers from THEIR template and
- * update SELF_CHECK to their stated upload size. Do not average two
- * printers' specs.
+ * The size of the card, the upload MPC wants and the deck sizes they sell
+ * are in scripts/card-spec.js, taken from MPC's own published figures.
  */
-const SPEC = {
-  dpi: 300,
-  cardWidthIn: 2.75, // tarot
-  cardHeightIn: 4.75,
-  bleedIn: 36 / 300, // 0.12" — MPC trims this off
-  safeIn: 36 / 300, // 0.12" — keep all content inside this
-};
-const SELF_CHECK = { w: 897, h: 1497 }; // MPC's published tarot upload size
-
-// MPC sells tarot decks in fixed tiers; an order cannot be an arbitrary
-// count. Faces = prompts + title + instructions.
-const MPC_TAROT_TIERS = [18, 36, 54, 72, 90, 108];
-
 import { chromium } from "playwright";
 import { draftSlots, liveCards } from "../src/deck/cards.ts";
 import { edition } from "../src/deck/editions.ts";
+import { CARD as SPEC, DECK_SIZES, UPLOAD } from "./card-spec.js";
 import { mark as tint } from "./mark.js";
 import fs from "node:fs";
 import path from "node:path";
@@ -81,28 +56,27 @@ if (drafts.length && !PROOF) {
 
 const printable = PROOF ? all : cards;
 const faces = printable.length + 2; // + title + instructions
-if (!MPC_TAROT_TIERS.includes(faces)) {
-  const next = MPC_TAROT_TIERS.find((n) => n > faces);
+// MPC sells decks of "up to" a fixed set of counts. A deck that fits none of
+// them cannot be ordered; one that fits is priced at the smallest it fits in.
+const deckSize = DECK_SIZES.find((n) => n >= faces);
+if (!deckSize) {
   console.error(
     `\nRefusing to render: ${faces} faces (${printable.length} prompts + title + instructions).\n` +
-      `MakePlayingCards prints tarot decks in tiers of ${MPC_TAROT_TIERS.join(", ")}.\n` +
-      (next
-        ? `Write ${next - faces} more prompt${next - faces === 1 ? "" : "s"} to reach ${next}.\n`
-        : `That is past their largest tier.\n`)
+      `MakePlayingCards' largest deck of this card is ${DECK_SIZES.at(-1)}.\n`
   );
   process.exit(1);
 }
 
 const px = (inches) => Math.round(inches * SPEC.dpi);
-const W = px(SPEC.cardWidthIn + 2 * SPEC.bleedIn);
-const H = px(SPEC.cardHeightIn + 2 * SPEC.bleedIn);
+const W = px(SPEC.widthIn + 2 * SPEC.bleedIn);
+const H = px(SPEC.heightIn + 2 * SPEC.bleedIn);
 const bleed = px(SPEC.bleedIn);
 const inset = px(SPEC.bleedIn + SPEC.safeIn); // content stays inside this
 
-if (W !== SELF_CHECK.w || H !== SELF_CHECK.h) {
+if (W !== UPLOAD.w || H !== UPLOAD.h) {
   console.error(
-    `\nSpec drift: this renders ${W}x${H}, the printer wants ${SELF_CHECK.w}x${SELF_CHECK.h}.\n` +
-      `Fix SPEC (or SELF_CHECK, if you deliberately changed printers) before ordering.\n`
+    `\nSpec drift: this renders ${W}x${H}, the printer wants ${UPLOAD.w}x${UPLOAD.h}.\n` +
+      `Fix scripts/card-spec.js before ordering.\n`
   );
   process.exit(1);
 }
@@ -123,14 +97,19 @@ const FACE_WGHT = ed.reversed ? 440 : 400;
 // strokes exactly where the physical size needs them sturdy.
 const pt = (pxSize) => (pxSize / SPEC.dpi) * 72;
 
+// Every size on a face is a proportion of the card's WIDTH, written as the
+// pixel value it had on the 825 px wide card these layouts were drawn on. `u`
+// scales it to the card being printed, so a change of card size keeps the
+// face's proportions instead of its pixel counts.
+const U = px(SPEC.widthIn) / 825;
+const u = (n) => Math.round(n * U);
+
 // Set to match the SITE's proportion, not to a point size that sounds
-// reasonable. The site sets the card face at roughly 12% of the card's width
-// per em; 64px on this 753px content column is 8.5%, which renders as a
-// tasteful-but-timid book setting rather than the object the site builds.
-// 80px restores the proportion. The longest card (62 chars) still sets in
-// three lines with room to spare.
-const FACE_PX = 80;
-const RULE_PX = 4; // 0.34mm — 3px is a 0.25mm hair that prints weak on cream
+// reasonable: the prompt is 9.7% of the card's width per em. Smaller reads as
+// a tasteful-but-timid book setting rather than the object the site builds.
+// The longest card (62 characters) sets in five lines with room to spare.
+const FACE_PX = u(80);
+const RULE_PX = 4; // 0.34mm: 3px is a 0.25mm hair that prints weak on pale stock
 
 const guides = process.env.GUIDES
   ? `<div style="position:fixed; inset:${bleed}px; outline:2px solid red;"></div>
@@ -147,7 +126,7 @@ const shell = (body, extra = "") => `<!doctype html><style>
          font-optical-sizing: none; }
   svg { display: block; }
   .safe { position: absolute; inset: ${inset}px; display: grid; }
-  .num { font-family: "Plex Mono", monospace; font-size: 30px;
+  .num { font-family: "Plex Mono", monospace; font-size: ${u(30)}px;
          letter-spacing: 0.16em; color: ${MUTED}; }
   ${extra}
 </style><body>${body}${guides}</body>`;
@@ -172,9 +151,9 @@ const face = (card) =>
          ${
            card.draft
              ? `<div style="text-align:center; color:#b4382f;">
-                  <div style="font-family:'Plex Mono',monospace; font-size:44px; letter-spacing:0.2em;
-                              transform:rotate(-8deg); border:4px solid; padding:18px 26px;">UNWRITTEN</div>
-                  <div style="font-size:34px; margin-top:44px; color:${MUTED}; font-style:italic;
+                  <div style="font-family:'Plex Mono',monospace; font-size:${u(44)}px; letter-spacing:0.2em;
+                              transform:rotate(-8deg); border:4px solid; padding:${u(18)}px ${u(26)}px;">UNWRITTEN</div>
+                  <div style="font-size:${u(34)}px; margin-top:${u(44)}px; color:${MUTED}; font-style:italic;
                               line-height:1.4;">${esc(card.note ?? "")}</div>
                 </div>`
              : `<div style="font-size:${FACE_PX}px; font-variation-settings:'opsz' ${pt(FACE_PX).toFixed(0)},'wght' ${FACE_WGHT};
@@ -186,37 +165,37 @@ const face = (card) =>
                        .join("")}</div>`
          }
        </div>
-       <div style="justify-self:center; width:120px; height:${RULE_PX}px; background:${RULE};"></div>
+       <div style="justify-self:center; width:${u(120)}px; height:${RULE_PX}px; background:${RULE};"></div>
      </div>`
   );
 
 // The two editions have different backs on purpose. They are not meant to be
 // shuffled together, and a stray card should say which box it belongs to
 // before it is turned over.
-const back = shell(`<div class="safe" style="place-content:center; justify-items:center; gap:110px; color:${MUTED};">
-  <div style="width:260px;">${tint(ACCENT)}</div>
-  <div style="font-family:'Plex Mono',monospace; font-size:34px; letter-spacing:0.24em;
+const back = shell(`<div class="safe" style="place-content:center; justify-items:center; gap:${u(110)}px; color:${MUTED};">
+  <div style="width:${u(260)}px;">${tint(ACCENT)}</div>
+  <div style="font-family:'Plex Mono',monospace; font-size:${u(34)}px; letter-spacing:0.24em;
               text-transform:uppercase; white-space:nowrap;">Grasping&nbsp;Straws?</div>
 </div>`);
 
-const title = shell(`<div class="safe" style="place-content:center; justify-items:center; gap:90px; text-align:center;">
-  <div style="width:220px;">${tint(ACCENT)}</div>
-  <div style="font-size:88px; font-variation-settings:'opsz' ${pt(88).toFixed(0)},'wght' 600;">Grasping Straws?</div>
-  <div style="font-size:38px; font-style:italic; color:${MUTED};">${ed.subtitle.map(esc).join("<br>")}</div>
-  <div class="num" style="font-size:26px; text-transform:uppercase;">${esc(ed.name)}</div>
+const title = shell(`<div class="safe" style="place-content:center; justify-items:center; gap:${u(90)}px; text-align:center;">
+  <div style="width:${u(220)}px;">${tint(ACCENT)}</div>
+  <div style="font-size:${u(88)}px; white-space:nowrap; font-variation-settings:'opsz' ${pt(u(88)).toFixed(0)},'wght' 600;">Grasping Straws?</div>
+  <div style="font-size:${u(38)}px; font-style:italic; color:${MUTED};">${ed.subtitle.map(esc).join("<br>")}</div>
+  <div class="num" style="font-size:${u(28)}px; text-transform:uppercase;">${esc(ed.name)}</div>
 </div>`);
 
 // The instructions card earns its slot by saying only what a physical deck
 // cannot show you: how it wants to be used, and where it also lives.
-const instructions = shell(`<div class="safe" style="align-content:center; gap:44px;">
+const instructions = shell(`<div class="safe" style="align-content:center; gap:${u(44)}px;">
   <div class="num">HOW TO USE</div>
-  <div style="font-size:40px; font-variation-settings:'opsz' ${pt(40).toFixed(0)},'wght' ${FACE_WGHT}; line-height:1.5;">
+  <div style="font-size:${u(40)}px; font-variation-settings:'opsz' ${pt(u(40)).toFixed(0)},'wght' ${FACE_WGHT}; line-height:1.5;">
     ${ed.instructions
-      .map((p, i, a) => `<p${i < a.length - 1 ? ` style="margin-bottom:32px;"` : ""}>${esc(p)}</p>`)
+      .map((p, i, a) => `<p${i < a.length - 1 ? ` style="margin-bottom:${u(32)}px;"` : ""}>${esc(p)}</p>`)
       .join("\n    ")}
   </div>
-  <div style="justify-self:start; width:120px; height:${RULE_PX}px; background:${RULE};"></div>
-  <div class="num" style="font-size:26px;">STRAWS.LSCATURCHIO.XYZ</div>
+  <div style="justify-self:start; width:${u(120)}px; height:${RULE_PX}px; background:${RULE};"></div>
+  <div class="num" style="font-size:${u(28)}px;">STRAWS.LSCATURCHIO.XYZ</div>
 </div>`);
 
 /* ---------- render ---------- */
@@ -332,7 +311,9 @@ console.log(
     `  back.png          the shared back\n` +
     `  face-*.png        ${faces} faces (title, instructions, ${printable.length} prompts)\n` +
     `  contact-sheet.png proof this before uploading anything\n\n` +
-    `${W}x${H}px at ${SPEC.dpi} DPI — MakePlayingCards' tarot upload size exactly.\n` +
+    `${W}x${H}px at ${SPEC.dpi} DPI — MakePlayingCards' upload size for this card exactly.\n` +
+    `Order it as a deck of "up to ${deckSize} cards"` +
+    (deckSize > faces ? `; ${deckSize - faces} slot${deckSize - faces === 1 ? "" : "s"} left unused.\n` : `.\n`) +
     (PROOF
       ? `\nPROOF RUN — ${drafts.length} face(s) are stamped UNWRITTEN. Do not upload this\n` +
         `directory. Write the missing cards, then run without PROOF=1.\n`

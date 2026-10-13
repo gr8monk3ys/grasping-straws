@@ -5,13 +5,15 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import { EDITIONS, edition } from "../src/deck/editions.ts";
 import { NIGHT, PAPER } from "../src/deck/palette.ts";
+import { DECK_SIZES } from "../scripts/card-spec.js";
 
 const read = (ed) => JSON.parse(fs.readFileSync(new URL(`../${ed.file}`, import.meta.url), "utf8"));
 const all = Object.values(EDITIONS);
 
-test("every edition fills a 54-face tier: 52 cards, a title and instructions", () => {
+test("every edition is 54 faces, which the printer sells a deck for", () => {
+  assert.equal(DECK_SIZES.find((n) => n >= 54), 55, "the deck it is ordered as");
   for (const ed of all) {
-    assert.equal(read(ed).length + 2, 54, ed.name);
+    assert.equal(read(ed).length + 2, 54, ed.name); // 52 cards, a title, instructions
     assert.equal(ed.ids[1] - ed.ids[0] + 1, 52, ed.name);
   }
 });

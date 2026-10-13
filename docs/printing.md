@@ -1,6 +1,6 @@
 # Printing the decks
 
-How to turn the card files into physical decks of tarot-size cards from
+How to turn the card files into physical decks of poker-size cards from
 [MakePlayingCards](https://www.makeplayingcards.com) (MPC). They have no
 minimum order, so one personal copy is a normal thing to buy.
 
@@ -13,6 +13,11 @@ There are two editions, declared in `src/deck/editions.ts`:
 | Card ids | 1–52 | 101–152 |
 | Stock and ink | paper face, ink text | night face, pale text |
 | On the site | yes, it is the deck the site deals | no, print only |
+
+The card is poker size, 2.5" × 3.5" (63.5 × 88.9 mm). That is the nearest
+size MPC makes to the 70 × 90 mm card of Oblique Strategies, the deck this
+one answers: the same height to within a millimetre and 6.5 mm narrower.
+The size and everything that follows from it live in `scripts/card-spec.js`.
 
 Everything about the files is settled and checked by the build. The parts
 that need a human are the writing and the finish.
@@ -27,9 +32,11 @@ the objects could be designed around real words; Lorenzo revises every card
 before anything is ordered. A printed deck is permanent, so do not order
 until that pass is done.
 
-MPC prints tarot decks in **fixed tiers** — 18, 36, 54, 72. Each edition is
-52 cards + a title card + an instructions card, which is 54. To grow an
-edition past that, reserve the new ids as drafts first:
+MPC sells this card in decks of **up to** 18, 36, 55, 72, 90 and more. Each
+edition is 52 cards + a title card + an instructions card, which is 54, so
+it is ordered as a deck of up to 55 with one slot unused. A 56th face would
+move it to the 72 deck and its price. To grow an edition, reserve the new
+ids as drafts first:
 
 ```json
 { "id": 53, "text": "", "suit": "lateral", "draft": true, "note": "what this slot is for" }
@@ -63,8 +70,8 @@ npm run print                  # Paper -> print/final/paper/
 EDITION=night npm run print    # Night -> print/final/night/
 ```
 
-This refuses to run while any draft remains, and refuses again if the face
-count isn't a tier. For each edition it writes:
+This refuses to run while any draft remains, and refuses again if the faces
+outnumber the largest deck MPC sells. For each edition it writes:
 
 | File | What it is |
 |---|---|
@@ -86,22 +93,22 @@ exits non-zero. Text at the safe boundary is not reliably visible by eye on a
 downscaled proof — the guide outline and a full-width line of type blur into
 each other — so this is checked rather than looked at.
 
-Every file is **897 × 1497 px at 300 DPI**. That is MPC's published tarot
+Every file is **822 × 1122 px at 300 DPI**. That is MPC's published poker
 upload size, taken from their
 [upload FAQ](https://www.makeplayingcards.com/faq-photo.aspx), not from a
 third-party template:
 
 ```
-trim          2.75" × 4.75"          825 × 1425 px
+trim          2.5" × 3.5"            750 × 1050 px
 bleed         0.12" each side         36 px  ← trimmed off
 safe margin   0.12" further in        36 px  ← keep content inside
-upload        2.99" × 4.99"          897 × 1497 px
+upload        2.74" × 3.74"          822 × 1122 px
 ```
 
 Note the bleed is **0.12"**, not the 1/8" (0.125") MPC's prose rounds it to.
-Building to 0.125" gives 900 × 1500, which MPC accepts and silently rescales,
-putting every card about 0.3% off register. `SELF_CHECK` in
-`scripts/print-cards.js` fails the run if the computed size ever drifts.
+Building to 0.125" gives 825 × 1125, which MPC accepts and silently rescales,
+putting every card a little off register. `scripts/print-cards.js` fails the
+run if what it computes ever differs from `UPLOAD` in `scripts/card-spec.js`.
 
 To see the bleed and safe outlines drawn on the cards:
 
@@ -140,8 +147,9 @@ wear sooner, because the white core appears wherever the edge chips.
 
 ## 4. Order
 
-One order per edition. At MPC, choose a **blank tarot deck** (2.75" × 4.75")
-and set the card count to **54**. Then:
+One order per edition. At MPC, choose
+[Design Your Own Game Cards, Traditional Poker Size](https://www.makeplayingcards.com/design/custom-blank-card-traditional-size.html)
+(63.5 × 88.9 mm) and set the size to **Up to 55 cards**. Then:
 
 - **Fronts** — upload the 54 `face-*.png` files. Their `NNN` prefix means a
   plain alphabetical sort is already the deck order. (For a deck you shuffle
@@ -155,9 +163,13 @@ and set the card count to **54**. Then:
   to stop light showing through, which only matters for games with hidden
   information.
 
-- **Box** — add the custom rigid box for tarot cards: **Custom**, **Up to 78
+- **Box** — add the custom rigid box for poker cards: **Custom**, **Up to 55
   cards**, **Matte laminated (linen finish)**, and upload that edition's
   `box.pdf`. See [The box](#the-box) below.
+
+Prices read from MPC's configurator on 2026-10-12, for one copy: $18.75 for
+the deck on M31 linen stock and $16.70 for the box, so about $35 an edition
+before shipping.
 
 Check MPC's own on-screen proof before paying. Their preview draws the safe
 area; nothing should cross it. Check it against the contact sheet card by
@@ -198,12 +210,15 @@ Three things it deliberately does differently from the manufactured run:
   `npm run print` refuses while any card is unwritten. Someone printing at
   home today should get today's cards rather than nothing, so the PDF renders
   the live deck and leaves the reserved slots out.
-- **The rules cards are here and only here.** MPC prints tarot decks in fixed
-  tiers, and the manufactured deck already sits exactly on 54 faces (52
-  prompts + title + instructions). Adding five rules cards would make 59,
-  which is not a tier — it would cost four written prompts or a jump to the
-  72 tier. The five games are on `/play/`, printed in the free edition, and
-  out of the manufactured deck until the deck is deliberately resized.
+- **The rules cards are here and only here.** The manufactured deck is 54
+  faces (52 prompts + title + instructions) and is ordered as a deck of up
+  to 55. Adding five rules cards would make 59, which moves it to the 72
+  deck and no longer fits the 55-card box. The five games are on `/play/`,
+  printed in the free edition, and out of the manufactured deck until the
+  deck is deliberately resized.
+- **It is still tarot size.** The free edition was laid out four to a page
+  at 2.75" × 4.75" before the manufactured deck moved to poker size, and has
+  not been redrawn. The words are the same; the card is taller.
 - **The PDF is committed.** It is a generated artifact in git, which is
   normally the wrong thing: the site is static files on a host with no
   browser, so it cannot be rendered on request, and the About page links it.
@@ -221,20 +236,20 @@ the manufactured faces are measured against the safe line.
 ## The box
 
 Each edition goes in MPC's
-[custom rigid box for tarot cards](https://www.makeplayingcards.com/design/custom-rigid-box-for-tarot-cards.html):
+[custom rigid box for poker cards](https://www.makeplayingcards.com/design/custom-rigid-box-for-poker-sized-cards.html):
 a lid and a base, printed all over. Checked on that page on 2026-10-12:
 
 | | |
 |---|---|
-| Size option | **Up to 78 cards**, the smallest they make |
-| External size | 129.9 × 79.1 × 30.3 mm |
+| Size option | **Up to 55 cards**, the smallest they make |
+| External size | 97.8 × 72.4 × 20.7 mm |
 | Finish | **Matte laminated (linen finish)**. Large solid dark areas show scuffs and this hides them best |
-| Price | $18.40 for one |
-| Template | `2.75x4.75x78pcs.pdf`, from the "Download rigid box template" link with that size selected |
+| Price | $16.70 for one |
+| Template | `2.5x3.5x54pcs.pdf`, from the "Download rigid box template" link with that size selected |
 
-A 54-card deck is 18 to 19 mm thick and the box is built for 78 cards, so
-the deck sits about 8 mm below the rim of the base. That was accepted in
-exchange for a lid-and-base box and room to grow to the 72 tier.
+The box is made for the deck: 55 cards, against the 54 printed. There is no
+room in it for a larger deck, so growing an edition past 55 faces means a
+new box and a new dieline.
 
 The template is one page holding two nets: the lid on the left, the base on
 the right, each a centre panel with four walls and a wrap that turns over
@@ -242,10 +257,9 @@ the rim. Its numbers are in `scripts/box-spec.js`, every one a vertex read
 out of MPC's file, with a self-check against the size MPC lists. Two things
 the listing does not tell you and the template does:
 
-- The **lid is 20.3 mm deep** and the base 30.3 mm, so a closed box shows a
-  10 mm band of the base under the lid. On the Paper box that band is paper
-  under a forest ink lid.
-- The **base is 74.6 × 125.3 mm**, smaller than the lid by the thickness of
+- The **lid is as deep as the base**, 20.7 mm, so a closed box shows only
+  the lid. The base's colour is seen when the box is open.
+- The **base is 67.9 × 93.3 mm**, smaller than the lid by the thickness of
   the board all round.
 
 What goes on each panel is defined once, in `scripts/box-art.js`, in
@@ -267,12 +281,14 @@ EDITION=night npm run print:box    # Night -> print/final/night/
 
 The run measures every piece of lettering against its own panel and fails
 if any comes within 3 mm of a fold, and it reads the page size back out of
-the written PDF and fails if that is not the template's. Chromium rounds a
-PDF page to whole 1/300 inch, so `box.pdf` comes out about 0.2 mm taller
-than the template; the artwork is anchored to the bottom-left corner, which
-is the template's origin, so the difference is spare bleed along the top.
+the written PDF and fails if that is not the template's. Chromium does not
+print a PDF page at exactly the size asked, so `box.pdf` comes out up to
+0.2 mm taller or shorter than the template; the artwork is anchored to the
+bottom-left corner, which is the template's origin, so the difference is
+added to or taken from the spare bleed along the top.
 
-That placement was checked once against the real thing on 2026-10-12: the
+That placement was checked against the real thing on 2026-10-12, for this
+template and for the tarot one used before it: the
 fold rectangles were printed to a PDF the same way, MPC's template and that
 PDF were both rasterised with Inkscape
 (`inkscape --pdf-poppler --export-type=png --export-dpi=200`), and the two

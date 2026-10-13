@@ -2,25 +2,28 @@
 // and one that agrees with what the printer says it sells.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { BASE, BOX, CUT, LID, PAGE, SPLIT_X } from "../scripts/box-spec.js";
+import { BASE, BOX, CUT, LID, LISTED, PAGE, SPLIT_X } from "../scripts/box-spec.js";
+import { TRIM_MM } from "../scripts/card-spec.js";
 
 const near = (a, b, tol = 0.06) => Math.abs(a - b) <= tol;
 
 test("the lid is the size MakePlayingCards lists, and the base its height", () => {
-  assert.ok(near(BOX.lid.l, 129.9), `lid length ${BOX.lid.l}`);
-  assert.ok(near(BOX.lid.w, 79.1), `lid width ${BOX.lid.w}`);
-  assert.ok(near(BOX.base.h, 30.3), `base height ${BOX.base.h}`);
+  assert.deepEqual(LISTED, { l: 97.8, w: 72.4, h: 20.7 });
+  assert.ok(near(BOX.lid.l, LISTED.l), `lid length ${BOX.lid.l}`);
+  assert.ok(near(BOX.lid.w, LISTED.w), `lid width ${BOX.lid.w}`);
+  assert.ok(near(BOX.base.h, LISTED.h), `base height ${BOX.base.h}`);
 });
 
-test("the base fits inside the lid, and the lid is shallower than the base", () => {
+test("the base fits inside the lid, and the lid is no deeper than the base", () => {
   assert.ok(BOX.base.w < BOX.lid.w && BOX.base.l < BOX.lid.l);
-  assert.ok(BOX.lid.h < BOX.base.h);
+  assert.ok(BOX.lid.h <= BOX.base.h + 0.06);
 });
 
-test("a tarot card and a 54-card stack fit in the base", () => {
-  assert.ok(BOX.base.w - 2 * 1.6 > 69.85, "card width");
-  assert.ok(BOX.base.l - 2 * 1.6 > 120.65, "card length");
-  assert.ok(BOX.base.h > 19, "stack height");
+test("the card and a 54-card stack fit in the base", () => {
+  const board = 1.6; // the base's wall and floor, approximately
+  assert.ok(BOX.base.w - 2 * board > TRIM_MM.w, "card width");
+  assert.ok(BOX.base.l - 2 * board > TRIM_MM.h, "card length");
+  assert.ok(BOX.base.h - board > 54 * 0.31, "stack height");
 });
 
 test("each net's walls hang off its centre panel with the same depth all round", () => {
@@ -32,9 +35,10 @@ test("each net's walls hang off its centre panel with the same depth all round",
       net.right.x1 - net.right.x0,
     ];
     assert.ok(depth.every((d) => near(d, depth[0], 0.02)), `${name} wall depths ${depth}`);
-    assert.equal(net.top.x0, net.cover.x0, name);
-    assert.equal(net.top.x1, net.cover.x1, name);
-    assert.equal(net.bottom.x0, net.cover.x0, name);
+    // A wall is drawn a hair narrower than the panel it hangs from.
+    assert.ok(near(net.top.x0, net.cover.x0, 1) && near(net.top.x1, net.cover.x1, 1), name);
+    assert.ok(near(net.bottom.x0, net.cover.x0, 1) && near(net.bottom.x1, net.cover.x1, 1), name);
+    assert.ok(near(net.left.y0, net.cover.y0, 2) && near(net.left.y1, net.cover.y1, 2), name);
     assert.ok(net.left.x1 < net.cover.x0 && net.right.x0 > net.cover.x1, name);
   }
 });

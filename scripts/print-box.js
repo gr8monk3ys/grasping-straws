@@ -70,9 +70,10 @@ const page = (proof) => `<!doctype html><meta charset="utf-8"><style>${FONT_CSS}
      of the line where the nets meet, base colour right of it. */
   html { background: linear-gradient(90deg, ${ed.box.lid} ${px(SPLIT_X)}px, ${ed.box.base} ${px(SPLIT_X)}px); }
   /* Everything is placed from the page's bottom-left corner, which is the
-     template's own origin. Chromium rounds a PDF page to whole 1/300 inch
-     and can come out a hair taller than asked; anchored this way the extra
-     lands as spare bleed along the top and nothing moves off the dieline. */
+     template's own origin. Chromium does not print a PDF page at exactly the
+     size asked: it has come out up to 0.55 pt taller or shorter. Anchored
+     this way the difference is added to or taken from the spare bleed along
+     the top and right edges, and nothing moves off the dieline. */
   html, body { width: ${px(PAGE.w)}px; height: 100%; overflow: hidden; }
   body { position: relative; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   svg { display: block; }
@@ -134,12 +135,15 @@ await browser.close();
 
 // Read the page size back out of the file that was actually written. A page
 // that is not the template's size means the artwork is not where MPC's
-// dieline expects it, which no proof on screen would show.
+// dieline expects it, which no proof on screen would show. The cut line
+// stops 8.5 pt short of the page's top and right edges, so a page within
+// SLACK of the template's size has lost or gained only spare bleed.
+const SLACK = 0.8;
 const pdf = fs.readFileSync(path.join(out, "box.pdf"), "latin1");
 const media = pdf.match(/\/MediaBox\s*\[\s*([\d.]+)\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)\s*\]/);
 const pages = (pdf.match(/\/Type\s*\/Page\b/g) ?? []).length;
 const got = media ? { w: media[3] - media[1], h: media[4] - media[2] } : null;
-if (!got || pages !== 1 || Math.abs(got.w - PAGE.w) > 0.3 || got.h < PAGE.h - 0.3 || got.h > PAGE.h + 0.8) {
+if (!got || pages !== 1 || Math.abs(got.w - PAGE.w) > SLACK || Math.abs(got.h - PAGE.h) > SLACK) {
   console.error(
     `\nbox.pdf is ${got ? `${got.w.toFixed(2)} x ${got.h.toFixed(2)} pt on ${pages} page(s)` : "unreadable"}; ` +
       `MPC's template is one page of ${PAGE.w} x ${PAGE.h} pt. Do NOT upload it.\n`

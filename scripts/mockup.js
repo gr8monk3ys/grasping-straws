@@ -19,6 +19,7 @@ import { fileURLToPath } from "node:url";
 import { EDITIONS } from "../src/deck/editions.ts";
 import { FONT_CSS, panels } from "./box-art.js";
 import { BOX } from "./box-spec.js";
+import { CARD as SPEC, TRIM_MM, UPLOAD } from "./card-spec.js";
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const out = path.join(root, "print", "mockup");
@@ -27,13 +28,17 @@ fs.mkdirSync(out, { recursive: true });
 const S = 4; // px per mm
 const mm = (v) => v * S;
 
-// Card: MakePlayingCards' tarot trim. Box: the lid and base as their dieline
-// gives them (scripts/box-spec.js). The lid is shallower than the base, so a
-// closed box shows a band of the base below it.
-const CARD = { w: 69.85, h: 120.65, corner: 4.5, upload: { w: 897, h: 1497, bleed: 36 } };
+// Card: the printer's trim size (scripts/card-spec.js). Box: the lid and base
+// as their dieline gives them (scripts/box-spec.js).
+const CARD = {
+  w: TRIM_MM.w,
+  h: TRIM_MM.h,
+  corner: SPEC.cornerMm,
+  upload: { ...UPLOAD, bleed: Math.round(SPEC.bleedIn * SPEC.dpi) },
+};
 const { lid: LID, base: BASE } = BOX;
 const WALL = 1.6;
-const STACK_MM = 18.5; // 54 cards
+const STACK_MM = WALL + 16.7; // the base's board, then 54 cards of linen stock
 
 const files = (ed) => {
   const dir = path.join(root, "print", "final", ed.key);
@@ -113,11 +118,11 @@ function spread(ed, ox, oy) {
 
   return [
     cuboid({ x: ox, y: oy, rot: -7, ...LID, top: p.lidTop, south: p.lidShort, north: p.lidShort, east: p.lidLong, west: p.lidLong }),
-    cuboid({ x: ox + 98, y: oy + 12, rot: 5, ...BASE, top: well, open: true,
+    cuboid({ x: ox + LID.w + 18, y: oy + 6, rot: 5, ...BASE, top: well, open: true,
              south: p.baseSide, north: p.baseSide, east: p.baseSide, west: p.baseSide }),
-    flat(cardFace(f.card(ids[1])), ox - 14, oy + 152, -9, 0.3),
-    flat(cardFace(f.card(ids[2])), ox + 64, oy + 146, 2, 0.6),
-    flat(cardFace(f.back), ox + 142, oy + 152, 12, 0.9),
+    flat(cardFace(f.card(ids[1])), ox - 12, oy + LID.l + 20, -9, 0.3),
+    flat(cardFace(f.card(ids[2])), ox + 60, oy + LID.l + 15, 2, 0.6),
+    flat(cardFace(f.back), ox + 132, oy + LID.l + 20, 12, 0.9),
   ].join("\n");
 }
 
@@ -172,11 +177,11 @@ async function shoot(name, html, viewport, fullPage = false) {
 const tilt = "rotateX(54deg) rotateZ(-11deg)";
 console.log(`\nwrote to print/mockup/`);
 await shoot("cards", sheet(), { width: Math.round(mm(6 * CARD.w + 5 * 9 + 28)), height: 800 }, true);
-await shoot("desk-paper", desk(spread(EDITIONS.paper, -118, -150), tilt), { width: 1500, height: 1050 });
-await shoot("desk-night", desk(spread(EDITIONS.night, -118, -150), tilt), { width: 1500, height: 1050 });
+await shoot("desk-paper", desk(spread(EDITIONS.paper, -100, -112), tilt), { width: 1300, height: 860 });
+await shoot("desk-night", desk(spread(EDITIONS.night, -100, -112), tilt), { width: 1300, height: 860 });
 await shoot(
   "desk-both",
-  desk(spread(EDITIONS.paper, -250, -165) + spread(EDITIONS.night, 40, -165), tilt),
-  { width: 2300, height: 1200 }
+  desk(spread(EDITIONS.paper, -222, -118) + spread(EDITIONS.night, 30, -118), tilt),
+  { width: 2000, height: 960 }
 );
 await browser.close();
