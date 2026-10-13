@@ -1,10 +1,11 @@
 /*
- * Print-file generator: renders every card in public/cards.json — plus the
- * back, a title card and an instructions card — as 300 DPI PNGs into print/
- * for MakePlayingCards.
+ * Print-file generator: renders every card of one edition — plus its back,
+ * a title card and an instructions card — as 300 DPI PNGs into print/ for
+ * MakePlayingCards. The editions are declared in src/deck/editions.ts.
  *
- *   npm run print              # renders print/*.png + a contact sheet
- *   GUIDES=1 npm run print     # overlays bleed/safe outlines for proofing
+ *   npm run print                  # the Paper edition -> print/final/paper/
+ *   EDITION=night npm run print    # the Night edition -> print/final/night/
+ *   GUIDES=1 npm run print         # overlays bleed/safe outlines for proofing
  *
  * The numbers below are MakePlayingCards' published tarot figures, not
  * estimates. From their upload FAQ (makeplayingcards.com/faq-photo.aspx):
@@ -37,17 +38,20 @@ const MPC_TAROT_TIERS = [18, 36, 54, 72, 90, 108];
 
 import { chromium } from "playwright";
 import { draftSlots, liveCards } from "../src/deck/cards.ts";
+import { edition } from "../src/deck/editions.ts";
+import { mark as tint } from "./mark.js";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
-const pub = path.join(here, "..", "public");
-const out = path.join(here, "..", "print", process.env.PROOF === "1" ? "proof" : "final");
+const root = path.join(here, "..");
+const pub = path.join(root, "public");
+const ed = edition(process.env.EDITION);
+const out = path.join(root, "print", process.env.PROOF === "1" ? "proof" : "final", ed.key);
 fs.mkdirSync(out, { recursive: true });
 
-const all = JSON.parse(fs.readFileSync(path.join(pub, "cards.json"), "utf8"));
-const svg = fs.readFileSync(path.join(pub, "favicon.svg"), "utf8");
+const all = JSON.parse(fs.readFileSync(path.join(root, ed.file), "utf8"));
 const b64 = (f) => fs.readFileSync(path.join(pub, "fonts", f)).toString("base64");
 const fraunces = b64("Fraunces-latin.woff2");
 const plex = b64("PlexMono-400-latin.woff2");
@@ -68,7 +72,7 @@ if (drafts.length && !PROOF) {
   console.error(
     `\nRefusing to render: ${drafts.length} card${drafts.length === 1 ? " is" : "s are"} still a draft.\n` +
       drafts.map((c) => `  #${c.id} (${c.suit ?? "no suit"}) — ${c.note ?? "unwritten"}`).join("\n") +
-      `\n\nWrite the text in public/cards.json and delete the "draft" and "note" keys.` +
+      `\n\nWrite the text in ${ed.file} and delete the "draft" and "note" keys.` +
       `\nA printed deck is permanent; a placeholder that reaches it costs a reprint.` +
       `\nTo check layout and trim in the meantime: PROOF=1 npm run print\n`
   );
@@ -105,10 +109,13 @@ if (W !== SELF_CHECK.w || H !== SELF_CHECK.h) {
 
 /* ---------- the printed object ---------- */
 
-const CARD = "#fdfaf3"; // --paper, straight off the site
-const INK = "#241e16";
-const MUTED = "#6e6455";
-const ACCENT = "#2c6e4f"; // the site's green, safely inside CMYK
+// The edition's own stock and ink, from the one palette the site also uses.
+const { card: CARD, ink: INK, muted: MUTED, accent: ACCENT, moss: RULE } = ed.palette;
+
+// Pale type on dark stock prints lighter than it is drawn: ink spreads into
+// the letters from every side. Night is set heavier so both editions land at
+// the same apparent weight in the hand.
+const FACE_WGHT = ed.reversed ? 440 : 400;
 
 // Fraunces' optical-size axis has to be driven by PHYSICAL size, not by the
 // px number. 64px at 300 DPI is 15.4pt of actual card — a text setting. Left
@@ -134,7 +141,7 @@ const shell = (body, extra = "") => `<!doctype html><style>
   @font-face { font-family: "Fraunces"; src: url(data:font/woff2;base64,${fraunces}) format("woff2"); }
   @font-face { font-family: "Plex Mono"; src: url(data:font/woff2;base64,${plex}) format("woff2"); }
   * { margin: 0; box-sizing: border-box; }
-  html { color-scheme: light; }
+  html { color-scheme: ${ed.reversed ? "dark" : "light"}; }
   html, body { width: ${W}px; height: ${H}px; }
   body { background: ${CARD}; font-family: "Fraunces", serif; color: ${INK};
          font-optical-sizing: none; }
@@ -146,16 +153,6 @@ const shell = (body, extra = "") => `<!doctype html><style>
 </style><body>${body}${guides}</body>`;
 
 const esc = (s) => s.replaceAll("&", "&amp;").replaceAll("<", "&lt;");
-
-// favicon.svg hardcodes its ink and carries a prefers-color-scheme: dark
-// branch that swaps it to #EAE3D4. The site never sees that — it renders the
-// glyph through a CSS mask, so the colour comes from the page. Inlined into a
-// print page the SVG's own rules win, which means (a) the mark ignores the
-// colour we ask for and (b) a browser that happened to report dark mode would
-// print a near-white mark on cream stock. Replacing BOTH hexes settles both:
-// the media query still matches, and both branches now say the same thing.
-const tint = (color) =>
-  svg.replaceAll("#241E16", color).replaceAll("#EAE3D4", color);
 
 // text-wrap: balance evens out line LENGTHS; it has no idea where a sentence
 // ends. On a two-sentence card that reliably strands the second sentence's
@@ -180,7 +177,7 @@ const face = (card) =>
                   <div style="font-size:34px; margin-top:44px; color:${MUTED}; font-style:italic;
                               line-height:1.4;">${esc(card.note ?? "")}</div>
                 </div>`
-             : `<div style="font-size:${FACE_PX}px; font-variation-settings:'opsz' ${pt(FACE_PX).toFixed(0)},'wght' 400;
+             : `<div style="font-size:${FACE_PX}px; font-variation-settings:'opsz' ${pt(FACE_PX).toFixed(0)},'wght' ${FACE_WGHT};
                      line-height:1.32; text-align:center;">${sentences(card.text)
                        .map(
                          (s, i) =>
@@ -189,12 +186,15 @@ const face = (card) =>
                        .join("")}</div>`
          }
        </div>
-       <div style="justify-self:center; width:120px; height:${RULE_PX}px; background:${ACCENT}; opacity:0.65;"></div>
+       <div style="justify-self:center; width:120px; height:${RULE_PX}px; background:${RULE};"></div>
      </div>`
   );
 
+// The two editions have different backs on purpose. They are not meant to be
+// shuffled together, and a stray card should say which box it belongs to
+// before it is turned over.
 const back = shell(`<div class="safe" style="place-content:center; justify-items:center; gap:110px; color:${MUTED};">
-  <div style="width:260px;">${tint(MUTED)}</div>
+  <div style="width:260px;">${tint(ACCENT)}</div>
   <div style="font-family:'Plex Mono',monospace; font-size:34px; letter-spacing:0.24em;
               text-transform:uppercase; white-space:nowrap;">Grasping&nbsp;Straws?</div>
 </div>`);
@@ -202,27 +202,29 @@ const back = shell(`<div class="safe" style="place-content:center; justify-items
 const title = shell(`<div class="safe" style="place-content:center; justify-items:center; gap:90px; text-align:center;">
   <div style="width:220px;">${tint(ACCENT)}</div>
   <div style="font-size:88px; font-variation-settings:'opsz' ${pt(88).toFixed(0)},'wght' 600;">Grasping Straws?</div>
-  <div style="font-size:38px; font-style:italic; color:${MUTED};">an original deck of<br>lateral-thinking prompts</div>
+  <div style="font-size:38px; font-style:italic; color:${MUTED};">${ed.subtitle.map(esc).join("<br>")}</div>
+  <div class="num" style="font-size:26px; text-transform:uppercase;">${esc(ed.name)}</div>
 </div>`);
 
 // The instructions card earns its slot by saying only what a physical deck
 // cannot show you: how it wants to be used, and where it also lives.
 const instructions = shell(`<div class="safe" style="align-content:center; gap:44px;">
   <div class="num">HOW TO USE</div>
-  <div style="font-size:40px; font-variation-settings:'opsz' ${pt(40).toFixed(0)},'wght' 400; line-height:1.5;">
-    <p style="margin-bottom:32px;">Stuck? Shuffle. Draw one card. Read it once.</p>
-    <p style="margin-bottom:32px;">Apply it to the thing in front of you, however
-       literally you can bear. The prompt that seems wrong is usually the one
-       doing the work.</p>
-    <p>Deal through the deck before reshuffling — no card twice in a cycle.</p>
+  <div style="font-size:40px; font-variation-settings:'opsz' ${pt(40).toFixed(0)},'wght' ${FACE_WGHT}; line-height:1.5;">
+    ${ed.instructions
+      .map((p, i, a) => `<p${i < a.length - 1 ? ` style="margin-bottom:32px;"` : ""}>${esc(p)}</p>`)
+      .join("\n    ")}
   </div>
-  <div style="justify-self:start; width:120px; height:${RULE_PX}px; background:${ACCENT}; opacity:0.65;"></div>
+  <div style="justify-self:start; width:120px; height:${RULE_PX}px; background:${RULE};"></div>
   <div class="num" style="font-size:26px;">STRAWS.LSCATURCHIO.XYZ</div>
 </div>`);
 
 /* ---------- render ---------- */
 
-const browser = await chromium.launch();
+// PW_CHANNEL=chrome renders with the installed Chrome instead of Playwright's
+// own build. Good enough to look at; order from the pinned build, because a
+// different Chrome can break a line somewhere else.
+const browser = await chromium.launch({ channel: process.env.PW_CHANNEL || undefined });
 const page = await browser.newPage({ viewport: { width: W, height: H } });
 const written = [];
 
@@ -326,7 +328,7 @@ if (overflows.length) {
 
 const dir = path.relative(path.join(here, ".."), out);
 console.log(
-  `\nwrote ${written.length + 1} files to ${dir}/\n` +
+  `\n${ed.name}: wrote ${written.length + 1} files to ${dir.replaceAll("\\", "/")}/\n` +
     `  back.png          the shared back\n` +
     `  face-*.png        ${faces} faces (title, instructions, ${printable.length} prompts)\n` +
     `  contact-sheet.png proof this before uploading anything\n\n` +
