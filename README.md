@@ -85,6 +85,7 @@ npm run validate   # lint public/cards.json
 npm run verify     # drive the built site end to end (build + serve first)
 npm run assets     # regenerate og.png + PWA icons from favicon.svg
 npm run print      # render 300 DPI print files into print/final/<edition>/ (see below)
+npm run print:box  # lay an edition's box artwork onto the printer's dieline
 npm run mockup     # stage the print files as cards and boxes, into print/mockup/
 npm run pnp        # render the free print-and-play PDF into public/
 npm run pnp:check  # is the committed PDF still in step with cards.json?

@@ -9,7 +9,7 @@
  *
  * These are previews, not print files, and they are drawn, not photographed:
  * colour on card stock will be flatter than on a screen, and the corner
- * radius and box wall are the printer's listed figures, not measured ones.
+ * radius and board thickness are estimates, not the printer's figures.
  * Run `npm run print` for each edition first; this reads print/final/.
  */
 import { chromium } from "playwright";
@@ -18,6 +18,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { EDITIONS } from "../src/deck/editions.ts";
 import { FONT_CSS, panels } from "./box-art.js";
+import { BOX } from "./box-spec.js";
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const out = path.join(root, "print", "mockup");
@@ -26,13 +27,12 @@ fs.mkdirSync(out, { recursive: true });
 const S = 4; // px per mm
 const mm = (v) => v * S;
 
-// MakePlayingCards' listed figures. Card: tarot trim. Box: "custom rigid box
-// for tarot cards", external. The base is drawn a board's thickness smaller
-// so the lid can sit over it.
+// Card: MakePlayingCards' tarot trim. Box: the lid and base as their dieline
+// gives them (scripts/box-spec.js). The lid is shallower than the base, so a
+// closed box shows a band of the base below it.
 const CARD = { w: 69.85, h: 120.65, corner: 4.5, upload: { w: 897, h: 1497, bleed: 36 } };
-const LID = { w: 79.1, l: 129.9, h: 30.3 };
+const { lid: LID, base: BASE } = BOX;
 const WALL = 1.6;
-const BASE = { w: LID.w - 2 * WALL, l: LID.l - 2 * WALL, h: LID.h - WALL };
 const STACK_MM = 18.5; // 54 cards
 
 const files = (ed) => {

@@ -155,8 +155,13 @@ and set the card count to **54**. Then:
   to stop light showing through, which only matters for games with hidden
   information.
 
+- **Box** — add the custom rigid box for tarot cards: **Custom**, **Up to 78
+  cards**, **Matte laminated (linen finish)**, and upload that edition's
+  `box.pdf`. See [The box](#the-box) below.
+
 Check MPC's own on-screen proof before paying. Their preview draws the safe
-area; nothing should cross it.
+area; nothing should cross it. Check it against the contact sheet card by
+card: this is the last look before the deck is permanent.
 
 ## 5. After it ships
 
@@ -231,19 +236,52 @@ A 54-card deck is 18 to 19 mm thick and the box is built for 78 cards, so
 the deck sits about 8 mm below the rim of the base. That was accepted in
 exchange for a lid-and-base box and room to grow to the 72 tier.
 
+The template is one page holding two nets: the lid on the left, the base on
+the right, each a centre panel with four walls and a wrap that turns over
+the rim. Its numbers are in `scripts/box-spec.js`, every one a vertex read
+out of MPC's file, with a self-check against the size MPC lists. Two things
+the listing does not tell you and the template does:
+
+- The **lid is 20.3 mm deep** and the base 30.3 mm, so a closed box shows a
+  10 mm band of the base under the lid. On the Paper box that band is paper
+  under a forest ink lid.
+- The **base is 74.6 × 125.3 mm**, smaller than the lid by the thickness of
+  the board all round.
+
 What goes on each panel is defined once, in `scripts/box-art.js`, in
 millimetres: the mark, the name and a wall label on the lid top; the name
-and edition along the long sides; the mark on the short sides; and on the
-underside what the deck is, the URL and the printing number. The Paper box
-has a forest ink lid on a paper base. The Night box is night all over with
-the mark in emerald. `npm run mockup` folds those panels into a box to look
-at.
+and edition along the long walls; the mark on the short walls; and on the
+underside what the deck is, the URL and the printing number. The base walls
+are plain.
 
-**Not done yet:** laying the panels onto MPC's template as an upload file.
-The template fixes where each panel sits, how far artwork must bleed past
-the fold and what wraps inside the rim, and none of that can be guessed
-from the external size. Until that generator exists the box cannot be
-ordered with custom art; MPC will print a plain white or black one.
+```sh
+npm run print:box                  # Paper -> print/final/paper/
+EDITION=night npm run print:box    # Night -> print/final/night/
+```
+
+| File | What it is |
+|---|---|
+| `box.pdf` | the artwork alone on the template's page, placed from the template's own origin. **This is the upload.** |
+| `box.png` | the same page at 300 DPI, if their uploader wants an image |
+| `box-proof.png` | the artwork with folds in blue and the cut line in red. For checking; never upload it |
+
+The run measures every piece of lettering against its own panel and fails
+if any comes within 3 mm of a fold, and it reads the page size back out of
+the written PDF and fails if that is not the template's. Chromium rounds a
+PDF page to whole 1/300 inch, so `box.pdf` comes out about 0.2 mm taller
+than the template; the artwork is anchored to the bottom-left corner, which
+is the template's origin, so the difference is spare bleed along the top.
+
+Open `box-proof.png` before uploading and check three things: every wall's
+lettering has its top toward the centre panel (that edge is uppermost once
+folded), nothing sits on a blue line, and colour runs past the red line
+everywhere.
+
+MPC's template was written for Illustrator: add artwork on a layer, hide
+their layer, send the file back. `box.pdf` is that file without their
+layer. **Not yet verified:** what their uploader accepts for a rigid box
+and how it previews it. That is checked the first time a cart is built; if
+it rejects the PDF, `box.png` is the fallback.
 
 ---
 
