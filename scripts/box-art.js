@@ -76,7 +76,7 @@ export function panels(ed, mm) {
          ${esc(ed.blurb)}</div>
        <div style="display:grid; gap:${mm(2.2)}px;">
          <div style="${label(mm, b.baseLabel, 2.1)}">straws.lscaturchio.xyz</div>
-         <div style="${label(mm, b.baseLabel, 2.1)}">Edition ${esc(DECK_VERSION)} · made by Lorenzo</div>
+         <div style="${label(mm, b.baseLabel, 2.1)}">Printing ${esc(DECK_VERSION)} · made by Lorenzo</div>
        </div>`,
       `align-content:space-between; padding:${mm(11)}px ${mm(9)}px;`
     ),

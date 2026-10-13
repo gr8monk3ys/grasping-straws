@@ -4,7 +4,7 @@
     "scripts/rules-cards.js",
     "scripts/print-and-play.js"
   ],
-  "sha256": "561fd8264a7576cfa55f2c45104b8e03459ee4aa47b08d682da6e93fff4f181b",
-  "bytes": 340839,
-  "faces": 54
+  "sha256": "ab964b56c3418be6922e809a05fc49cc467b60d54f09cb42e8f92bf83721bf42",
+  "bytes": 252806,
+  "faces": 58
 }

@@ -84,16 +84,25 @@ npm test           # the deck, the card rule and the readable-text budget, in No
 npm run validate   # lint public/cards.json
 npm run verify     # drive the built site end to end (build + serve first)
 npm run assets     # regenerate og.png + PWA icons from favicon.svg
-npm run print      # render 300 DPI print files into print/final/ (see below)
+npm run print      # render 300 DPI print files into print/final/<edition>/ (see below)
+npm run mockup     # stage the print files as cards and boxes, into print/mockup/
 npm run pnp        # render the free print-and-play PDF into public/
 npm run pnp:check  # is the committed PDF still in step with cards.json?
 npm run validate:rules  # do /play/ and the printed rules cards list the same games?
 ```
 
-## Print files (physical deck)
+## Print files (physical decks)
 
-`npm run print` renders all 54 faces, the shared back and a contact sheet
-into `print/final/` at **897 × 1497 px, 300 DPI** — MakePlayingCards'
+There are two printed editions, declared in `src/deck/editions.ts`. The
+**Paper edition** (ids 1–52) is the deck this site deals and works on the
+piece in front of you. The **Night edition** (ids 101–152, in
+`src/deck/night.json`) works on the person making it and exists only in
+print. Both are set in the palette of lscaturchio.xyz, held in
+`src/deck/palette.ts`.
+
+`npm run print` renders the Paper edition and `EDITION=night npm run print`
+the Night edition: all 54 faces, the shared back and a contact sheet
+into `print/final/<edition>/` at **897 × 1497 px, 300 DPI** — MakePlayingCards'
 published tarot upload size, taken from their own FAQ rather than a
 third-party template. The script self-checks that figure and refuses to run
 if it drifts, if any card is still a draft, or if the face count isn't one
@@ -104,7 +113,10 @@ text crosses the safe line, which is the mistake that costs a reprint.
 separate directory so layout can be checked before the writing is done.
 `GUIDES=1` overlays the bleed and safe outlines.
 
-Full ordering steps, including what is still unresolved about the tuck box:
+`npm run mockup` folds the rendered files into pictures of the cards and
+their boxes, to judge the object before paying for one.
+
+Full ordering steps, including the box:
 **[docs/printing.md](docs/printing.md)**.
 
 ### The free print-and-play edition

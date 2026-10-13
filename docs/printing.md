@@ -1,34 +1,53 @@
-# Printing the deck
+# Printing the decks
 
-How to turn `public/cards.json` into a physical deck of tarot-size cards from
+How to turn the card files into physical decks of tarot-size cards from
 [MakePlayingCards](https://www.makeplayingcards.com) (MPC). They have no
 minimum order, so one personal copy is a normal thing to buy.
 
-Everything about the files is already settled and checked by the build. The
-parts that need a human are the writing and the finish.
+There are two editions, declared in `src/deck/editions.ts`:
+
+| | Paper edition | Night edition |
+|---|---|---|
+| Works on | the piece in front of you | the person making it |
+| Card file | `public/cards.json` | `src/deck/night.json` |
+| Card ids | 1–52 | 101–152 |
+| Stock and ink | paper face, ink text | night face, pale text |
+| On the site | yes, it is the deck the site deals | no, print only |
+
+Everything about the files is settled and checked by the build. The parts
+that need a human are the writing and the finish.
 
 ---
 
-## 1. Finish the deck (blocking)
+## 1. Finish the writing (blocking)
 
-Four card slots are reserved and unwritten. They exist because MPC prints
-tarot decks in **fixed tiers** — 18, 36, 54, 72 — and 48 prompts + a title
-card + an instructions card is 50, which is not a tier. Four more prompts
-makes 54.
+Every card in both editions has text, so both render. **The text is not
+final.** The Night deck and Paper cards #49–52 were written as stand-ins so
+the objects could be designed around real words; Lorenzo revises every card
+before anything is ordered. A printed deck is permanent, so do not order
+until that pass is done.
 
-```sh
-node scripts/validate-cards.js     # prints each slot and its brief
+MPC prints tarot decks in **fixed tiers** — 18, 36, 54, 72. Each edition is
+52 cards + a title card + an instructions card, which is 54. To grow an
+edition past that, reserve the new ids as drafts first:
+
+```json
+{ "id": 53, "text": "", "suit": "lateral", "draft": true, "note": "what this slot is for" }
 ```
 
-Each slot carries a `note` explaining the gap in its suit it was reserved to
-fill. Write the text into `"text"`, then **delete the `draft` and `note`
+A draft is never dealt or published and blocks the print run until it is
+written. Write the text into `"text"`, then **delete the `draft` and `note`
 keys**. Validation fails if a card has text while still marked draft, so a
 half-finished edit cannot slip through.
+
+```sh
+npm run validate          # both card files; ids must be unique across editions
+```
 
 Use typographic apostrophes (`’`, not `'`). Validation enforces this — at
 24pt on card stock a typewriter apostrophe is conspicuous.
 
-To see the layout before the writing is done:
+To see the layout while slots are still drafts:
 
 ```sh
 PROOF=1 npm run print     # renders to print/proof/, every draft stamped UNWRITTEN
@@ -40,15 +59,16 @@ can't be mistaken for the real thing at upload time.
 ## 2. Render
 
 ```sh
-npm run print             # -> print/final/
+npm run print                  # Paper -> print/final/paper/
+EDITION=night npm run print    # Night -> print/final/night/
 ```
 
 This refuses to run while any draft remains, and refuses again if the face
-count isn't a tier. It writes:
+count isn't a tier. For each edition it writes:
 
 | File | What it is |
 |---|---|
-| `back.png` | one shared back for all 54 cards |
+| `back.png` | one shared back for all 54 cards of that edition |
 | `face-001-title.png` | the title card |
 | `face-002-instructions.png` | how to use the deck |
 | `face-NNN-card-II.png` | one per prompt |
@@ -91,8 +111,8 @@ GUIDES=1 npm run print
 
 ## 3. Proof the contact sheet
 
-Open `print/final/contact-sheet.png` and read every card. This is the step
-that catches what code cannot:
+Open `print/final/<edition>/contact-sheet.png` and read every card. This is
+the step that catches what code cannot:
 
 - a line break that lands somewhere stupid
 - a card that reads badly next to its neighbours
@@ -102,10 +122,26 @@ Card text is set with each **sentence** as its own balanced block, so
 two-sentence cards break at the full stop rather than stranding the next
 sentence's first word on the line above.
 
+To see the cards as objects, trimmed and corner-rounded, and the boxes
+folded up around them:
+
+```sh
+npm run mockup            # -> print/mockup/cards.png, desk-paper.png, desk-night.png, desk-both.png
+```
+
+These are drawn, not photographed. They are for judging type, margins and
+the object as a whole; colour on card stock will be flatter than on a
+screen. Never upload anything from `print/mockup/`.
+
+The Night deck prints pale type on a dark ground. Ink spreads into reversed
+type on press and thins it, so `scripts/print-cards.js` sets Night faces at
+a heavier weight than Paper faces. A full-bleed dark card also shows edge
+wear sooner, because the white core appears wherever the edge chips.
+
 ## 4. Order
 
-At MPC, choose a **blank tarot deck** (2.75" × 4.75") and set the card count
-to **54**. Then:
+One order per edition. At MPC, choose a **blank tarot deck** (2.75" × 4.75")
+and set the card count to **54**. Then:
 
 - **Fronts** — upload the 54 `face-*.png` files. Their `NNN` prefix means a
   plain alphabetical sort is already the deck order. (For a deck you shuffle
@@ -124,8 +160,10 @@ area; nothing should cross it.
 
 ## 5. After it ships
 
-- Bump `DECK_VERSION` in `src/config.ts` so the site and the printed box
-  agree on which edition is which.
+- `DECK_VERSION` in `src/config.ts` is the printing number on the box base.
+  The first boxes are printing 1. Bump it when card text changes after a
+  deck has been printed, so the site and a box in the hand can be told
+  apart.
 - If the deck ever gets a product page, set `PHYSICAL_DECK_URL` in the same
   file and every "physical deck" link on the site points at it.
 
@@ -175,17 +213,37 @@ the manufactured faces are measured against the safe line.
 
 ---
 
-## Not done yet: the tuck box
+## The box
 
-The box is a separate piece of artwork on a different template, and its
-dimensions depend on the **stack thickness** — which depends on the stock and
-card count you actually select at order time. Guessing it is exactly the
-mistake this file exists to prevent.
+Each edition goes in MPC's
+[custom rigid box for tarot cards](https://www.makeplayingcards.com/design/custom-rigid-box-for-tarot-cards.html):
+a lid and a base, printed all over. Checked on that page on 2026-10-12:
 
-When you've chosen a stock, download MPC's tuck-box template for that
-configuration and its numbers can be dropped into a box generator the same
-way `SPEC` works here. MPC will also print a plain white or black box if you
-would rather not.
+| | |
+|---|---|
+| Size option | **Up to 78 cards**, the smallest they make |
+| External size | 129.9 × 79.1 × 30.3 mm |
+| Finish | **Matte laminated (linen finish)**. Large solid dark areas show scuffs and this hides them best |
+| Price | $18.40 for one |
+| Template | `2.75x4.75x78pcs.pdf`, from the "Download rigid box template" link with that size selected |
+
+A 54-card deck is 18 to 19 mm thick and the box is built for 78 cards, so
+the deck sits about 8 mm below the rim of the base. That was accepted in
+exchange for a lid-and-base box and room to grow to the 72 tier.
+
+What goes on each panel is defined once, in `scripts/box-art.js`, in
+millimetres: the mark, the name and a wall label on the lid top; the name
+and edition along the long sides; the mark on the short sides; and on the
+underside what the deck is, the URL and the printing number. The Paper box
+has a forest ink lid on a paper base. The Night box is night all over with
+the mark in emerald. `npm run mockup` folds those panels into a box to look
+at.
+
+**Not done yet:** laying the panels onto MPC's template as an upload file.
+The template fixes where each panel sits, how far artwork must bleed past
+the fold and what wraps inside the rim, and none of that can be guessed
+from the external size. Until that generator exists the box cannot be
+ordered with custom art; MPC will print a plain white or black one.
 
 ---
 

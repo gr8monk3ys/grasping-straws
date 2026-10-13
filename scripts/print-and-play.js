@@ -32,7 +32,7 @@ const pdfPath = path.join(pub, "print-and-play.pdf");
 const all = JSON.parse(fs.readFileSync(path.join(pub, "cards.json"), "utf8"));
 // Drafts are reserved ids with no text. The manufactured run refuses to
 // render while any remain; the free edition does not, because it is not
-// permanent — someone printing at home today should get today's 48 cards
+// permanent — someone printing at home today should get today's cards
 // rather than nothing.
 const cards = all.filter((c) => !c.draft);
 const b64 = (f) => fs.readFileSync(path.join(pub, "fonts", f)).toString("base64");
