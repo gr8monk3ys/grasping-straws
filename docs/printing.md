@@ -272,6 +272,15 @@ PDF page to whole 1/300 inch, so `box.pdf` comes out about 0.2 mm taller
 than the template; the artwork is anchored to the bottom-left corner, which
 is the template's origin, so the difference is spare bleed along the top.
 
+That placement was checked once against the real thing on 2026-10-12: the
+fold rectangles were printed to a PDF the same way, MPC's template and that
+PDF were both rasterised with Inkscape
+(`inkscape --pdf-poppler --export-type=png --export-dpi=200`), and the two
+were stacked from the bottom-left corner. The folds coincided at opposite
+corners of the page, the lid's top-left and the base's bottom-right. Repeat
+that if the template or the browser that renders the PDF changes. MPC's
+template is their file and is not kept in this repo.
+
 Open `box-proof.png` before uploading and check three things: every wall's
 lettering has its top toward the centre panel (that edge is uppermost once
 folded), nothing sits on a blue line, and colour runs past the red line
