@@ -36,7 +36,10 @@ function paint(): void {
     meta.name = "theme-color";
     document.head.appendChild(meta);
   }
-  meta.content = now === "dark" ? "#171310" : "#f5efe3";
+  // Night and Paper, the two page grounds in src/deck/palette.ts. Written
+  // out, not imported: this module is inlined into every page and a hex is
+  // shorter than a module. tests/palette.test.mjs holds them to the palette.
+  meta.content = now === "dark" ? "#111317" : "#f9f8f5";
 }
 
 btn?.addEventListener("click", () => {

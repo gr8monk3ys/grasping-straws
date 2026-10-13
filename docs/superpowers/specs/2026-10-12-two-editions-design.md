@@ -273,3 +273,24 @@ Three pull requests, each mergeable on its own:
    validator, CONTEXT.md.
 3. **Box and ordering.** The template check, the box generator, the
    rewritten printing doc. Ends with a cart built and waiting for Lorenzo.
+
+## As built
+
+Where the work departed from this document:
+
+- **One pull request, not three.** The pieces were built together and are
+  only meaningful together.
+- **The lid is 20.3 mm deep, not the full height.** MPC's template showed a
+  shallow lid over a 30.3 mm base, so a closed box shows a 10 mm band of the
+  base. The base is 74.6 × 125.3 mm.
+- **The box base says "Printing 1"**, not "Edition 1": edition now means
+  Paper or Night.
+- **Both card backs carry the mark in the accent**, forest ink on Paper and
+  emerald on Night. The Paper back was to keep its muted mark.
+- **A Moss token on the site.** Forest Ink read as black in small mono
+  capitals, so label-size green (hovered controls, mono links, the CTA) is
+  Moss. Prose links, focus and selection stay Forest Ink.
+- **The spread dialog lost its shadow** and separates by hairline and scrim,
+  as the website's overlays do.
+- **Not done:** building the cart. That waits for Lorenzo's pass over the
+  card text and a signed-in MPC session.

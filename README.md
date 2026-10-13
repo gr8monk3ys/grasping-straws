@@ -7,9 +7,9 @@ Peter Schmidt's Oblique Strategies. All card text here is original.
 Tap, get a card, tap again.
 
 <p align="center">
-  <img src="docs/screenshot-light.png" alt="The face-down card showing the straw-bundle mark, paper-warm light theme" width="42%">
+  <img src="docs/screenshot-light.png" alt="The face-down card showing the straw-bundle mark, in the light theme on off-white paper" width="42%">
   &nbsp;&nbsp;
-  <img src="docs/screenshot-dark.png" alt="A drawn card reading &quot;Translate it into plain speech; keep the ghost.&quot; in the near-black dark theme, with the deck, discard and kept counts below it" width="42%">
+  <img src="docs/screenshot-dark.png" alt="A drawn card reading &quot;Translate it into plain speech; keep the ghost.&quot; in the dark theme, with the deck, discard and kept counts below it" width="42%">
 </p>
 
 Built with [Astro](https://astro.build) as a fully static site. The built
@@ -172,7 +172,8 @@ printed deck carries the URL too — `scripts/print-cards.js`.
   card text in the title and OG tags so shared links preview the card
   itself (`#`-fragments never reach link scrapers). Each page invites the
   visitor to draw their own.
-- **Themes**: light (paper-warm) and dark (near-black), following
+- **Themes**: light (warm off-white paper) and dark (a cool night page), in
+  the palette of lscaturchio.xyz, following
   `prefers-color-scheme` by default with a masthead toggle that overrides it
   and persists. Both AA contrast, including the green accent.
 - **Type**: Fraunces for the card face and prose, IBM Plex Mono for the
