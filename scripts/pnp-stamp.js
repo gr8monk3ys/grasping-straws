@@ -24,8 +24,16 @@ const root = path.join(here, "..");
 export const STAMP_PATH = path.join(here, "pnp-stamp.json");
 
 // The card texts (drafts excluded — the PDF does not print them), the rules
-// cards, and the generator itself. Anything that changes a printed face.
-const INPUTS = ["public/cards.json", "scripts/rules-cards.js", "scripts/print-and-play.js"];
+// cards, the generator itself, and what it draws with: the palette and the
+// mark. Anything that changes a printed face.
+const INPUTS = [
+  "public/cards.json",
+  "scripts/rules-cards.js",
+  "scripts/print-and-play.js",
+  "scripts/mark.js",
+  "public/favicon.svg",
+  "src/deck/palette.ts",
+];
 
 export function pnpStamp() {
   const h = crypto.createHash("sha256");
@@ -34,7 +42,10 @@ export function pnpStamp() {
       const live = JSON.parse(fs.readFileSync(path.join(root, rel), "utf8")).filter((c) => !c.draft);
       h.update(JSON.stringify(live.map((c) => [c.id, c.text])));
     } else {
-      h.update(fs.readFileSync(path.join(root, rel)));
+      // Hashed as text with line endings folded to LF. Git checks these files
+      // out with CRLF on Windows and LF everywhere else; hashing the raw
+      // bytes made a stamp written on one fail the check on the other.
+      h.update(fs.readFileSync(path.join(root, rel), "utf8").replaceAll("\r\n", "\n"));
     }
   }
   return { inputs: INPUTS, sha256: h.digest("hex") };
