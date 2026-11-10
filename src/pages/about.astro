@@ -29,6 +29,13 @@ const description =
       attention.
     </p>
 
+    <h2>Two editions</h2>
+    <p>
+      There are two decks. The Paper edition works on the piece in front of you. The{" "}
+      <a href="/night/">Night edition</a> works on the person making it, for the days when the
+      piece is not the problem. Each has fifty-two cards, and no card is in both.
+    </p>
+
     <h2>Lineage</h2>
     <p>
       {/* The space before the link must be explicit: the HTML minifier
@@ -62,16 +69,16 @@ const description =
     }
     <p>
       Until then there is a free <a href="/print-and-play.pdf">print-and-play edition</a> &mdash;
-      the whole deck and the five rules cards, nine to a page with cut lines. Paper you cut
+      the whole Paper deck and the five rules cards, nine to a page with cut lines. Paper you cut
       yourself is still paper.
     </p>
 
-    {/* owner: add a portfolio link or contact here when ready — an Astro
-        comment, because an HTML one ships this note to every view-source */}
+    {/* The one link off the site that is not a source: who made this, and
+        where the rest of his work is. */}
     <p class="credit">
       Deck v{DECK_VERSION} &middot; <a href="/today/">Today’s card</a> &middot;
-      <a href="/play/">Ways to play</a> &middot; <a href="/deck/">The deck</a> &middot; Made by
-      Lorenzo.
+      <a href="/play/">Ways to play</a> &middot; <a href="/deck/">The deck</a> &middot; Made by{" "}
+      <a href="https://lscaturchio.xyz" rel="noopener">Lorenzo Scaturchio</a>.
     </p>
   </main>
 </Base>

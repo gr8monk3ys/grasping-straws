@@ -34,6 +34,10 @@ const allCards = JSON.parse(
 const cards = liveCards(allCards);
 const drafts = draftSlots(allCards);
 const byIdText = (id) => (cards.find((c) => c.id === id) || {}).text || null;
+// The Night edition: its own card file, dealt at its own table (/night/).
+const nightAll = JSON.parse(fs.readFileSync(path.join(root, EDITIONS.night.file), "utf8"));
+const nightCards = liveCards(nightAll);
+const nightDrafts = draftSlots(nightAll);
 
 const results = [];
 const check = (name, cond, extra = "") =>
@@ -513,11 +517,11 @@ check("the discard thickens as the deck thins", after.discardLayers > 0 && after
 await pu.screenshot({ path: path.join(SHOTS, "shot-12-table-light.png") });
 
 // --- what the site does not deal never reaches the site --------------------
-// Two kinds of id must stay off it: a draft (a slot reserved for print with
-// no text yet, when the deck has any) and every card of the Night edition,
-// which is print only. The deck may have no drafts at all; it always has a
-// Night card to try.
-const nightIds = JSON.parse(fs.readFileSync(path.join(root, EDITIONS.night.file), "utf8")).map((c) => c.id);
+// A draft (a slot reserved for print with no text yet, when a deck has any)
+// stays off the site entirely. A Night card is on the site, but only at its
+// own table: the Paper table must not be sent it, deal it, or open it from
+// the hash.
+const nightIds = nightAll.map((c) => c.id);
 const served = await pu.evaluate(async () => await (await fetch("/cards.json")).json());
 check("drafts are excluded from the dealt deck",
   served.filter((c) => c.draft).length === drafts.length &&
@@ -526,12 +530,15 @@ check("drafts are excluded from the dealt deck",
 check("no Night edition card is served in cards.json",
   nightIds.length > 0 && served.every((c) => !nightIds.includes(c.id)), `${nightIds.length} Night ids`);
 const nightFile = await pu.request.get(BASE + "/" + path.basename(EDITIONS.night.file));
-check("the Night deck's file is not served", nightFile.status() === 404, `${nightFile.status()}`);
-for (const [what, id] of [["a draft", drafts[0]?.id], ["a Night edition card", nightIds[0]]]) {
+check("the Night deck's source file is not served", nightFile.status() === 404, `${nightFile.status()}`);
+for (const [what, id] of [["a draft", drafts[0]?.id], ["a Night draft", nightDrafts[0]?.id]]) {
   if (id == null) continue;
   const res = await pu.request.get(BASE + "/c/" + id + "/");
   check(`${what} gets no share page`, res.status() === 404, `/c/${id}/ -> ${res.status()}`);
-  check(`${what}'s id in the hash is ignored`, await pu.evaluate(async (id) => {
+}
+for (const [what, id] of [["a draft", drafts[0]?.id], ["a Night edition card", nightCards[0].id]]) {
+  if (id == null) continue;
+  check(`${what}'s id in the hash is ignored at the Paper table`, await pu.evaluate(async (id) => {
     const before = document.querySelector('.face[aria-hidden="false"] .card-text').textContent;
     location.hash = "#" + id;
     await new Promise((r) => setTimeout(r, 300));
@@ -539,6 +546,91 @@ for (const [what, id] of [["a draft", drafts[0]?.id], ["a Night edition card", n
     return !!el.textContent.trim() && el.textContent === before;
   }, id));
 }
+check("the Paper masthead offers the Night deck",
+  ((await pu.locator('.chrome nav a[href="/night/"]').textContent()) || "").trim() === "Night deck");
+
+// --- the Night table (/night/) ---------------------------------------------
+// The same draw screen dealing the other deck. What must hold: it is sent
+// only its own cards, deals only those, keeps its own saved deck, and leaves
+// the Paper table's saved deck alone.
+const ctxNight = await browser.newContext({ colorScheme: "light", viewport: { width: 390, height: 844 } });
+const pn = await ctxNight.newPage();
+await pn.goto(BASE + "/night/", { waitUntil: "networkidle" });
+// What the page itself asked for. The service worker caches both decks for
+// offline use, and that is not the page downloading them.
+const nightAsked = await pn.evaluate(() =>
+  performance.getEntriesByType("resource").map((e) => new URL(e.name).pathname)
+);
+check("the Night table fetches its own deck and not the Paper one",
+  nightAsked.includes("/night/cards.json") && !nightAsked.includes("/cards.json"), nightAsked.join(" "));
+const nightServed = await pn.evaluate(async () => await (await fetch("/night/cards.json")).json());
+check("/night/cards.json serves exactly the Night edition's live cards",
+  JSON.stringify(nightServed.map((c) => [c.id, c.text])) === JSON.stringify(nightCards.map((c) => [c.id, c.text])),
+  `${nightServed.length} served, ${nightCards.length} live`);
+check("the Night table counts its own deck",
+  (await pn.textContent("#left-count")).trim() === String(nightCards.length) &&
+    (await pn.textContent("#tally-total")).trim() === String(nightCards.length));
+check("the Night table says which deck it is", /^Night\b/.test((await pn.textContent("#tally")).trim()));
+check("the Paper table's tally stays unmarked", !/night/i.test(await pu.textContent("#tally")));
+check("the Night masthead offers the Paper deck",
+  ((await pn.locator(".chrome nav a").nth(2).textContent()) || "").trim() === "Paper deck" &&
+    (await pn.locator(".chrome nav a").nth(2).getAttribute("href")) === "/");
+const nightWrapped = await pn.evaluate(() =>
+  [...document.querySelectorAll(".chrome a, .chrome .deck-name")]
+    .filter((el) => el.getClientRects().length > 1)
+    .map((el) => el.textContent.trim())
+);
+check("chrome labels sit on one line each at 390px on /night/", nightWrapped.length === 0, nightWrapped.join(" | "));
+check("no horizontal overflow at 390px on /night/", !(await pn.evaluate(() =>
+  document.documentElement.scrollWidth > document.documentElement.clientWidth
+)));
+const nightDealt = [];
+for (let i = 0; i < 4; i++) nightDealt.push(await drawOnce(pn, false));
+const nightUp = nightCards.find((c) => c.id === nightDealt[3]);
+check("the Night table deals only Night cards",
+  nightDealt.every((id) => nightCards.some((c) => c.id === id)) && new Set(nightDealt).size === 4, nightDealt.join(","));
+check("the Night card face up carries its own text", !!nightUp && (await faceText(pn)) === nightUp.text);
+const stores = await pn.evaluate(() => ({
+  night: localStorage.getItem("grasping-straws.night.v1"),
+  paper: localStorage.getItem("grasping-straws.v1"),
+  left: Number(document.getElementById("left-count").textContent),
+}));
+check("the Night table saves its deck under its own key",
+  !!stores.night && JSON.parse(stores.night).bag.length === stores.left, `${stores.left} left`);
+check("the Night table leaves the Paper table's saved deck alone", stores.paper === null);
+check("a Paper card's id in the hash is ignored at the Night table", await pn.evaluate(async (id) => {
+  const before = document.querySelector('.face[aria-hidden="false"] .card-text').textContent;
+  location.hash = "#" + id;
+  await new Promise((r) => setTimeout(r, 300));
+  const el = document.querySelector('.face[aria-hidden="false"] .card-text');
+  return !!el.textContent.trim() && el.textContent === before;
+}, cards[0].id));
+await pn.screenshot({ path: path.join(SHOTS, "shot-13-night-table.png") });
+
+// A Night card's share page: the card, its edition, and the way back to the
+// table it came from, not to the Paper one.
+const pnc = await ctxNight.newPage();
+const resNight = await pnc.goto(BASE + "/c/" + nightUp.id + "/", { waitUntil: "networkidle" });
+check("a Night card has a share page", resNight.ok(), `/c/${nightUp.id}/ -> ${resNight.status()}`);
+check("a Night share page shows its card", (await pnc.textContent(".card-text")) === nightUp.text);
+check("a Night share page names its edition", (await pnc.textContent(".card-page-frame")).includes("Night edition"));
+check("a Night share page leads back to the Night table",
+  (await pnc.locator(`main a[href="/night/#${nightUp.id}"]`).count()) === 1 &&
+    (await pnc.locator('main a[href="/night/"]').isVisible()));
+await pnc.screenshot({ path: path.join(SHOTS, "shot-14-night-card-page.png") });
+// The link on the card opens that card at the Night table.
+await pnc.click(".card-static");
+await pnc.waitForFunction(() => !!document.querySelector('.face[aria-hidden="false"] .card-text')?.textContent.trim());
+check("a Night share page's card opens face up at the Night table",
+  new URL(pnc.url()).pathname === "/night/" && (await faceText(pnc)) === nightUp.text);
+// And in the dark, at desktop width, for the eye.
+const pnd = await ctxUi.newPage();
+await pnd.emulateMedia({ colorScheme: "dark" });
+await pnd.goto(BASE + "/night/", { waitUntil: "networkidle" });
+await drawOnce(pnd, false);
+await pnd.screenshot({ path: path.join(SHOTS, "shot-15-night-table-dark.png") });
+await pnd.close();
+await ctxNight.close();
 
 // --- picking a pile up ----------------------------------------------------
 // The discard is now a real pile: it knows the sequence, not just the count.
@@ -941,8 +1033,10 @@ if (fs.existsSync(path.join(distDir, "index.html"))) {
   // The share pages are the discovery surface; without a sitemap nothing can
   // find them. Drafts must not be advertised.
   const sitemap = distFile("sitemap.xml");
-  check("sitemap lists every live card page", cards.every((c) => sitemap.includes(`/c/${c.id}/`)), `${cards.length} pages`);
-  check("sitemap omits reserved drafts", drafts.every((c) => !sitemap.includes(`/c/${c.id}/`)));
+  const everyCard = [...cards, ...nightCards];
+  check("sitemap lists every live card page, both editions", everyCard.every((c) => sitemap.includes(`/c/${c.id}/`)), `${everyCard.length} pages`);
+  check("sitemap lists the Night table", sitemap.includes("/night/</loc>"));
+  check("sitemap omits reserved drafts", [...drafts, ...nightDrafts].every((c) => !sitemap.includes(`/c/${c.id}/`)));
   const robots = distFile("robots.txt");
   check("robots.txt points at the sitemap", /Sitemap: https:\/\/[^\s]+\/sitemap\.xml/.test(robots));
 
@@ -965,6 +1059,7 @@ if (fs.existsSync(path.join(distDir, "index.html"))) {
     "today/index.html",
     "play/index.html",
     "deck/index.html",
+    "night/index.html",
   ]
     .map((f) => fs.readFileSync(path.join(here, "..", "dist", f), "utf8"))
     .join("\n");
@@ -985,6 +1080,12 @@ if (fs.existsSync(path.join(distDir, "index.html"))) {
     listed.filter((f) => f.endsWith(".js")).length === 0 && inlineJs.length > 0,
     listed.filter((f) => f.endsWith(".js")).join(",") || "inlined"
   );
+  // Both tables run the one script. A second copy that differed would mean
+  // the page, not its data attributes, had started deciding the deck.
+  const nightHtml = distFile("night/index.html");
+  const nightJs = [...nightHtml.matchAll(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/g)].map((m) => m[1]).join("");
+  check("the Night table carries the same inlined script as the Paper table", nightJs === inlineJs, `${nightJs.length} vs ${inlineJs.length} chars`);
+  check("the Night table's static count matches its deck", nightHtml.includes(`id="left-count">${nightCards.length}<`));
 }
 
 // ---- typography floor ---------------------------------------------------
@@ -1119,10 +1220,18 @@ await pdeck.goto(BASE + "/deck/", { waitUntil: "networkidle" });
 const listed = await pdeck.evaluate(() =>
   [...document.querySelectorAll(".deck-list li .deck-text")].map((el) => el.textContent.trim())
 );
-check("/deck/ lists every live card exactly once", listed.length === cards.length && new Set(listed).size === cards.length, `${listed.length} listed, ${cards.length} live`);
-check("/deck/ lists no draft", drafts.every((d) => !listed.includes(d.text ?? "")));
-const suitCount = new Set(cards.map((c) => c.suit).filter(Boolean)).size;
+const bothDecks = [...cards, ...nightCards];
+check("/deck/ lists every live card of both editions exactly once",
+  listed.length === bothDecks.length && new Set(listed).size === bothDecks.length && bothDecks.every((c) => listed.includes(c.text)),
+  `${listed.length} listed, ${bothDecks.length} live`);
+check("/deck/ lists no draft", [...drafts, ...nightDrafts].every((d) => !listed.includes(d.text ?? "")));
+const suitsOf = (deck) => new Set(deck.map((c) => c.suit).filter(Boolean)).size;
+const suitCount = suitsOf(cards) + suitsOf(nightCards);
 check("/deck/ groups by suit", (await pdeck.locator(".suit-block").count()) === suitCount, `${suitCount} suits`);
+check("/deck/ heads each edition and links to its table",
+  (await pdeck.locator("h2.edition-head").count()) === 2 &&
+    (await pdeck.locator('h2.edition-head a[href="/"]').count()) === 1 &&
+    (await pdeck.locator('h2.edition-head a[href="/night/"]').count()) === 1);
 // The page is a contents list, not a second draw screen: it must ship no
 // script of its own. Measured against /about/, which is the site's baseline
 // of "only the chrome" — the head's theme snippet and the theme module.

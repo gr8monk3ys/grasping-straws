@@ -5,19 +5,23 @@
  * editorial page would carry them.
  */
 import { DECK_NAME, PHYSICAL_DECK_URL } from "../config";
-import { liveCards } from "../deck/cards";
-import entries from "../../public/cards.json";
+import type { EditionKey } from "../deck/editions";
+import { TABLES } from "../deck/site";
 
 interface Props {
   /* the draw screen carries a live count; other pages do not */
   counter?: boolean;
+  /* which edition the page belongs to; everything but Night is Paper's */
+  edition?: EditionKey;
 }
-const { counter = false } = Astro.props;
-const physicalHref = PHYSICAL_DECK_URL || "/about/#physical";
-// Computed, not hardcoded: a literal 48 here becomes a first-paint lie the
-// moment the deck changes size — which it is about to, when the four
-// reserved print slots are written. Drafts never reach the site.
-const deckSize = liveCards(entries).length;
+const { counter = false, edition = "paper" } = Astro.props;
+// Computed, not hardcoded: a literal here becomes a first-paint lie the
+// moment a deck changes size. Drafts never reach the site.
+const deckSize = TABLES[edition].cards.length;
+// The masthead offers the other deck, by name. "Night" alone would sit
+// beside the Light/Dark switch and read as a third theme.
+const other = TABLES[edition === "night" ? "paper" : "night"];
+const otherLabel = other.edition.name.replace(" edition", " deck");
 ---
 
 <header class="chrome">
@@ -26,6 +30,13 @@ const deckSize = liveCards(entries).length;
   {
     counter && (
       <p class="tally" id="tally" aria-live="off">
+        {/* The two tables look alike, so the second one says which it is.
+            The front page stays unmarked: it is the deck people arrive at. */}
+        {edition === "night" && (
+          <>
+            <span class="tally-label">Night</span> <span class="tally-sep">&middot;</span>{" "}
+          </>
+        )}
         <span class="tally-num" id="tally-drawn">0</span>{" "}
         <span class="tally-sep">/</span>{" "}
         <span class="tally-num" id="tally-total">{deckSize}</span>{" "}
@@ -40,15 +51,11 @@ const deckSize = liveCards(entries).length;
         needs a second row at 390px with the links it has. */}
     <a href="/play/">Play</a>
     <a href="/about/">About</a>
-    {/* "Get the deck" only while there is a deck to get. Until then the
-        link names the thing and leads to the paragraph that says when. */}
-    {
-      PHYSICAL_DECK_URL ? (
-        <a href={physicalHref} class="cta">Get the deck</a>
-      ) : (
-        <a href={physicalHref} class="cta" data-soon>Physical deck</a>
-      )
-    }
+    <a href={other.home}>{otherLabel}</a>
+    {/* "Get the deck" only once there is a deck to get. Until then the
+        masthead says nothing: a link that led to "coming soon" was a door
+        with a wall behind it. About still says where the deck stands. */}
+    {PHYSICAL_DECK_URL && <a href={PHYSICAL_DECK_URL} data-get>Get the deck</a>}
     <button id="theme" class="theme" type="button" aria-label="Switch to dark theme">
       <span class="theme-dot" aria-hidden="true"></span>
       <span class="theme-word" id="theme-word">Light</span>

@@ -1,33 +1,40 @@
 ---
 /*
- * One static page per card, built from public/cards.json. These are what
- * the share control hands out: unlike /#17 (a fragment scrapers never see),
- * /c/17/ puts the card text in the title and OG tags, so a shared link
- * previews the card itself. The page needs no JavaScript.
+ * One static page per card, in both editions. These are what the share
+ * control hands out: unlike /#17 (a fragment scrapers never see), /c/17/
+ * puts the card text in the title and OG tags, so a shared link previews
+ * the card itself. The page needs no JavaScript.
+ *
+ * Ids never overlap between editions, so /c/<id>/ names one card and the
+ * page can tell from the number which table to send the visitor back to.
  */
-import entries from "../../../public/cards.json";
-import { liveCards, type Card } from "../../deck/cards";
+import type { Card } from "../../deck/cards";
+import { ALL_TABLES, tableOf } from "../../deck/site";
 import Base from "../../layouts/Base.astro";
 import Chrome from "../../components/Chrome.astro";
-import { DECK_NAME, PHYSICAL_DECK_URL } from "../../config";
+import { DECK_NAME } from "../../config";
 
 export function getStaticPaths() {
   // Drafts are ids reserved so the printed deck reaches a whole tier; they
   // have no text yet. Building a share page for one would publish an empty
   // card with an empty <title>.
-  return liveCards(entries).map((card) => ({ params: { id: String(card.id) }, props: { card } }));
+  return ALL_TABLES.flatMap((table) =>
+    table.cards.map((card) => ({ params: { id: String(card.id) }, props: { card } }))
+  );
 }
 
 const { card } = Astro.props as { card: Card };
-const deckSize = liveCards(entries).length;
+const table = tableOf(card.id);
+const night = table.edition.key === "night";
+const deckSize = table.cards.length;
 const title = `“${card.text}” — ${DECK_NAME}`;
-const description =
-  "A card from Grasping Straws, an original deck of lateral-thinking prompts. Draw your own.";
-const physicalHref = PHYSICAL_DECK_URL || "/about/#physical";
+const description = night
+  ? "A card from the Night edition of Grasping Straws, the deck for the person making the work. Draw your own."
+  : "A card from Grasping Straws, an original deck of lateral-thinking prompts. Draw your own.";
 ---
 
 <Base title={title} description={description}>
-  <Chrome />
+  <Chrome edition={table.edition.key} />
   <main id="main" class="stage">
     {/* Same deck shell as the draw screen, minus the second face — a shared
         card is already face up and never turns. */}
@@ -40,8 +47,8 @@ const physicalHref = PHYSICAL_DECK_URL || "/about/#physical";
       <span class="card-shadow card-shadow-ambient" aria-hidden="true"></span>
       <span class="card-shadow card-shadow-contact" aria-hidden="true"></span>
       {/* The card itself is the way onto the table: it opens face up there,
-          at /#id, and the next tap deals. */}
-      <a class="card card-static" href={`/#${card.id}`} aria-label={`Open card ${card.id} on the table`}>
+          at its own edition's table, and the next tap deals. */}
+      <a class="card card-static" href={`${table.home}#${card.id}`} aria-label={`Open card ${card.id} on the table`}>
         <span class="card-inner">
           <span class="face face-a">
             <span class="card-num" aria-hidden="true">#{card.id}</span>
@@ -50,12 +57,14 @@ const physicalHref = PHYSICAL_DECK_URL || "/about/#physical";
         </span>
       </a>
     </div>
-    <h1 class="card-page-frame">Card {card.id} of {deckSize}</h1>
-    <p class="card-page-about">
-      One of {deckSize} original prompts for breaking a creative deadlock.
-    </p>
+    {/* "Card 117 of 52" would be nonsense: a Night card's number says which
+        card it is, not how far through the deck it sits. */}
+    <h1 class="card-page-frame">
+      {night ? `Card ${card.id} · ${table.edition.name}` : `Card ${card.id} of ${deckSize}`}
+    </h1>
+    <p class="card-page-about">One of {deckSize} {table.about}</p>
     <p class="hint card-page-invite">
-      <a href="/">Draw your own card <span aria-hidden="true">&rarr;</span></a>
+      <a href={table.home}>Draw your own card <span aria-hidden="true">&rarr;</span></a>
     </p>
   </main>
 </Base>

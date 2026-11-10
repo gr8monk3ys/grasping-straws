@@ -305,6 +305,7 @@ html {
 .card-wordmark,
 .card-page-frame,
 .about h2,
+.about h3,
 .deck-num {
   font-family: var(--font-mono);
   font-weight: 500;
@@ -1375,15 +1376,11 @@ html:not(.js) .hint-slot .hint {
   text-decoration: none;
 }
 
-.chrome a.cta {
+/* "Get the deck", which is only in the masthead once a deck can be
+   bought. Keyed on an attribute, not a class, so the rule can wait here
+   without failing the check that every class rule matches some markup. */
+.chrome a[data-get] {
   color: var(--moss);
-}
-
-/* Until the physical deck exists the link only leads to a paragraph that
-   says so. It stays, in the chrome's own voice, and stops wearing the
-   accent that promises something to get. */
-.chrome a.cta[data-soon] {
-  color: inherit;
 }
 
 /* the rule wipes in rather than snapping on: a hairline drawn beneath the
@@ -1431,8 +1428,10 @@ html:not(.js) .hint-slot .hint {
 }
 
 /* The tally takes its own row before the nav would have to wrap: left on
-   one row, the toggle drops to a second line on its own, under the links. */
-@media (width < 52rem) {
+   one row, the toggle drops to a second line on its own, under the links.
+   54rem, not 52: the Night table's tally also names its deck, and that
+   one needed the row to itself up to 860px. */
+@media (width < 54rem) {
   .chrome {
     flex-wrap: wrap;
     gap: 0.55rem 1rem;
@@ -1521,7 +1520,8 @@ html:not(.js) .theme {
   margin-bottom: 1.5rem;
 }
 
-.about h2 {
+.about h2,
+.about h3 {
   margin-top: 2.6em;
   margin-bottom: 0.7em;
   font-size: var(--t-mono-sm);
@@ -1584,8 +1584,16 @@ html:not(.js) .theme {
 
 /* The suit head belongs to its block, so it must not re-add the 2.6em the
    block already carries. */
-.about .suit-block h2 {
+.about .suit-block h3 {
   margin-top: 0;
+}
+
+/* /deck/ holds two decks. Each opens under a rule, the way the credit
+   closes the page, so the suits read as belonging to the edition above. */
+.about .edition-head {
+  margin-top: 4rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--rule);
 }
 
 .about .suit-blurb {

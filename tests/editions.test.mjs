@@ -32,9 +32,11 @@ test("no id is claimed by two editions", () => {
   assert.ok(a[1] < b[0] || b[1] < a[0], "id ranges overlap");
 });
 
-test("the site's deck is the Paper edition's file", () => {
+test("only the Paper edition's file is served as it stands", () => {
   assert.equal(EDITIONS.paper.file, "public/cards.json");
-  assert.ok(!EDITIONS.night.file.startsWith("public/"), "the Night deck must not be served");
+  // The Night table gets its cards from /night/cards.json, which the build
+  // writes without drafts. The source file itself has no address online.
+  assert.ok(!EDITIONS.night.file.startsWith("public/"), "the Night deck's source file must not be served raw");
 });
 
 test("each edition is printed in its own palette", () => {

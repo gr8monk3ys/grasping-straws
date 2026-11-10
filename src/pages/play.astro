@@ -17,7 +17,6 @@ import { DECK_NAME, PHYSICAL_DECK_URL } from "../config";
 
 const description =
   "Five ways to play Grasping Straws — solo rituals, a duet, and studio games for working artists.";
-const physicalHref = PHYSICAL_DECK_URL || "/about/#physical";
 ---
 
 <Base title={`Ways to play — ${DECK_NAME}`} description={description} bodyClass="about">
@@ -91,7 +90,13 @@ const physicalHref = PHYSICAL_DECK_URL || "/about/#physical";
       <a href="/">Draw a card</a> &middot;
       <a href="/today/">Today’s card</a> &middot;
       <a href="/deck/">The deck</a> &middot;
-      <a href={physicalHref}>Get the physical deck</a>
+      {
+        PHYSICAL_DECK_URL ? (
+          <a href={PHYSICAL_DECK_URL} rel="noopener">Get the physical deck</a>
+        ) : (
+          <a href="/about/#physical">About the physical deck</a>
+        )
+      }
     </p>
   </main>
 </Base>

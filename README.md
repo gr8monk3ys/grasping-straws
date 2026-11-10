@@ -4,6 +4,9 @@ A single-purpose, mobile-first web app that deals one card at a time from an
 original deck of lateral-thinking prompts, in the spirit of Brian Eno and
 Peter Schmidt's Oblique Strategies. All card text here is original.
 
+There are two decks of 52. The Paper edition, at `/`, works on the piece in
+front of you. The Night edition, at `/night/`, works on the person making it.
+
 Tap, get a card, tap again.
 
 <p align="center">
@@ -33,12 +36,15 @@ degrades — the shader falls back to a CSS grain layer, and
 
 ## Editing the deck
 
-Edit **`public/cards.json`** and nothing else. It's an array of
+Each edition has one card file: **`public/cards.json`** for Paper and
+**`src/deck/night.json`** for Night. Edit those and nothing else. Each is an
+array of
 `{ "id": 1, "text": "…", "suit": "lateral" }` objects:
 
 - `id` must be unique and stable — it's what `#17`-style deep links, the
   `/c/17/` share pages, and the number printed on the physical card all
-  point at.
+  point at. Paper uses 1–52 and Night 101–152, and no id may be in both
+  files.
 - `text` is the card. Use typographic quotes (`’`), not `'` — validation
   enforces it, because at 24pt on card stock the difference is obvious.
 - `suit` groups the deck on [`/deck/`](https://straws.lscaturchio.xyz/deck/),
@@ -53,9 +59,14 @@ Edit **`public/cards.json`** and nothing else. It's an array of
   [docs/printing.md](docs/printing.md).
 
 Removed cards vanish from visitors' in-progress decks automatically; added
-cards join at their next reshuffle. When an editing pass lands, bump
-`DECK_VERSION` in `src/config.ts` so the site and the printed deck stay in
-lockstep.
+cards join at their next reshuffle.
+
+Until a deck has been printed, card text can change freely and
+`DECK_VERSION` stays at 1. After a print run two rules apply. Bump
+`DECK_VERSION` in `src/config.ts` when card text changes, so the site and a
+box in the hand can be told apart. And retire an id instead of rewriting its
+text, because a share link and a printed card must keep meaning the same
+card. Both rules are in [docs/printing.md](docs/printing.md), section 5.
 
 ## Configuration
 
@@ -64,9 +75,12 @@ lockstep.
 - `DECK_NAME` — the display name. The `?` is part of the mark; designed
   contexts (masthead, card back, titles) keep it, running prose drops it, and
   technical identifiers use `grasping-straws`.
-- `PHYSICAL_DECK_URL` — leave `""` for the built-in "coming soon" state;
-  set it to the product page URL once the physical deck exists.
-- `DECK_VERSION` — shown discreetly on the About page.
+- `PHYSICAL_DECK_URL` — leave `""` until the physical deck exists. While it
+  is empty the About page says "coming soon" and the masthead carries no
+  deck link. Set it to the product page URL and "Get the deck" appears in
+  the masthead.
+- `DECK_VERSION` — the printing number: shown discreetly on the About page
+  and printed on the box base.
 
 The mark (straw bundle) has a single vector source: `public/favicon.svg`.
 Both pages render it from there via CSS `mask`, so editing the glyph means
@@ -81,7 +95,7 @@ npm run build      # static build into dist/
 npm run preview    # serve the built site
 npm run check      # typecheck the client script
 npm test           # the deck, the card rule and the readable-text budget, in Node
-npm run validate   # lint public/cards.json
+npm run validate   # lint both editions' card files
 npm run verify     # drive the built site end to end (build + serve first)
 npm run assets     # regenerate og.png + PWA icons from favicon.svg
 npm run print      # render 300 DPI print files into print/final/<edition>/ (see below)
@@ -95,10 +109,10 @@ npm run validate:rules  # do /play/ and the printed rules cards list the same ga
 ## Print files (physical decks)
 
 There are two printed editions, declared in `src/deck/editions.ts`. The
-**Paper edition** (ids 1–52) is the deck this site deals and works on the
-piece in front of you. The **Night edition** (ids 101–152, in
-`src/deck/night.json`) works on the person making it and exists only in
-print. Both are set in the palette of lscaturchio.xyz, held in
+**Paper edition** (ids 1–52, in `public/cards.json`) works on the piece in
+front of you. The **Night edition** (ids 101–152, in `src/deck/night.json`)
+works on the person making it. The site deals both, each at its own table.
+Both are set in the palette of lscaturchio.xyz, held in
 `src/deck/palette.ts`.
 
 `npm run print` renders the Paper edition and `EDITION=night npm run print`
@@ -122,7 +136,7 @@ Full ordering steps, including the box:
 
 ### The free print-and-play edition
 
-`npm run pnp` renders `public/print-and-play.pdf` — the live deck plus the
+`npm run pnp` renders `public/print-and-play.pdf` — the Paper deck plus the
 five rules cards, nine to a US Letter page at the manufactured card's true
 size (poker, 2.5 × 3.5 in), with cut lines, a cover of instructions and a
 page of backs. Unlike the manufactured
@@ -139,11 +153,13 @@ request. `scripts/pnp-stamp.json` records a hash of its inputs and
 
 | Path | What it is |
 |---|---|
-| `/` | the draw screen |
-| `/today/` | one card a day, the same for everyone sharing a date, picked client-side from the local date |
+| `/` | the draw screen for the Paper edition |
+| `/night/` | the draw screen for the Night edition: the same table, its own cards and its own saved deck |
+| `/today/` | one Paper card a day, the same for everyone sharing a date, picked client-side from the local date |
 | `/play/` | five games — the rules that turn a prompt deck into a card deck |
-| `/deck/` | every live card grouped by suit; the contents of the box, no JavaScript |
-| `/c/<id>/` | one static share page per card, with the text in the title and OG tags |
+| `/deck/` | every live card of both editions, grouped by suit; the contents of the boxes, no JavaScript |
+| `/c/<id>/` | one static share page per card of either edition, with the text in the title and OG tags |
+| `/night/cards.json` | the Night deck as the Night table fetches it; the source file itself is not served |
 | `/about/` | what the deck is and where it comes from |
 
 ## Deploying
