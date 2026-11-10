@@ -1,0 +1,22 @@
+---
+/*
+ * The Night edition's table. The same table and the same script as the
+ * front page, dealing the other deck and keeping its own saved state, so a
+ * visitor can be part-way through both decks at once.
+ *
+ * It is not tied to the dark theme: Night is a deck, not a colour scheme,
+ * and it is dealt in whichever theme the visitor has chosen.
+ */
+import Base from "../../layouts/Base.astro";
+import Chrome from "../../components/Chrome.astro";
+import DrawTable from "../../components/DrawTable.astro";
+import { DECK_NAME } from "../../config";
+
+const description =
+  `The Night edition of ${DECK_NAME}: fifty-two prompts for the person making the work, for when the piece is not the problem. Tap to draw a card.`;
+---
+
+<Base title={`Night edition — ${DECK_NAME}`} description={description}>
+  <Chrome counter edition="night" />
+  <DrawTable edition="night" />
+</Base>

@@ -3,8 +3,9 @@
  * own range of card ids; the print pipeline and the box generator read this
  * file and nothing else to know what they are making.
  *
- * Paper works on the piece in front of you and is the deck the site deals.
- * Night works on the person making it. Ids never overlap, so a number
+ * Paper works on the piece in front of you. Night works on the person
+ * making it. The site deals both, each at its own table (src/deck/site.ts
+ * says where). Ids never overlap, so a number
  * printed on a card names exactly one card; Night starts at 101 to leave
  * Paper room to grow a tier without renumbering anything.
  */

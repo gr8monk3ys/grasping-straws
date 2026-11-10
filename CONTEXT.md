@@ -15,12 +15,16 @@ A card slot reserved by id so the printed deck reaches one of the printer's fixe
 _Avoid_: placeholder, reserved card, empty card
 
 **Deck**:
-Every card the site deals: the entries of cards.json that are not drafts.
+The cards one table deals: the entries of an edition's card file that are not drafts. The site has two decks, one per edition, and no card is in both.
 _Avoid_: pack, set
 
 **Edition**:
-A printed deck with its own box and its own range of card ids. There are two. The Paper edition (ids 1–52) works on the piece in front of you and is the deck the site deals. The Night edition (ids 101–152) works on the person making it and exists only in print.
+A deck with its own box, its own table on the site and its own range of card ids. There are two. The Paper edition (ids 1–52) works on the piece in front of you and is dealt at /. The Night edition (ids 101–152) works on the person making it and is dealt at /night/.
 _Avoid_: version (DECK_VERSION counts printings of an edition), light deck, dark deck, volume
+
+**Table**:
+The draw screen for one edition, with its own bag, discard and shelf, saved apart from the other table's. A card id in a link is turned up only at the table of its own edition.
+_Avoid_: mode, theme (the Night table is not the dark theme)
 
 ### The cycle
 

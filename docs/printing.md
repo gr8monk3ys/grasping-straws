@@ -12,7 +12,7 @@ There are two editions, declared in `src/deck/editions.ts`:
 | Card file | `public/cards.json` | `src/deck/night.json` |
 | Card ids | 1–52 | 101–152 |
 | Stock and ink | paper face, ink text | night face, pale text |
-| On the site | yes, it is the deck the site deals | no, print only |
+| On the site | dealt at `/` | dealt at `/night/` |
 
 The card is poker size, 2.5" × 3.5" (63.5 × 88.9 mm). That is the nearest
 size MPC makes to the 70 × 90 mm card of Oblique Strategies, the deck this
@@ -186,6 +186,12 @@ card: this is the last look before the deck is permanent.
   The first boxes are printing 1. Bump it when card text changes after a
   deck has been printed, so the site and a box in the hand can be told
   apart.
+- After a print run, retire an id instead of rewriting its text. The id is
+  the number on the printed card and in its share link, and both must keep
+  meaning the same card. A replacement card gets a new id. Each edition's
+  id range in `src/deck/editions.ts` is exactly 52 wide today and a test
+  holds it there, so the first retirement means widening that range on
+  purpose, as part of planning the next printing.
 - If the deck ever gets a product page, set `PHYSICAL_DECK_URL` in the same
   file and every "physical deck" link on the site points at it.
 
@@ -193,7 +199,7 @@ card: this is the last look before the deck is permanent.
 
 ## The free print-and-play edition
 
-`npm run pnp` renders `public/print-and-play.pdf`: the whole live deck plus
+`npm run pnp` renders `public/print-and-play.pdf`: the whole Paper deck plus
 the five rules cards and a title card, nine to a US Letter page at the
 manufactured card's true size, with a cover sheet of instructions and a page
 of backs for optional duplexing. The card's size comes from

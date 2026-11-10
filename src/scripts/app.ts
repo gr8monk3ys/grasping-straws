@@ -17,7 +17,12 @@ import { openDeck, layersFor, type Deck } from "../deck/deck";
 import { FLIP_MS, RIFFLE_MS, WORD_MS, WORDS_START, staggerGap } from "../deck/motion";
 import { mountPaper, type Paper } from "./paper";
 
-const STORAGE_KEY = "grasping-straws.v1";
+// Which edition this table deals. The page says so on <main>: where the
+// edition's cards are, and the key this visitor's state for it is saved
+// under. Both values come from src/deck/site.ts.
+const table = (document.getElementById("main") as HTMLElement).dataset;
+const CARDS_URL = table.cards as string;
+const STORAGE_KEY = table.store as string;
 
 const cardBtn = document.getElementById("card") as HTMLButtonElement;
 const inner = document.getElementById("card-inner") as HTMLElement;
@@ -602,7 +607,7 @@ async function shareCard(): Promise<void> {
 async function init(): Promise<void> {
   let cards;
   try {
-    const res = await fetch("/cards.json");
+    const res = await fetch(CARDS_URL);
     // Drafts are ids held open so the PRINTED deck reaches one of MPC's
     // fixed tiers. They carry no text and must never be dealt.
     cards = liveCards((await res.json()) as unknown[]);

@@ -24,8 +24,8 @@ page with no context. (inferred from the /c/‹id›/ share pages)
 
 ## Product Purpose
 
-Deal one card at a time from an original deck of 52 lateral-thinking
-prompts. Success is a visitor drawing a card, taking it seriously for ten
+Deal one card at a time from one of two original decks of 52 prompts: the
+Paper edition at / and the Night edition at /night/. Success is a visitor drawing a card, taking it seriously for ten
 minutes, and coming back to draw again. The site is a sample of the object;
 the physical deck is the instrument.
 
@@ -44,8 +44,11 @@ a shelf, and all of it persists across visits.
 
 ## Operating Context
 
-- The draw screen (/) is the product: card, deck, discard, shelf, the
-  set-aside and share controls, a masthead with the running tally.
+- The draw screen is the product: card, deck, discard, shelf, the
+  set-aside and share controls, a masthead with the running tally. There
+  are two, one per edition: / deals the Paper edition and /night/ deals the
+  Night edition. They are the same table with different cards, and each
+  keeps its own deck, discard and shelf.
 - Each card has a static share page (/c/‹id›/) whose title carries the card
   text so a shared link previews the card itself.
 - The About page (/about/) explains the lineage and why the physical deck is
@@ -54,9 +57,10 @@ a shelf, and all of it persists across visits.
   Oblique Strategies' own) printed via MakePlayingCards, each in a printed
   rigid box, with a print pipeline in the repo
   (docs/printing.md). There are two editions of 52 cards. The Paper edition
-  is the deck this site deals and works on the piece in front of you. The
-  Night edition works on the person making it and exists only in print; it
-  is not on the site and how it should appear there is undecided.
+  works on the piece in front of you. The Night edition works on the person
+  making it. The site deals both, each at its own table; the Night table is
+  not tied to the dark theme. Today's card (/today/) and the free
+  print-and-play PDF are the Paper edition only.
 - Deep links (/#‹id›) turn a card up on the draw screen; the draw screen
   works offline once visited (service worker).
 
@@ -64,8 +68,8 @@ a shelf, and all of it persists across visits.
 
 - Static Astro site; the built output ships no framework JavaScript. The
   draw script, a hand-rolled WebGL paper shader and the theme toggle are
-  ~6 KB gzipped, inlined. Budgets are enforced by the verifier: client JS
-  ≤ 7 KB gzipped, CSS ≤ 6 KB gzipped, no JS bundles in dist.
+  about 7 KB gzipped, inlined. Budgets are enforced by the verifier: client
+  JS ≤ 7.5 KB gzipped, CSS ≤ 6 KB gzipped, no JS bundles in dist.
 - No third-party requests at runtime, enforced by a same-origin
   Content-Security-Policy meta tag. This is a published promise.
 - Tap-to-readable-text budget: the longest card's last word must land
@@ -78,7 +82,8 @@ a shelf, and all of it persists across visits.
   discard, reshuffle, face-up card, turn up, shelf, set aside, pile, share
   page.
 - Undecided: the physical deck's product page URL (PHYSICAL_DECK_URL is
-  empty; the site shows a "coming soon" state). No pricing, no launch date.
+  empty; the About page says "coming soon" and the masthead carries no deck
+  link until it is set). No pricing, no launch date.
 
 ## Brand Commitments
 
@@ -94,7 +99,8 @@ a shelf, and all of it persists across visits.
 ## Evidence on Hand
 
 - public/cards.json: 52 written cards across five suits (lateral, sound,
-  image, language, threshold); suits are editorial metadata, never shown.
+  image, language, threshold). Suits group the cards on /deck/; the drawn
+  card and the printed card never name one.
 - src/deck/night.json: the Night edition's 52 cards across five inward
   suits (avoidance, motive, protection, audience, permission). The Night
   deck and Paper cards #49–52 are stand-in text awaiting Lorenzo's revision.

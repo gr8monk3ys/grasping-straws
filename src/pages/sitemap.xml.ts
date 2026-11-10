@@ -1,17 +1,16 @@
 /*
  * Hand-rolled sitemap — a build-time endpoint, zero integrations, in keeping
  * with the rest of the site. The /c/<id>/ share pages are the whole reason
- * this exists: 48 pages with the card text in their titles that nothing
+ * this exists: a page per card, with the card text in its title, that nothing
  * links to except ephemeral shares, so without a sitemap a crawler has no
- * way to discover any of them.
+ * way to discover any of them. Both editions are listed.
  *
  * Drafts are ids reserved for the printed deck; they have no page and must
  * not be advertised. Same rule as getStaticPaths in c/[id].astro, imported
  * from the same place.
  */
 import type { APIRoute } from "astro";
-import { liveCards } from "../deck/cards";
-import entries from "../../public/cards.json";
+import { ALL_TABLES } from "../deck/site";
 
 export const GET: APIRoute = ({ site }) => {
   // `site` comes from astro.config.mjs; the build fails loudly rather than
@@ -24,7 +23,8 @@ export const GET: APIRoute = ({ site }) => {
     "/today/",
     "/play/",
     "/deck/",
-    ...liveCards(entries).map((c) => `/c/${c.id}/`),
+    "/night/",
+    ...ALL_TABLES.flatMap((t) => t.cards.map((c) => `/c/${c.id}/`)),
   ];
 
   const body =
