@@ -19,7 +19,7 @@
     "pnp:check": "node scripts/check-pnp-fresh.js"
   },
   "devDependencies": {
-    "astro": "^7.3.3",
+    "astro": "^7.4.7",
     "playwright": "1.56.1",
     "typescript": "^5.6.0"
   }
