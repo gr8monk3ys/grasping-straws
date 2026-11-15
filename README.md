@@ -96,7 +96,7 @@ npm run preview    # serve the built site
 npm run check      # typecheck the client script
 npm test           # the deck, the card rule and the readable-text budget, in Node
 npm run validate   # lint both editions' card files
-npm run verify     # drive the built site end to end (build + serve first)
+npm run verify     # everything CI runs: checks, unit tests, build, then the built site end to end
 npm run assets     # regenerate og.png + PWA icons from favicon.svg
 npm run print      # render 300 DPI print files into print/final/<edition>/ (see below)
 npm run print:box  # lay an edition's box artwork onto the printer's dieline

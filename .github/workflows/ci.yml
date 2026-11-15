@@ -17,22 +17,33 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - name: Validate cards.json
-        run: npm run validate
-      - name: The games on /play/ match the printed rules cards
-        run: npm run validate:rules
-      - name: The committed print-and-play PDF is in step with the deck
-        run: npm run pnp:check
-      - name: Typecheck
-        run: npm run check
-      - name: Unit tests (the deck, in Node)
-        run: npm test
-      - name: Build
-        run: npm run build
+      # validate, validate:rules, pnp:check, typecheck, unit tests, build.
+      - name: Verify (checks, unit tests, build)
+        run: npm run verify:check
+      - name: Test-count evidence (unit)
+        if: ${{ !cancelled() }}
+        run: python3 scripts/verify_summary.py unit reports/unit.xml
       - name: Install Playwright browser
         run: npx playwright install --with-deps chromium
       - name: Drive the built site end to end
+        run: npm run verify:e2e
+        env:
+          SHOTS_DIR: reports/ui-evidence
+      - name: Test-count evidence (e2e)
+        if: ${{ !cancelled() }}
+        run: python3 scripts/verify_summary.py e2e reports/e2e.xml
+      - name: Upload UI evidence (screenshots + trace)
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ui-evidence
+          path: reports/ui-evidence
+          if-no-files-found: error
+      - name: List UI evidence in the job summary
+        if: ${{ !cancelled() }}
         run: |
-          python3 -m http.server 8317 --bind 127.0.0.1 --directory dist &> /dev/null &
-          sleep 1
-          node scripts/verify.js
+          {
+            echo "### ui-evidence artifact"
+            echo
+            find reports/ui-evidence -type f | sort | sed 's/^/- /'
+          } >> "$GITHUB_STEP_SUMMARY"

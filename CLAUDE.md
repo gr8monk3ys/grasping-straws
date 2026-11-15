@@ -1,5 +1,9 @@
 # grasping-straws
 
+## Checks
+
+Run `npm run verify` before opening a PR. It is exactly what CI runs: `verify:check` (card and rules validation, print-and-play freshness, typecheck, unit tests, build), then `verify:e2e` (the built site driven in Chromium). Get the evidence lines with `python3 scripts/verify_summary.py unit reports/unit.xml` and `python3 scripts/verify_summary.py e2e reports/e2e.xml`, and paste the `VERIFY stage=...` lines into the PR body under "Evidence". CI writes the same lines to its job summary and uploads screenshots and a trace as the `ui-evidence` artifact.
+
 ## Agent skills
 
 ### Issue tracker
