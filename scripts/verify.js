@@ -90,6 +90,8 @@ const browser = await chromium.launch(
 
 // ---- mobile, light, fresh visitor -----------------------------------
 const ctx = await browser.newContext({ colorScheme: "light", viewport: { width: 390, height: 844 } });
+// The main visitor's session is traced for the CI ui-evidence artifact.
+await ctx.tracing.start({ screenshots: true, snapshots: true });
 const page = await ctx.newPage();
 const requests = [];
 page.on("request", (r) => requests.push(r.url()));
@@ -1267,5 +1269,18 @@ check(
 console.log(results.join("\n"));
 const fails = results.filter((r) => r.startsWith("FAIL"));
 console.log(`\n${results.length - fails.length}/${results.length} checks passed — screenshots in ${SHOTS}`);
+await ctx.tracing.stop({ path: path.join(SHOTS, "trace.zip") });
+// JUnit for scripts/verify_summary.py: one testcase per check.
+const esc = (t) => t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;");
+const junitPath = process.env.JUNIT_FILE || path.join(root, "reports", "e2e.xml");
+fs.mkdirSync(path.dirname(junitPath), { recursive: true });
+fs.writeFileSync(
+  junitPath,
+  `<?xml version="1.0" encoding="UTF-8"?>\n<testsuite name="e2e" tests="${results.length}" failures="${fails.length}">\n` +
+    results
+      .map((r) => `  <testcase name="${esc(r.slice(6))}">${r.startsWith("FAIL") ? '<failure message="check failed"/>' : ""}</testcase>`)
+      .join("\n") +
+    "\n</testsuite>\n"
+);
 await browser.close();
 process.exit(fails.length ? 1 : 0);
