@@ -47,6 +47,8 @@ const { title, description, bodyClass } = Astro.props;
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="preload" href="/fonts/Fraunces-latin.woff2" as="font" type="font/woff2" crossorigin />
+    {/* The hand sets the masthead name and the card on every page. */}
+    <link rel="preload" href="/fonts/LorenzoHand-Bold.woff2" as="font" type="font/woff2" crossorigin />
     {/* Every label on the site is a wall label, and a wall label is weight
         500: the masthead, the tally, the piles, the hint. This is the mono
         file every page paints with first. Plex Mono 400 is NOT preloaded:

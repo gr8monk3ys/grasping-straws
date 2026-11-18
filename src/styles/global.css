@@ -38,10 +38,10 @@
     U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
-/* The maker's own print handwriting: the masthead name, the page titles and
-   the signature on the credit line. The cards stay in Fraunces, the face
-   the deck is printed in. size-adjust because its x-height is 0.39em against
-   Fraunces' 0.436em. */
+/* The maker's own print handwriting: the prompt on every card, the deck's
+   name wherever it appears, the page titles and the signature on the credit
+   line. Fraunces is the reading face. size-adjust because its x-height is
+   0.39em against Fraunces' 0.436em. */
 @font-face {
   font-family: "Lorenzo Hand";
   font-style: normal;
@@ -701,7 +701,8 @@ button.pile:not([disabled]):focus-visible .pile-label {
   /* A card in miniature casts the card's own shadows: the contact shadow at
      rest, both once it is lifted. */
   box-shadow: var(--shadow-contact);
-  font-family: var(--font-text);
+  font-family: var(--font-hand);
+  font-weight: 700;
   font-size: 0.98rem;
   line-height: 1.32;
   text-align: center;
@@ -1064,19 +1065,14 @@ button.pile:not([disabled]):focus-visible .pile-label {
 }
 
 .card-text {
-  font-family: var(--font-text);
+  font-family: var(--font-hand);
   font-size: var(--t-card);
   /* Never larger than a tenth of the card: the ratio at which the longest
      card fits the stock at full size. The first declaration stays for
      browsers without container units. */
   font-size: min(var(--t-card), 10.4cqw);
-  /* Fraunces carries opsz 9..144, so the browser fits the design to the
-     size on its own. This is the axis EB Garamond did not have. */
-  font-optical-sizing: auto;
-  font-weight: 400;
+  font-weight: 700;
   line-height: 1.28;
-  /* large sizes need the tracking pulled back in */
-  letter-spacing: -0.012em;
   text-align: center;
   text-wrap: balance;
 }
@@ -1093,11 +1089,15 @@ button.pile:not([disabled]):focus-visible .pile-label {
   width: clamp(56px, 26%, 84px);
 }
 
+/* The name on the back of the card, handwritten as the printed back sets
+   it: mixed case and untracked, not a wall label. */
 .card-wordmark {
-  font-size: var(--t-mono-sm);
-  /* the one label tracked wider than 0.16em: it is the name on the back of
-     the card, set as the printed back sets it, not a caption beside it */
-  letter-spacing: 0.2em;
+  font-family: var(--font-hand);
+  font-weight: 700;
+  font-size: 1.25rem;
+  line-height: 1.2;
+  letter-spacing: 0;
+  text-transform: none;
   text-align: center;
   /* Wraps to two lines on a card narrower than the mark, rather than
      running off the stock. */

@@ -20,12 +20,12 @@ const pub = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "publi
 const b64 = (f) => fs.readFileSync(path.join(pub, "fonts", f)).toString("base64");
 
 export const FONT_CSS = `
-  @font-face { font-family: "Fraunces"; font-weight: 300 700;
-    src: url(data:font/woff2;base64,${b64("Fraunces-latin.woff2")}) format("woff2"); }
   @font-face { font-family: "Plex Mono"; font-weight: 400;
     src: url(data:font/woff2;base64,${b64("PlexMono-400-latin.woff2")}) format("woff2"); }
   @font-face { font-family: "Plex Mono"; font-weight: 500;
-    src: url(data:font/woff2;base64,${b64("PlexMono-500-latin.woff2")}) format("woff2"); }`;
+    src: url(data:font/woff2;base64,${b64("PlexMono-500-latin.woff2")}) format("woff2"); }
+  @font-face { font-family: "Lorenzo Hand"; size-adjust: 125%;
+    src: url(data:font/woff2;base64,${b64("LorenzoHand-Bold.woff2")}) format("woff2"); }`;
 
 const esc = (s) => s.replaceAll("&", "&amp;").replaceAll("<", "&lt;");
 
@@ -34,9 +34,9 @@ const label = (mm, color, sizeMm = 2.3) =>
   `font-family:'Plex Mono',monospace; font-weight:500; font-size:${mm(sizeMm)}px;` +
   ` letter-spacing:0.16em; text-transform:uppercase; white-space:nowrap; color:${color};`;
 
+// The deck's name, in the maker's handwriting, as the cards carry it.
 const name = (mm, color, sizeMm) =>
-  `font-family:'Fraunces',serif; font-size:${mm(sizeMm)}px; line-height:1.1; white-space:nowrap; color:${color};` +
-  ` font-optical-sizing:none; font-variation-settings:'opsz' ${Math.round(sizeMm * 2.835)},'wght' 600;`;
+  `font-family:'Lorenzo Hand',serif; font-size:${mm(sizeMm)}px; line-height:1.1; white-space:nowrap; color:${color};`;
 
 // The panels were drawn for a lid 79.1 mm wide. `s` scales a measurement to
 // the lid actually being printed, so the lid top keeps its proportions on a
@@ -78,8 +78,8 @@ export function panels(ed, mm) {
     // The underside: what the deck is, where it lives, which printing this is.
     baseBottom: panel(
       b.base,
-      `<div style="font-family:'Fraunces',serif; font-size:${mm(s(4.1))}px; line-height:1.4; color:${b.baseInk};
-                   font-optical-sizing:none; font-variation-settings:'opsz' 12,'wght' 400; text-wrap:balance;">
+      `<div style="font-family:'Lorenzo Hand',serif; font-size:${mm(s(4.1))}px; line-height:1.4; color:${b.baseInk};
+                   text-wrap:balance;">
          ${esc(ed.blurb)}</div>
        <div style="display:grid; gap:${mm(2.2)}px;">
          <div style="${label(mm, b.baseLabel, 2.1)}">straws.lscaturchio.xyz</div>

@@ -67,7 +67,7 @@ function validate(ed) {
     } else if (typeof card.text !== "string" || card.text.trim() === "") {
       errors.push(`${where}: "text" must be a non-empty string`);
     }
-    // These get set in Fraunces at 24pt on physical card stock, where a
+    // These get set at 24pt on physical card stock, where a
     // typewriter apostrophe is conspicuous. Caught here rather than fixed at
     // render time so the site and the printed deck never disagree.
     if (typeof card.text === "string" && /['"]/.test(card.text)) {

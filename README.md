@@ -193,7 +193,8 @@ printed deck carries the URL too — `scripts/print-cards.js`.
   the palette of lscaturchio.xyz, following
   `prefers-color-scheme` by default with a masthead toggle that overrides it
   and persists. Both AA contrast, including the green accent.
-- **Type**: Fraunces for the card face and prose, IBM Plex Mono for the
+- **Type**: Lorenzo Hand (my own handwriting) for the card face and the
+  deck's name, Fraunces for prose, IBM Plex Mono for the
   masthead, tally and labels. Sizes are set by *apparent* size — the two
   families have different x-heights (0.436 and 0.516), so they get separate
   ramps, and a check fails the build if anything renders under ~11.5px

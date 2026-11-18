@@ -39,6 +39,7 @@ const cards = all.filter((c) => !c.draft);
 const b64 = (f) => fs.readFileSync(path.join(pub, "fonts", f)).toString("base64");
 const fraunces = b64("Fraunces-latin.woff2");
 const plex = b64("PlexMono-400-latin.woff2");
+const hand = b64("LorenzoHand-Bold.woff2");
 
 // The free edition is the Paper edition, in the same colours as the printed one.
 const { card: CARD, ink: INK, muted: MUTED, accent: ACCENT, moss: RULE } = PAPER;
@@ -121,6 +122,7 @@ const cover = `<section class="page cover">
 const html = `<!doctype html><meta charset="utf-8"><style>
   @font-face { font-family: "Fraunces"; src: url(data:font/woff2;base64,${fraunces}) format("woff2"); }
   @font-face { font-family: "Plex Mono"; src: url(data:font/woff2;base64,${plex}) format("woff2"); }
+  @font-face { font-family: "Lorenzo Hand"; size-adjust: 125%; src: url(data:font/woff2;base64,${hand}) format("woff2"); }
   @page { size: letter; margin: 0; }
   * { margin: 0; box-sizing: border-box; }
   html { color-scheme: light; }
@@ -139,28 +141,26 @@ const html = `<!doctype html><meta charset="utf-8"><style>
   .rule { justify-self: center; width: ${z(0.4)}in; height: 1pt; background: ${RULE}; }
   /* 15.5pt on the 2.75in card, scaled: the proportion the site sets the face
      at. The longest card (62 characters) sets in four lines at poker size. */
-  .prompt { font-size: ${z(15.5)}pt; line-height: 1.32; text-align: center; text-wrap: balance;
-            font-variation-settings: 'opsz' ${Math.round(z(15.5))}, 'wght' 400; }
+  .prompt { font-family: "Lorenzo Hand", serif; font-size: ${z(15.5)}pt; line-height: 1.32;
+            text-align: center; text-wrap: balance; }
   .rules { display: grid; justify-items: center; gap: ${z(9)}pt; text-align: center; }
   .rules-title { font-family: "Plex Mono", monospace; font-size: ${z(9)}pt; letter-spacing: 0.18em;
                  text-transform: uppercase; }
   .rules-players { font-size: ${z(9)}pt; font-style: italic; color: ${MUTED}; margin-top: ${z(-6)}pt; }
-  .rules-body { font-size: ${z(11)}pt; line-height: 1.45; text-wrap: balance; }
+  .rules-body { font-family: "Lorenzo Hand", serif; font-size: ${z(11)}pt; line-height: 1.45; text-wrap: balance; }
   .titlecard { display: grid; justify-items: center; gap: ${z(16)}pt; text-align: center; }
   .titlecard .mark { width: ${z(0.7)}in; }
-  .titlecard .name { font-size: ${z(18.5)}pt; white-space: nowrap;
-                     font-variation-settings: 'opsz' ${Math.round(z(18.5))}, 'wght' 600; }
-  .titlecard .sub { font-size: ${z(9.5)}pt; font-style: italic; color: ${MUTED}; line-height: 1.4; }
+  .titlecard .name { font-family: "Lorenzo Hand", serif; font-size: ${z(18.5)}pt; white-space: nowrap; }
+  .titlecard .sub { font-family: "Lorenzo Hand", serif; font-size: ${z(9.5)}pt; color: ${MUTED}; line-height: 1.4; }
   /* The back has one child, not the face's three rows — without collapsing
      the template it lands in the first (auto) row and prints top-aligned. */
   .back { grid-template-rows: 1fr; place-items: center; }
   .backart { display: grid; justify-items: center; gap: ${z(22)}pt; color: ${MUTED}; }
   .backart .mark { width: ${z(0.8)}in; }
-  .backart .wordmark { font-family: "Plex Mono", monospace; font-size: ${z(8.5)}pt;
-                       letter-spacing: 0.22em; text-transform: uppercase; white-space: nowrap; }
+  .backart .wordmark { font-family: "Lorenzo Hand", serif; font-size: ${z(13.5)}pt; white-space: nowrap; }
   .cover { display: block; padding: 1.2in 1.1in; }
   .cover .mark { width: 0.6in; margin-bottom: 0.35in; }
-  .cover h1 { font-size: 26pt; font-variation-settings: 'opsz' 26, 'wght' 600; margin-bottom: 6pt; }
+  .cover h1 { font-family: "Lorenzo Hand", serif; font-size: 26pt; margin-bottom: 6pt; }
   .cover .tag { font-style: italic; color: ${MUTED}; margin-bottom: 0.4in; }
   .cover ol { padding-left: 1.2em; line-height: 1.7; font-size: 12pt; }
   .cover .fine { margin-top: 0.5in; font-size: 9.5pt; color: ${MUTED}; line-height: 1.5; }
