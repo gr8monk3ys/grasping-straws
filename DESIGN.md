@@ -138,7 +138,7 @@ This site is a page from the same notebook as lscaturchio.xyz. It is set on that
 
 The material is paper, not glass. Card faces carry grain (a fractal-noise tile at 3.4% multiply in light, 5.5% overlay in dark, or a WebGL fibre shader when available), structure is drawn with 1px hairlines, and there is one green pen. Density is low and the rhythm is editorial: generous vertical air, one serif for reading and one mono for labels, and a type scale sized by apparent x-height so the two families read at the same optical size.
 
-Motion is physical and short: a 460ms flip that reads as a solid turning in space, a specular sheen that rides the first half of the turn, cards that deal into a spread with a capped stagger, and a hover that lifts by pixels. Every effect degrades: reduced motion removes decoration and keeps feedback; no JavaScript hides controls that would not work.
+Motion is physical and short: a 460ms flip that reads as a solid turning in space, a specular sheen that rides the first half of the turn, cards that deal into a spread with a capped stagger, and a hover that lifts by pixels. Every effect degrades: reduced motion removes decoration and keeps feedback; no JavaScript hides controls that would not work. Whatever is in the maker's handwriting is written rather than faded: each word of a card is wiped in from its left edge inside the same 560ms budget, the deck's name writes itself once for a fresh visitor, a page title each time the page opens, and the signature as it is scrolled to. The masthead holds still while pages crossfade.
 
 **Key Characteristics:**
 - One card, optically centred, is the composition; flanking piles reserve symmetric columns so it never shifts.

@@ -361,16 +361,17 @@ function show(id: number, { instant = false, keepHint = false } = {}): void {
     { duration: FLIP_MS, easing: "ease-in-out" }
   );
 
-  // The words land in sequence rather than the block appearing at once,
-  // inside a capped envelope so the longest card cannot outgrow the 560ms
-  // budget (see STAGGER_ENVELOPE_MS). It is a real constraint, not a taste
-  // knob.
+  // The words are written in sequence, each wiped in from its left edge the
+  // way a pen lays it down, inside a capped envelope so the longest card
+  // cannot outgrow the 560ms budget (see STAGGER_ENVELOPE_MS). It is a real
+  // constraint, not a taste knob. The inset is negative on the open sides so
+  // a tail that leaves the word's box is never cut.
   const gap = staggerGap(words.length);
   words.forEach((word, i) =>
     word.animate(
       [
-        { opacity: 0, transform: "translateY(8px)" },
-        { opacity: 1, transform: "none" },
+        { opacity: 0, clipPath: "inset(-.3em 100% -.3em -.3em)" },
+        { opacity: 1, clipPath: "inset(-.3em)" },
       ],
       {
         duration: WORD_MS,

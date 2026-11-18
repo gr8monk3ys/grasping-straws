@@ -1367,6 +1367,8 @@ html:not(.js) .hint-slot .hint {
 /* A running head, not a footer: the wordmark and the tally sit where an
    editorial page carries them, above the content. */
 .chrome {
+  /* holds still while the page under it crossfades (see @view-transition) */
+  view-transition-name: chrome;
   display: flex;
   align-items: baseline;
   justify-content: space-between;
@@ -1695,6 +1697,41 @@ html:not(.js) .theme {
   to {
     opacity: 1;
     transform: none;
+  }
+}
+
+/* ---------- the hand writes ---------- */
+
+/* Whatever is in the maker's handwriting is written, not faded: wiped in
+   from its left edge. The deck's name once for a fresh visitor, a page's
+   title each time the page opens, the signature as it is scrolled to. The
+   negative inset leaves room for a tail that leaves the box. */
+@keyframes write {
+  from {
+    clip-path: inset(-0.3em 100% -0.3em -0.3em);
+  }
+  to {
+    clip-path: inset(-0.3em);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  body.entrance .deck-name,
+  .about h1 {
+    animation: write 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.1s backwards;
+  }
+
+  body.entrance .card-wordmark {
+    animation: write 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.5s backwards;
+  }
+
+  @supports (animation-timeline: view()) {
+    .credit .hand {
+      display: inline-block;
+      animation: write linear both;
+      animation-timeline: view();
+      animation-range: entry 0% cover 22%;
+    }
   }
 }
 
