@@ -38,6 +38,16 @@
     U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
+/* The maker's own print handwriting. It signs the credit line and nothing
+   else, so only that page ever fetches it. */
+@font-face {
+  font-family: "Lorenzo Hand";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("/fonts/LorenzoHand-Bold.woff2") format("woff2");
+}
+
 /* ---------- themes ---------- */
 
 :root {
@@ -89,6 +99,7 @@
 
   --font-text: "Fraunces", "Iowan Old Style", Georgia, serif;
   --font-mono: "Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --font-hand: "Lorenzo Hand", "Fraunces", "Iowan Old Style", Georgia, serif;
 
   /* ---------- type scale ----------
      Sized by APPARENT size, not px. Measured x-heights, per 1em:
@@ -319,6 +330,17 @@ html {
 .hint a,
 .credit a {
   color: var(--moss);
+}
+
+/* The signature. The hand's x-height is 0.348em against Plex Mono's 0.516em,
+   so it is set ~1.6x the credit line to read as the same size and a touch
+   more. line-height 0 keeps the taller glyphs from opening the line. */
+.credit .hand {
+  font-family: var(--font-hand);
+  font-weight: 700;
+  font-size: 1.6em;
+  line-height: 0;
+  letter-spacing: 0;
 }
 
 /* The mark. favicon.svg is the single vector source of the glyph; both
