@@ -197,6 +197,29 @@ card: this is the last look before the deck is permanent.
 
 ---
 
+## Selling it
+
+Nothing on the site takes payment. Each edition is listed on a store that
+takes the order, prints the deck and ships it to the buyer, and /get/ links
+to the listing. The store these files are built for is MakePlayingCards'
+Marketplace: the same deck and box as section 4, saved as a product, with
+your price on top of their base cost. They charge a 5% handling fee and
+nothing up front. Not yet verified: their listing and approval steps.
+
+Once an edition is listed, put its address and its price in `STORE` in
+`src/config.ts`:
+
+```ts
+export const STORE = {
+  paper: { url: "https://www.makeplayingcards.com/...", price: "$38" },
+  night: { url: "", price: "" },
+};
+```
+
+An edition with a `url` gets a buy button on /get/. As soon as either has
+one, "Get the deck" appears in the masthead and every physical-deck link on
+the site points at /get/. An edition without one says "Not on sale yet".
+
 ## The free print-and-play edition
 
 `npm run pnp` renders `public/print-and-play.pdf`: the whole Paper deck plus

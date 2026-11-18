@@ -10,9 +10,9 @@
  */
 import fs from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { PUBLIC } from "./public-dir.js";
 
-const file = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "public", "favicon.svg");
+const file = path.join(PUBLIC, "favicon.svg");
 const svg = fs.readFileSync(file, "utf8");
 
 const bare = svg.replace(/<style>[\s\S]*?<\/style>/, "").replace(/<!--[\s\S]*?-->/g, "");

@@ -1009,9 +1009,24 @@ if (fs.existsSync(path.join(distDir, "index.html"))) {
 
   const inlineJs = grab(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/g);
   const jsGz = gz(inlineJs);
+  // The budget is on what every page pays: the stylesheets the draw screen
+  // links, plus the 404's. /get/ is the one page that sells, and it brings a
+  // stylesheet of its own that no other page loads; that one has its own
+  // budget below instead of being hidden inside this one.
+  const sheetsOf = (page) =>
+    [...fs.readFileSync(path.join(distDir, page), "utf8").matchAll(/<link rel="stylesheet" href="\/_astro\/([^"]+)"/g)].map((m) => m[1]);
+  const getOnly = sheetsOf("get/index.html").filter((f) => !sheetsOf("index.html").includes(f));
   const cssGz =
     gz(grab(/<style[^>]*>([\s\S]*?)<\/style>/g)) +
-    listed.filter((f) => f.endsWith(".css")).reduce((n, f) => n + gz(read(f)), 0);
+    listed.filter((f) => f.endsWith(".css") && !getOnly.includes(f)).reduce((n, f) => n + gz(read(f)), 0);
+  const getCssGz = getOnly.reduce((n, f) => n + gz(read(f)), 0);
+  // A timeline inside the `animation` shorthand is not valid CSS in any
+  // browser, and the whole declaration is dropped: the animation never runs
+  // and nothing reports it. The build's minifier writes exactly that when
+  // `animation-timeline` sits in the same rule as `animation`.
+  const foldedTimelines = listed
+    .filter((f) => f.endsWith(".css"))
+    .flatMap((f) => read(f).toString().match(/animation:[^;}]*(?:\b(?:view|scroll)\(|(?<![(\w-])--[\w-]+)[^;}]*/g) ?? []);
 
   // 2560 B when the draw script was alone; the paper shader roughly doubled
   // it, the theme toggle added ~500 B, and the browsable piles, the throw
@@ -1073,6 +1088,12 @@ if (fs.existsSync(path.join(distDir, "index.html"))) {
   // bytes over it. Half a kilobyte of room, deliberately, not a trend.
   check("all client JS <= 7.5 KB gzipped (draw + shader + theme + table)", jsGz <= 7680, `${jsGz} B gz`);
   check("total CSS <= 6 KB gzipped", cssGz <= 6144, `${cssGz} B gz`);
+  check("/get/ adds <= 3 KB gzipped of CSS, and only to itself", getCssGz > 0 && getCssGz <= 3072, `${getCssGz} B gz`);
+  check(
+    "no built stylesheet folds a timeline into the animation shorthand (put animation-timeline in a rule of its own, under a different selector)",
+    foldedTimelines.length === 0,
+    foldedTimelines.join(" | ")
+  );
   // Raised with the editorial pass (masthead, piles, two type ramps).
   // The draw script is the only JavaScript on the site and it is inlined, so
   // a JS file appearing in _astro means either a framework crept in or the

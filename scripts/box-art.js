@@ -11,12 +11,12 @@
  */
 import fs from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { DECK_NAME, DECK_VERSION } from "../src/config.ts";
 import { BOX } from "./box-spec.js";
 import { mark } from "./mark.js";
+import { PUBLIC } from "./public-dir.js";
 
-const pub = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "public");
+const pub = PUBLIC;
 const b64 = (f) => fs.readFileSync(path.join(pub, "fonts", f)).toString("base64");
 
 export const FONT_CSS = `
