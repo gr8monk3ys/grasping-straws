@@ -153,7 +153,7 @@ Motion is physical and short: a 460ms flip that reads as a solid turning in spac
 The palette, the hairline, the wall label and the night page are adopted from lscaturchio.xyz without change. Three things are deliberately different, and only the first is a departure from that system's rules:
 
 - **Card elevation is kept.** The website's Flat Paper Rule allows no shadow on a content surface. Here the card, the cards in a spread, the mini-piles and the deck edges all cast, because the card being a physical object is this product's third principle (PRODUCT.md). This is the one sanctioned departure, and it stops at card stock: the masthead, the dialog, links and controls obey the Flat Paper Rule.
-- **Fraunces is the only text face.** The website reads in Instrument Sans; this page reads in the card's own voice. No sans is loaded.
+- **Fraunces is the only reading face.** The website reads in Instrument Sans; this page reads in the card's own voice. No sans is loaded.
 - **Labels are larger.** The website's label is 0.72rem; Plex Mono at that size is under this site's type floor, so labels here use 0.8rem and 0.95rem. Weight, case, tracking, numerals and colour are the website's.
 
 ## Colors
@@ -199,7 +199,7 @@ One paper, one ink, one hairline and one green pen in the light theme; the same 
 - **Body** (400, 1.16rem, 1.55 on the body, 1.6 in prose): running text, the empty-spread notice. Spread cards use a compact 0.98rem at 1.32.
 - **Label** (Plex Mono 500, 0.95rem, uppercase, 0.16em, `tabular-nums`, Ink Muted): masthead, tally, nav links, the hint line, the share and set-aside controls, the dialog title, the pile counts (in Ink). Steps down to 0.85rem inside the masthead under 42rem, and the hint and the two controls step down to Label-sm under 26rem.
 - **Label-sm** (Plex Mono 500, 0.8rem, uppercase, 0.16em, `tabular-nums`, Ink Muted): pile labels, card ids on the face and in a spread, the share page's frame line, section headings on the editorial pages, the numbers on the contents page.
-- **The signature.** The maker's name in the About page's credit line is set in Lorenzo Hand, his own print handwriting (Bold, 1.6em of the credit line because its x-height is 0.348em). It is the one place a third face appears, and only that page fetches it.
+- **The hand.** Lorenzo Hand, the maker's own print handwriting (Bold, `size-adjust: 125%`), sets the masthead name, the page titles (About, Ways to play, The deck) and his name in the About credit line. It is the site's signature. The cards never use it: they stay in Fraunces, the face the deck is printed in.
 - **Two exceptions, both deliberate.** The wordmark on the back of the card is a Label-sm tracked at 0.2em: it is the name printed on the object, not a caption beside it. The credit line and the caption riding on a section heading (`.players`) are mono in mixed case at 0.04em, the website's "small mono link" voice: they are sentences, and a sentence is not shouted.
 
 ### Named Rules
