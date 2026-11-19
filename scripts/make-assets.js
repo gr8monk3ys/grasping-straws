@@ -30,10 +30,9 @@ const INK_RGB = [1, 3, 5].map((i) => parseInt(INK.slice(i, i + 2), 16)).join(" "
 // colour onto the shapes instead (see scripts/mark.js).
 const svg = mark(INK);
 const font = fs.readFileSync(path.join(pub, "fonts", "Fraunces-latin.woff2")).toString("base64");
-// The wordmark on a card BACK is Plex Mono everywhere else — the masthead
-// and the printed deck. The OG image is the same object and must not be the
-// one place it renders in a serif.
-const mono = fs.readFileSync(path.join(pub, "fonts", "PlexMono-500-latin.woff2")).toString("base64");
+// The wordmark on a card BACK is the maker's handwriting everywhere else: the
+// masthead and the printed deck. The OG image is the same object.
+const hand = fs.readFileSync(path.join(pub, "fonts", "LorenzoHand-Bold.woff2")).toString("base64");
 
 const baseCss = `
   @font-face {
@@ -41,8 +40,9 @@ const baseCss = `
     src: url(data:font/woff2;base64,${font}) format("woff2");
   }
   @font-face {
-    font-family: "Plex Mono";
-    src: url(data:font/woff2;base64,${mono}) format("woff2");
+    font-family: "Lorenzo Hand";
+    size-adjust: 125%;
+    src: url(data:font/woff2;base64,${hand}) format("woff2");
   }
   * { margin: 0; box-sizing: border-box; }
   html, body { width: 100%; height: 100%; }
@@ -59,7 +59,7 @@ const ogHtml = `<!doctype html><style>${baseCss}
           display: grid; place-items: center; }
   .mark { display: grid; justify-items: center; gap: 34px; color: ${MUTED}; }
   .mark svg { width: 120px; height: 120px; }
-  .wordmark { font-family: "Plex Mono", monospace; font-size: 19px; letter-spacing: 0.24em; text-transform: uppercase; }
+  .wordmark { font-family: "Lorenzo Hand", serif; font-size: 32px; }
 </style><body>
   <div class="card"><div class="mark">${svg}<div class="wordmark">Grasping&nbsp;Straws?</div></div></div>
 </body>`;

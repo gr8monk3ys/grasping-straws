@@ -30,6 +30,8 @@ const all = JSON.parse(fs.readFileSync(path.join(root, ed.file), "utf8"));
 const b64 = (f) => fs.readFileSync(path.join(pub, "fonts", f)).toString("base64");
 const fraunces = b64("Fraunces-latin.woff2");
 const plex = b64("PlexMono-400-latin.woff2");
+// The maker's handwriting: everything on a face but the wall labels. Fraunces only sets a draft's note.
+const hand = b64("LorenzoHand-Bold.woff2");
 
 /* ---------- gates: nothing reaches a printer half-written ---------- */
 
@@ -86,17 +88,6 @@ if (W !== UPLOAD.w || H !== UPLOAD.h) {
 // The edition's own stock and ink, from the one palette the site also uses.
 const { card: CARD, ink: INK, muted: MUTED, accent: ACCENT, moss: RULE } = ed.palette;
 
-// Pale type on dark stock prints lighter than it is drawn: ink spreads into
-// the letters from every side. Night is set heavier so both editions land at
-// the same apparent weight in the hand.
-const FACE_WGHT = ed.reversed ? 440 : 400;
-
-// Fraunces' optical-size axis has to be driven by PHYSICAL size, not by the
-// px number. 64px at 300 DPI is 15.4pt of actual card — a text setting. Left
-// on `auto`, the browser reads 64 and picks a display cut, which thins the
-// strokes exactly where the physical size needs them sturdy.
-const pt = (pxSize) => (pxSize / SPEC.dpi) * 72;
-
 // Every size on a face is a proportion of the card's WIDTH, written as the
 // pixel value it had on the 825 px wide card these layouts were drawn on. `u`
 // scales it to the card being printed, so a change of card size keeps the
@@ -119,6 +110,7 @@ const guides = process.env.GUIDES
 const shell = (body, extra = "") => `<!doctype html><style>
   @font-face { font-family: "Fraunces"; src: url(data:font/woff2;base64,${fraunces}) format("woff2"); }
   @font-face { font-family: "Plex Mono"; src: url(data:font/woff2;base64,${plex}) format("woff2"); }
+  @font-face { font-family: "Lorenzo Hand"; size-adjust: 125%; src: url(data:font/woff2;base64,${hand}) format("woff2"); }
   * { margin: 0; box-sizing: border-box; }
   html { color-scheme: ${ed.reversed ? "dark" : "light"}; }
   html, body { width: ${W}px; height: ${H}px; }
@@ -156,7 +148,7 @@ const face = (card) =>
                   <div style="font-size:${u(34)}px; margin-top:${u(44)}px; color:${MUTED}; font-style:italic;
                               line-height:1.4;">${esc(card.note ?? "")}</div>
                 </div>`
-             : `<div style="font-size:${FACE_PX}px; font-variation-settings:'opsz' ${pt(FACE_PX).toFixed(0)},'wght' ${FACE_WGHT};
+             : `<div style="font-family:'Lorenzo Hand',serif; font-size:${FACE_PX}px;
                      line-height:1.32; text-align:center;">${sentences(card.text)
                        .map(
                          (s, i) =>
@@ -174,14 +166,13 @@ const face = (card) =>
 // before it is turned over.
 const back = shell(`<div class="safe" style="place-content:center; justify-items:center; gap:${u(110)}px; color:${MUTED};">
   <div style="width:${u(260)}px;">${tint(ACCENT)}</div>
-  <div style="font-family:'Plex Mono',monospace; font-size:${u(34)}px; letter-spacing:0.24em;
-              text-transform:uppercase; white-space:nowrap;">Grasping&nbsp;Straws?</div>
+  <div style="font-family:'Lorenzo Hand',serif; font-size:${u(56)}px; white-space:nowrap;">Grasping&nbsp;Straws?</div>
 </div>`);
 
 const title = shell(`<div class="safe" style="place-content:center; justify-items:center; gap:${u(90)}px; text-align:center;">
   <div style="width:${u(220)}px;">${tint(ACCENT)}</div>
-  <div style="font-size:${u(84)}px; white-space:nowrap; font-variation-settings:'opsz' ${pt(u(84)).toFixed(0)},'wght' 600;">Grasping Straws?</div>
-  <div style="font-size:${u(38)}px; font-style:italic; color:${MUTED};">${ed.subtitle.map(esc).join("<br>")}</div>
+  <div style="font-family:'Lorenzo Hand',serif; font-size:${u(84)}px; white-space:nowrap;">Grasping Straws?</div>
+  <div style="font-family:'Lorenzo Hand',serif; font-size:${u(38)}px; line-height:1.3; color:${MUTED};">${ed.subtitle.map(esc).join("<br>")}</div>
   <div class="num" style="font-size:${u(28)}px; text-transform:uppercase;">${esc(ed.name)}</div>
 </div>`);
 
@@ -189,7 +180,7 @@ const title = shell(`<div class="safe" style="place-content:center; justify-item
 // cannot show you: how it wants to be used, and where it also lives.
 const instructions = shell(`<div class="safe" style="align-content:center; gap:${u(44)}px;">
   <div class="num">HOW TO USE</div>
-  <div style="font-size:${u(40)}px; font-variation-settings:'opsz' ${pt(u(40)).toFixed(0)},'wght' ${FACE_WGHT}; line-height:1.5;">
+  <div style="font-family:'Lorenzo Hand',serif; font-size:${u(40)}px; line-height:1.5;">
     ${ed.instructions
       .map((p, i, a) => `<p${i < a.length - 1 ? ` style="margin-bottom:${u(32)}px;"` : ""}>${esc(p)}</p>`)
       .join("\n    ")}
