@@ -1,0 +1,737 @@
+---
+/*
+ * /get/ — the page that sells the object.
+ *
+ * Everything on it is the real thing: the box is the print artwork from
+ * scripts/box-art.js folded in CSS, and the cards are cards from the two
+ * decks. There is no photograph because no deck has been printed yet, and no
+ * price or buy link until config.ts STORE has one.
+ *
+ * The store (MakePlayingCards) takes the order, prints it and ships it; this
+ * page only links to the listing.
+ */
+import Base from "../layouts/Base.astro";
+import Chrome from "../components/Chrome.astro";
+import { DECK_NAME, DECK_VERSION, STORE } from "../config";
+import { TABLES } from "../deck/site";
+import { panels } from "../../scripts/box-art.js";
+import { BOX } from "../../scripts/box-spec.js";
+import { TRIM_MM } from "../../scripts/card-spec.js";
+import { mark } from "../../scripts/mark.js";
+
+const description =
+  "The printed deck: fifty-two prompts, a title card and an instructions card in a rigid box. Two editions, printed to order.";
+
+// box-art writes millimetres as px; here a millimetre is the CSS length --mm,
+// so the whole object scales with the viewport.
+const mmCss = (html: string) => html.replace(/(\d+(?:\.\d+)?)px/g, "calc($1 * var(--mm))");
+const art = (key: "paper" | "night") => {
+  const p = panels(TABLES[key].edition, (v: number) => v);
+  return Object.fromEntries(Object.entries(p).map(([k, v]) => [k, mmCss(v as string)]));
+};
+const paper = art("paper");
+
+const card = { w: TRIM_MM.w, l: TRIM_MM.h };
+const dims = [
+  `--lw:${BOX.lid.w.toFixed(1)}`, `--ll:${BOX.lid.l.toFixed(1)}`, `--lh:${BOX.lid.h.toFixed(1)}`,
+  `--bw:${BOX.base.w.toFixed(1)}`, `--bl:${BOX.base.l.toFixed(1)}`, `--bh:${BOX.base.h.toFixed(1)}`,
+  `--cw:${card.w.toFixed(1)}`, `--cl:${card.l.toFixed(1)}`,
+].join(";");
+
+const pick = (key: "paper" | "night", id: number) => TABLES[key].cards.find((c) => c.id === id) ?? TABLES[key].cards[0];
+const hero = [pick("paper", 14), pick("paper", 18), pick("paper", 1)];
+
+const editions = (["paper", "night"] as const).map((key) => {
+  const t = TABLES[key];
+  const p = t.edition.palette;
+  return {
+    key,
+    name: t.edition.name,
+    works: key === "paper" ? "Works on the piece in front of you." : "Works on the person making it.",
+    blurb: t.blurb,
+    home: t.home,
+    lid: art(key).lidTop,
+    sample: pick(key, key === "paper" ? 1 : 108),
+    vars: `--c-card:${p.card};--c-ink:${p.ink};--c-muted:${p.muted};--c-rule:${p.moss};--lid:${t.edition.box.lid}`,
+    store: STORE[key],
+  };
+});
+const onSale = editions.some((e) => e.store.url);
+const P = TABLES.paper.edition.palette;
+---
+
+<Base title={`Get the deck — ${DECK_NAME}`} description={description} bodyClass="get">
+  <Chrome />
+  <main id="main">
+    <section class="unbox" style={dims}>
+      <div class="unbox-pin">
+        <div class="pitch">
+          <h1>Open the box. Turn one card.</h1>
+          <p class="lede">
+            {DECK_NAME.replace("?", "")} is a deck of fifty-two prompts for when the work has stopped
+            moving. The site deals you a sample. The deck is the instrument: real card stock,
+            shuffled by your own hands.
+          </p>
+          <p class="actions">
+            <a class="go" href="#editions">{onSale ? "Choose an edition" : "See the two editions"}</a>
+            <a class="quiet" href="/print-and-play.pdf">Print it yourself, free</a>
+          </p>
+        </div>
+
+        {/* The object. Decorative: everything it shows is said in words on the page. */}
+        <div class="stage" aria-hidden="true">
+          <div class="scene">
+            <div class="ground"></div>
+            <div class="base">
+              <div class="wall s"></div>
+              <div class="wall e"></div>
+              <div class="floor"></div>
+            </div>
+            {
+              hero.map((c, i) => (
+                <div class={`fly fly-${i + 1}`} style={`--c-card:${P.card};--c-ink:${P.ink};--c-muted:${P.muted};--c-rule:${P.moss}`}>
+                  <div class="pc pc-face">
+                    <span class="pc-num">{String(c.id).padStart(2, "0")}</span>
+                    <span class="pc-text">{c.text}</span>
+                    <span class="pc-rule"></span>
+                  </div>
+                  <div class="pc pc-back">
+                    <span class="pc-mark" set:html={mark(P.accent)} />
+                    <span class="pc-name">{DECK_NAME}</span>
+                  </div>
+                </div>
+              ))
+            }
+            <div class="lid">
+              <div class="face top" set:html={paper.lidTop} />
+              <div class="face short s" set:html={paper.lidShort} />
+              <div class="face long e" set:html={paper.lidLong} />
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="editions" id="editions">
+      <h2>Two decks. No card is in both.</h2>
+      <div class="pair">
+        {
+          editions.map((e) => (
+            <article class="edition" style={`${e.vars};${dims}`}>
+              <div class="shot" aria-hidden="true">
+                <div class="lidflat" set:html={e.lid} />
+                <div class="pc pc-face sample">
+                  <span class="pc-num">{String(e.sample.id).padStart(2, "0")}</span>
+                  <span class="pc-text">{e.sample.text}</span>
+                  <span class="pc-rule"></span>
+                </div>
+              </div>
+              <h3>{e.name}</h3>
+              <p class="works">{e.works}</p>
+              <p>{e.blurb}</p>
+              {e.store.url ? (
+                <p class="buy">
+                  <a class="go" href={e.store.url} rel="noopener">
+                    Get the {e.name}{e.store.price && <span class="price"> · {e.store.price}</span>}
+                  </a>
+                </p>
+              ) : (
+                <p class="buy soon">Not on sale yet.</p>
+              )}
+              <p class="try"><a href={e.home}>Draw from it first</a></p>
+            </article>
+          ))
+        }
+      </div>
+      {onSale && (
+        <p class="terms">
+          Printed to order and shipped by MakePlayingCards. You order and pay on their site; this
+          one never sees your details.
+        </p>
+      )}
+    </section>
+
+    <section class="inside">
+      <h2>In the box</h2>
+      <ul>
+        <li><b>52</b> prompts, one to a card</li>
+        <li><b>1</b> title card</li>
+        <li><b>1</b> instructions card</li>
+        <li><b>{card.w.toFixed(1)} × {card.l.toFixed(1)} mm</b> poker size</li>
+        <li><b>Rigid box</b> lid and base</li>
+        <li><b>Printing {DECK_VERSION}</b> matches this site</li>
+      </ul>
+      <p class="say">The prompt that seems wrong is usually the one doing the work.</p>
+      <p class="credit">
+        <a href="/">Draw a card</a> &middot; <a href="/today/">Today’s card</a> &middot;
+        <a href="/deck/">The deck</a> &middot; <a href="/play/">Ways to play</a>
+      </p>
+    </section>
+  </main>
+</Base>
+
+<style is:global>
+  /* One millimetre of the printed object, as a CSS length. Everything in the
+     stage is sized in it, so the box and its cards keep their real proportions. */
+  .get main {
+    --mm: clamp(2.05px, 0.3vw + 1.1px, 3.3px);
+  }
+
+  .get h1,
+  .get h2,
+  .get h3,
+  .get .say {
+    font-family: var(--font-hand);
+    font-weight: 700;
+    text-wrap: balance;
+  }
+
+  /* ---------- the opening: the box ---------- */
+
+  .unbox-pin {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: center;
+    gap: 2rem;
+    max-width: 72rem;
+    margin-inline: auto;
+    padding: 2.5rem 1.35rem;
+  }
+
+  .pitch h1 {
+    font-size: clamp(2.2rem, 3.6vw + 1.1rem, 4.1rem);
+    line-height: 1.08;
+    margin-bottom: 1.25rem;
+  }
+
+  .pitch .lede {
+    max-width: 30rem;
+    font-size: var(--t-lede);
+    line-height: 1.45;
+  }
+
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1rem 1.6rem;
+    margin-top: 2rem;
+  }
+
+  .get .go,
+  .get .quiet,
+  .get .soon,
+  .get .try,
+  .get .terms,
+  .get .credit {
+    font-family: var(--font-mono);
+    font-weight: 500;
+    font-size: var(--t-mono-sm);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .get .go {
+    display: inline-block;
+    padding: 0.95rem 1.4rem;
+    border-radius: 6px;
+    background: var(--accent);
+    color: var(--bg);
+    text-decoration: none;
+    transition:
+      transform 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+      box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .get .go:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-ambient);
+  }
+
+  .get .go:active {
+    transform: none;
+    box-shadow: none;
+  }
+
+  .get .go:focus-visible {
+    outline: 2px solid var(--moss);
+    outline-offset: 3px;
+  }
+
+  .get .quiet,
+  .get .try a,
+  .get .credit a {
+    color: var(--moss);
+  }
+
+  .stage {
+    display: grid;
+    place-items: center;
+    height: calc(178 * var(--mm));
+    perspective: calc(950 * var(--mm));
+  }
+
+  .scene,
+  .lid,
+  .base,
+  .fly {
+    transform-style: preserve-3d;
+  }
+
+  .scene {
+    position: relative;
+    width: calc(var(--lw) * var(--mm));
+    height: calc(var(--ll) * var(--mm));
+    transform: translateY(calc(44 * var(--mm))) rotateX(57deg) rotateZ(32deg);
+  }
+
+  .scene > *,
+  .lid > *,
+  .base > * {
+    position: absolute;
+    top: 0;
+    left: 0;
+    transform-origin: 0 0;
+  }
+
+  .ground {
+    width: calc(var(--lw) * var(--mm));
+    height: calc(var(--ll) * var(--mm));
+    transform: translate3d(calc(7 * var(--mm)), calc(9 * var(--mm)), calc(-0.5 * var(--mm)));
+    background: rgb(26 31 35 / 0.3);
+    filter: blur(calc(9 * var(--mm)));
+  }
+
+  /* The lid: its top and the two walls this view shows, each carrying the
+     panel the printer gets. Shaded so the faces read as planes. */
+  .lid {
+    transform: translate3d(calc(-8 * var(--mm)), calc(-12 * var(--mm)), calc(102 * var(--mm))) rotateZ(-8deg);
+  }
+
+  .lid .face {
+    overflow: hidden;
+  }
+
+  .lid .face::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+  }
+
+  .lid .top {
+    width: calc(var(--lw) * var(--mm));
+    height: calc(var(--ll) * var(--mm));
+    transform: translateZ(calc(var(--lh) * var(--mm)));
+  }
+
+  .lid .short {
+    width: calc(var(--lw) * var(--mm));
+    height: calc(var(--lh) * var(--mm));
+    transform: translate3d(0, calc(var(--ll) * var(--mm)), calc(var(--lh) * var(--mm))) rotateX(-90deg);
+  }
+
+  .lid .short::after {
+    background: rgb(0 0 0 / 0.1);
+  }
+
+  .lid .long {
+    width: calc(var(--ll) * var(--mm));
+    height: calc(var(--lh) * var(--mm));
+    transform: translate3d(calc(var(--lw) * var(--mm)), calc(var(--ll) * var(--mm)), calc(var(--lh) * var(--mm)))
+      rotateZ(-90deg) rotateX(-90deg);
+  }
+
+  .lid .long::after {
+    background: rgb(0 0 0 / 0.2);
+  }
+
+  /* The base, open, with the rest of the deck still in it. */
+  .base {
+    transform: translate3d(
+      calc((var(--lw) - var(--bw)) / 2 * var(--mm)),
+      calc((var(--ll) - var(--bl)) / 2 * var(--mm)),
+      0
+    );
+  }
+
+  .base .wall {
+    height: calc(var(--bh) * var(--mm));
+    background: #f1efe9;
+    box-shadow: inset 0 0 0 calc(0.25 * var(--mm)) rgb(26 31 35 / 0.1);
+  }
+
+  .base .s {
+    width: calc(var(--bw) * var(--mm));
+    transform: translate3d(0, calc(var(--bl) * var(--mm)), calc(var(--bh) * var(--mm))) rotateX(-90deg);
+    background: #e7e4dd;
+  }
+
+  .base .e {
+    width: calc(var(--bl) * var(--mm));
+    transform: translate3d(calc(var(--bw) * var(--mm)), calc(var(--bl) * var(--mm)), calc(var(--bh) * var(--mm)))
+      rotateZ(-90deg) rotateX(-90deg);
+    background: #d9d6ce;
+  }
+
+  .base .floor {
+    width: calc(var(--bw) * var(--mm));
+    height: calc(var(--bl) * var(--mm));
+    transform: translateZ(calc((var(--bh) - 4) * var(--mm)));
+    background: #fbfaf9;
+    box-shadow: inset 0 0 calc(5 * var(--mm)) rgb(26 31 35 / 0.22);
+  }
+
+  /* A printed card, in millimetres: the face and the back the deck ships with. */
+  .pc {
+    display: grid;
+    width: calc(var(--cw) * var(--mm));
+    height: calc(var(--cl) * var(--mm));
+    padding: calc(5 * var(--mm));
+    border: max(1px, calc(0.2 * var(--mm))) solid rgb(26 31 35 / 0.16);
+    border-radius: calc(3 * var(--mm));
+    background: var(--c-card);
+    color: var(--c-ink);
+  }
+
+  .pc-face {
+    grid-template-rows: auto 1fr auto;
+  }
+
+  .pc-num {
+    font-family: var(--font-mono);
+    font-size: calc(2.6 * var(--mm));
+    letter-spacing: 0.16em;
+    color: var(--c-muted);
+  }
+
+  .pc-text {
+    align-self: center;
+    font-family: var(--font-hand);
+    font-weight: 700;
+    font-size: calc(6.1 * var(--mm));
+    line-height: 1.3;
+    text-align: center;
+    text-wrap: balance;
+  }
+
+  .pc-rule {
+    justify-self: center;
+    width: calc(9 * var(--mm));
+    height: max(1px, calc(0.34 * var(--mm)));
+    background: var(--c-rule);
+  }
+
+  .pc-back {
+    place-content: center;
+    justify-items: center;
+    gap: calc(8 * var(--mm));
+    color: var(--c-muted);
+  }
+
+  .pc-mark {
+    width: calc(20 * var(--mm));
+  }
+
+  .pc-mark svg {
+    display: block;
+    width: 100%;
+  }
+
+  .pc-name {
+    font-family: var(--font-hand);
+    font-weight: 700;
+    font-size: calc(4.3 * var(--mm));
+    white-space: nowrap;
+  }
+
+  /* The three cards out of the box. Each is a real two-sided card. */
+  .scene > .fly {
+    left: calc((var(--lw) - var(--cw)) / 2 * var(--mm));
+    top: calc((var(--ll) - var(--cl)) / 2 * var(--mm));
+    width: calc(var(--cw) * var(--mm));
+    height: calc(var(--cl) * var(--mm));
+    transform-origin: 50% 50%;
+  }
+
+  .fly .pc {
+    position: absolute;
+    inset: 0;
+    backface-visibility: hidden;
+    box-shadow: 0 calc(1 * var(--mm)) calc(3 * var(--mm)) rgb(26 31 35 / 0.14);
+  }
+
+  .fly .pc-back {
+    transform: rotateY(180deg);
+  }
+
+  .fly-1 {
+    transform: translate3d(calc(-38 * var(--mm)), calc(6 * var(--mm)), calc(30 * var(--mm))) rotateZ(-19deg)
+      rotateY(180deg);
+  }
+
+  .fly-2 {
+    transform: translate3d(calc(-8 * var(--mm)), calc(-4 * var(--mm)), calc(48 * var(--mm))) rotateZ(-5deg)
+      rotateY(0deg);
+  }
+
+  .fly-3 {
+    transform: translate3d(calc(28 * var(--mm)), calc(4 * var(--mm)), calc(66 * var(--mm))) rotateZ(12deg)
+      rotateY(0deg);
+  }
+
+  /* ---------- the two editions ---------- */
+
+  .editions,
+  .inside {
+    max-width: 62rem;
+    margin-inline: auto;
+    padding: 5.5rem 1.35rem 1rem;
+  }
+
+  .get h2 {
+    font-size: clamp(1.8rem, 2vw + 1.2rem, 2.6rem);
+    line-height: 1.15;
+    margin-bottom: 2.75rem;
+  }
+
+  .pair {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 3.5rem clamp(1.5rem, 6vw, 5rem);
+  }
+
+  .edition {
+    --mm: clamp(2px, 0.62vw, 3px);
+  }
+
+  .edition .shot {
+    position: relative;
+    height: calc(110 * var(--mm));
+    margin-bottom: 2rem;
+  }
+
+  .lidflat {
+    position: absolute;
+    top: 0;
+    left: calc(4 * var(--mm));
+    width: calc(var(--lw) * var(--mm));
+    height: calc(var(--ll) * var(--mm));
+    border-radius: calc(1 * var(--mm));
+    overflow: hidden;
+    outline: 1px solid var(--rule);
+    box-shadow: var(--shadow-contact), var(--shadow-ambient);
+    transform: rotate(-4deg);
+  }
+
+  .edition .sample {
+    position: absolute;
+    top: calc(13 * var(--mm));
+    left: calc(52 * var(--mm));
+    box-shadow: var(--shadow-contact), var(--shadow-ambient);
+    transform: rotate(6deg);
+  }
+
+  .edition h3 {
+    font-size: 1.9rem;
+    line-height: 1.15;
+  }
+
+  .edition .works {
+    margin-top: 0.5rem;
+    font-size: var(--t-lede);
+    line-height: 1.4;
+  }
+
+  .edition p {
+    margin-top: 0.75rem;
+    font-size: var(--t-body);
+    line-height: 1.5;
+    color: var(--muted);
+  }
+
+  .edition .works {
+    color: var(--ink);
+  }
+
+  .edition .buy {
+    margin-top: 1.6rem;
+  }
+
+  .get .soon,
+  .get .terms {
+    color: var(--muted);
+  }
+
+  .get .terms {
+    max-width: 38rem;
+    margin-top: 3rem;
+    line-height: 1.7;
+    letter-spacing: 0.04em;
+    text-transform: none;
+  }
+
+  /* ---------- what is in the box ---------- */
+
+  .inside ul {
+    list-style: none;
+    padding: 0;
+    border-top: 1px solid var(--rule);
+  }
+
+  .inside li {
+    display: flex;
+    justify-content: space-between;
+    gap: 1.5rem;
+    padding: 0.9rem 0;
+    border-bottom: 1px solid var(--rule);
+    font-size: var(--t-body);
+    color: var(--muted);
+  }
+
+  .inside b {
+    font-weight: 600;
+    color: var(--ink);
+  }
+
+  .get .say {
+    max-width: 36rem;
+    margin: 5rem 0 3rem;
+    font-size: clamp(1.7rem, 2.4vw + 1rem, 2.5rem);
+    line-height: 1.2;
+    color: var(--accent);
+  }
+
+  .get .credit {
+    padding-bottom: 4rem;
+    letter-spacing: 0.04em;
+    text-transform: none;
+    color: var(--muted);
+  }
+
+  @media (width < 54rem) {
+    .unbox-pin {
+      grid-template-columns: 1fr;
+      gap: 0.5rem;
+      padding-top: 1.75rem;
+    }
+
+    .stage {
+      height: calc(206 * var(--mm));
+    }
+
+    .scene {
+      transform: translateY(calc(70 * var(--mm))) rotateX(57deg) rotateZ(32deg);
+    }
+  }
+
+  @media (width < 46rem) {
+    .pair {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  /* ---------- motion ----------
+     The page's default is the finished picture: the box open, three cards
+     out, one turned over. Where scroll-driven animation is supported the
+     opening is pinned and the scroll does the unboxing; where it is not, or
+     the reader asked for less motion, nothing below applies and the picture
+     simply stands. */
+  @keyframes lid-on {
+    from {
+      transform: translate3d(0, 0, 0) rotateZ(0deg);
+    }
+  }
+
+  @keyframes in-box {
+    from {
+      transform: translate3d(0, 0, calc((var(--bh) - 3) * var(--mm))) rotateZ(0deg) rotateY(180deg);
+    }
+  }
+
+  @keyframes tucked {
+    from {
+      transform: translate(calc(-44 * var(--mm)), calc(-8 * var(--mm))) rotate(-4deg);
+    }
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .pitch h1 {
+      animation: write 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.1s backwards;
+    }
+
+    @supports (animation-timeline: view()) {
+      /* Wide: the opening is pinned and the scroll opens the box beside the
+         words. Narrow: there is no room to pin both, so the box opens as it
+         crosses the screen under them. */
+      .stage {
+        view-timeline: --unbox block;
+      }
+
+      @media (width >= 54rem) {
+        .unbox {
+          height: 260vh;
+          view-timeline: --unbox block;
+        }
+
+        .stage {
+          view-timeline: none;
+        }
+
+        .unbox-pin {
+          position: sticky;
+          top: 0;
+          box-sizing: border-box;
+          height: 100svh;
+        }
+      }
+
+      .lid,
+      .fly {
+        animation: lid-on linear both;
+        animation-range: contain 4% contain 46%;
+      }
+
+      /* Timelines sit in rules of their own: see the note in global.css. */
+      .scene > .lid,
+      .scene > .fly {
+        animation-timeline: --unbox;
+      }
+
+      .fly {
+        animation-name: in-box;
+      }
+
+      .fly-1 {
+        animation-range: contain 34% contain 66%;
+      }
+
+      .fly-2 {
+        animation-range: contain 46% contain 80%;
+      }
+
+      .fly-3 {
+        animation-range: contain 58% contain 96%;
+      }
+
+      .get h2 {
+        animation: write linear both;
+        animation-range: entry 0% entry 100%;
+      }
+
+      .get main h2 {
+        animation-timeline: view();
+      }
+
+      /* The sample card is dealt out from under its lid as the edition is
+         scrolled to. Decoration, so a part-dealt card costs nothing to read. */
+      .edition .sample {
+        animation: tucked linear both;
+        animation-range: entry 10% cover 34%;
+      }
+
+      .edition .shot .sample {
+        animation-timeline: view();
+      }
+    }
+  }
+</style>

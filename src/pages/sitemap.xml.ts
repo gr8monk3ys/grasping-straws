@@ -23,6 +23,7 @@ export const GET: APIRoute = ({ site }) => {
     "/today/",
     "/play/",
     "/deck/",
+    "/get/",
     "/night/",
     ...ALL_TABLES.flatMap((t) => t.cards.map((c) => `/c/${c.id}/`)),
   ];

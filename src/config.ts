@@ -6,12 +6,11 @@
  * back, <title> tags, OG titles). The "?" is part of the mark — don't
  * remove it here.
  *
- * PHYSICAL_DECK_URL: leave empty ("") until the physical deck exists. The
- * About page then says "coming soon", the masthead carries no deck link at
- * all, and the /play/ and /deck/ footers point at that About section. Once
- * there is a product page (e.g. MakePlayingCards / The Game Crafter), put
- * its URL here: the masthead gains "Get the deck" and every physical-deck
- * link on the site points at it after the next deploy.
+ * PHYSICAL_DECK_URL is derived from STORE below: empty until an edition is
+ * on sale. While it is empty the About page says "coming soon", the masthead
+ * carries no deck link at all, and the /play/ and /deck/ footers point at
+ * that About section. Once an edition has a listing the masthead gains "Get
+ * the deck" and every physical-deck link on the site points at /get/.
  *
  * DECK_VERSION: keeps the site deck and the physical deck in lockstep.
  * It stays at 1 until a deck has been printed. After that, bump it
@@ -19,5 +18,21 @@
  * discreetly on the About page and should match the printed box.
  */
 export const DECK_NAME = "Grasping Straws?";
-export const PHYSICAL_DECK_URL = "";
+/*
+ * STORE: where each edition is sold, and for how much. Both stay empty until
+ * the edition is listed. The store takes the order, prints it and ships it
+ * (MakePlayingCards Marketplace does all three), so the site only links to
+ * the listing: no payment code and no third-party request here.
+ *   url    the listing's address, e.g. "https://www.makeplayingcards.com/…"
+ *   price  as it should read on the page, e.g. "$38". Shown only when set.
+ * Setting either edition's url turns on "Get the deck" across the site.
+ */
+export const STORE = {
+  paper: { url: "", price: "" },
+  night: { url: "", price: "" },
+};
+
+// Where every "get the deck" link on the site points: the page that sells
+// both editions, once at least one is on sale. Empty until then.
+export const PHYSICAL_DECK_URL = STORE.paper.url || STORE.night.url ? "/get/" : "";
 export const DECK_VERSION = "1";

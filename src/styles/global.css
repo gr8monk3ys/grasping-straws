@@ -1676,15 +1676,23 @@ html:not(.js) .theme {
 /* Native scroll-driven animation — no observer, no client bundle, zero
    bytes of JavaScript. Gated behind @supports because without a timeline the
    `both` fill would leave these stuck at opacity 0 in browsers that parse
-   the animation but not the timeline. */
+   the animation but not the timeline.
+
+   The timeline is declared in a rule of its own, under a different selector,
+   everywhere on this site. In the same rule as `animation`, the build's
+   minifier folds it into the shorthand, which no browser accepts, and the
+   whole animation is dropped (the verifier checks the built CSS for it). */
 @supports (animation-timeline: view()) {
   @media (prefers-reduced-motion: no-preference) {
     .about main > h2,
     .about main > p,
     .about main > .credit {
       animation: rise-in linear both;
-      animation-timeline: view();
       animation-range: entry 0% entry 58%;
+    }
+
+    .about main > :is(h2, p, .credit) {
+      animation-timeline: view();
     }
   }
 }
@@ -1729,8 +1737,11 @@ html:not(.js) .theme {
     .credit .hand {
       display: inline-block;
       animation: write linear both;
-      animation-timeline: view();
       animation-range: entry 0% cover 22%;
+    }
+
+    .credit a.hand {
+      animation-timeline: view();
     }
   }
 }

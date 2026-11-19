@@ -81,9 +81,12 @@ a shelf, and all of it persists across visits.
 - Terminology follows CONTEXT.md: card, draft, deck, cycle, bag, deal,
   discard, reshuffle, face-up card, turn up, shelf, set aside, pile, share
   page.
-- Undecided: the physical deck's product page URL (PHYSICAL_DECK_URL is
-  empty; the About page says "coming soon" and the masthead carries no deck
-  link until it is set). No pricing, no launch date.
+- The page that sells the decks is /get/: the box and cards drawn from the
+  print artwork, both editions, and a buy link per edition. The store takes
+  the order, prints it and ships it; the site only links to the listing.
+- Undecided: where each edition is listed and at what price (`STORE` in
+  src/config.ts is empty, so /get/ says "Not on sale yet", the About page
+  says "coming soon" and the masthead carries no deck link). No launch date.
 
 ## Brand Commitments
 
