@@ -550,6 +550,16 @@ for (const [what, id] of [["a draft", drafts[0]?.id], ["a Night edition card", n
 }
 check("the Paper masthead offers the Night deck",
   ((await pu.locator('.chrome nav a[href="/night/"]').textContent()) || "").trim() === "Night deck");
+check("the masthead links to /get/ before any deck is on sale",
+  ((await pu.locator('.chrome nav a[href="/get/"]').textContent()) || "").trim() === "Get the deck");
+// With motion reduced, or no scroll-driven animation, /get/ shows the box
+// already open: the lid and three cards flung wider than a phone.
+const ctxGet = await browser.newContext({ reducedMotion: "reduce", viewport: { width: 390, height: 844 } });
+const pGet = await ctxGet.newPage();
+await pGet.goto(BASE + "/get/", { waitUntil: "networkidle" });
+const getWide = await pGet.evaluate(() => [document.documentElement.scrollWidth, innerWidth]);
+check("/get/ does not scroll sideways with the box open", getWide[0] <= getWide[1], getWide.join(" vs "));
+await ctxGet.close();
 
 // --- the Night table (/night/) ---------------------------------------------
 // The same draw screen dealing the other deck. What must hold: it is sent

@@ -7,10 +7,10 @@
  * remove it here.
  *
  * PHYSICAL_DECK_URL is derived from STORE below: empty until an edition is
- * on sale. While it is empty the About page says "coming soon", the masthead
- * carries no deck link at all, and the /play/ and /deck/ footers point at
- * that About section. Once an edition has a listing the masthead gains "Get
- * the deck" and every physical-deck link on the site points at /get/.
+ * on sale. While it is empty the About page says "coming soon" and the
+ * /play/ and /deck/ footers point at that About section. Once an edition has
+ * a listing those links point at /get/. The masthead links to /get/ either
+ * way.
  *
  * DECK_VERSION: keeps the site deck and the physical deck in lockstep.
  * It stays at 1 until a deck has been printed. After that, bump it
@@ -25,7 +25,7 @@ export const DECK_NAME = "Grasping Straws?";
  * the listing: no payment code and no third-party request here.
  *   url    the listing's address, e.g. "https://www.makeplayingcards.com/…"
  *   price  as it should read on the page, e.g. "$38". Shown only when set.
- * Setting either edition's url turns on "Get the deck" across the site.
+ * Setting either edition's url turns the page's "Not on sale yet" into a buy link.
  */
 export const STORE = {
   paper: { url: "", price: "" },
