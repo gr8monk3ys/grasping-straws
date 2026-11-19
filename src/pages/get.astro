@@ -188,6 +188,12 @@ const P = TABLES.paper.edition.palette;
 
   /* ---------- the opening: the box ---------- */
 
+  /* The open lid and the dealt cards reach past a phone's edge. clip, not
+     hidden: hidden would make this a scroll container and unpin the opening. */
+  .unbox {
+    overflow-x: clip;
+  }
+
   .unbox-pin {
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);

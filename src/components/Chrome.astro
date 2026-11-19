@@ -4,7 +4,7 @@
  * than a footer, which is what puts the wordmark and the deck count where an
  * editorial page would carry them.
  */
-import { DECK_NAME, PHYSICAL_DECK_URL } from "../config";
+import { DECK_NAME } from "../config";
 import type { EditionKey } from "../deck/editions";
 import { TABLES } from "../deck/site";
 
@@ -52,10 +52,9 @@ const otherLabel = other.edition.name.replace(" edition", " deck");
     <a href="/play/">Play</a>
     <a href="/about/">About</a>
     <a href={other.home}>{otherLabel}</a>
-    {/* "Get the deck" only once there is a deck to get. Until then the
-        masthead says nothing: a link that led to "coming soon" was a door
-        with a wall behind it. About still says where the deck stands. */}
-    {PHYSICAL_DECK_URL && <a href={PHYSICAL_DECK_URL} data-get>Get the deck</a>}
+    {/* Always here, on sale or not: /get/ shows the box and both editions
+        and says plainly when neither can be bought yet. */}
+    <a href="/get/" data-get>Get the deck</a>
     <button id="theme" class="theme" type="button" aria-label="Switch to dark theme">
       <span class="theme-dot" aria-hidden="true"></span>
       <span class="theme-word" id="theme-word">Light</span>

@@ -1411,9 +1411,7 @@ html:not(.js) .hint-slot .hint {
   text-decoration: none;
 }
 
-/* "Get the deck", which is only in the masthead once a deck can be
-   bought. Keyed on an attribute, not a class, so the rule can wait here
-   without failing the check that every class rule matches some markup. */
+/* "Get the deck": the one masthead link that leads to the object. */
 .chrome a[data-get] {
   color: var(--moss);
 }
@@ -1451,8 +1449,10 @@ html:not(.js) .hint-slot .hint {
    the tally drops to its own centred row, the toggle keeps only its disc,
    and the mono step comes down one notch — still ~13px apparent.
    Both breakpoints moved out when the labels took the wall label's 0.16em:
-   the same words are a tenth wider, so each group runs out of row sooner. */
-@media (width < 42rem) {
+   the same words are a tenth wider, so each group runs out of row sooner.
+   They moved out again, to 47 and 65rem, when "Get the deck" joined the
+   links for good. */
+@media (width < 47rem) {
   .chrome {
     --t-mono: 0.85rem;
   }
@@ -1462,11 +1462,30 @@ html:not(.js) .hint-slot .hint {
   }
 }
 
+/* Four links and the toggle need 424px of row. Under that the deck link and
+   the toggle go to a second row together, close under the first, so the
+   toggle is never left on a line by itself. */
+@media (width < 26.5rem) {
+  .chrome nav {
+    row-gap: 0;
+  }
+
+  .chrome nav::after {
+    content: "";
+    flex-basis: 100%;
+  }
+
+  .chrome a[data-get],
+  .theme {
+    order: 1;
+  }
+}
+
 /* The tally takes its own row before the nav would have to wrap: left on
    one row, the toggle drops to a second line on its own, under the links.
-   54rem, not 52: the Night table's tally also names its deck, and that
-   one needed the row to itself up to 860px. */
-@media (width < 54rem) {
+   65rem: the Night table's tally also names its deck, and with four links
+   that one needs the row to itself up to about 1020px. */
+@media (width < 65rem) {
   .chrome {
     flex-wrap: wrap;
     gap: 0.55rem 1rem;
