@@ -134,7 +134,7 @@ contrast at AA on both grounds, the 11.5 px type floor.
 - Night cards follow the existing voice rules: short imperatives, questions
   and koans, typographic quotes only, every card original. None may
   paraphrase an Oblique Strategies card.
-- `CONTEXT.md` gains one term. **Edition**: a printed deck with its own box
+- `GLOSSARY.md` gains one term. **Edition**: a printed deck with its own box
   and its own range of card ids. "Deck" keeps its current meaning, the
   cards the site deals.
 - `DECK_VERSION` stays at `"1"`. No deck has been printed yet, so the first
@@ -270,7 +270,7 @@ Three pull requests, each mergeable on its own:
    to cards.
 2. **Editions and cards.** The edition definitions, cards #49–52, the Night
    deck and its instructions card, `EDITION` in the print script, the
-   validator, CONTEXT.md.
+   validator, GLOSSARY.md.
 3. **Box and ordering.** The template check, the box generator, the
    rewritten printing doc. Ends with a cart built and waiting for Lorenzo.
 
