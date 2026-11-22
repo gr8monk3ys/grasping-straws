@@ -66,7 +66,8 @@ let tiltY = 0;
 // the cycle, so it is added here rather than in the deck.
 function loadState(): { drawn?: unknown } | null {
   try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "null");
+    const parsed: unknown = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "null");
+    return typeof parsed === "object" && parsed !== null ? parsed : null;
   } catch {
     return null;
   }
