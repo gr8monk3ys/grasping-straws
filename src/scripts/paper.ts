@@ -73,7 +73,7 @@ void main(){
 type Sheet = {
   canvas: HTMLCanvasElement;
   gl: WebGLRenderingContext;
-  u: Record<string, WebGLUniformLocation | null>;
+  u: Record<"res" | "paper" | "angle" | "dark" | "fibre", WebGLUniformLocation | null>;
   face: HTMLElement;
   // The angle and theme this sheet was last fully painted at, so a rest
   // that changes neither is not repainted. Null while a paint is partial.
@@ -270,7 +270,7 @@ export function mountPaper(faces: HTMLElement[], inner: HTMLElement): Paper | nu
   const steps: Array<() => boolean> = [];
   for (const face of faces) {
     steps.push(() => {
-      let sheet: Sheet | null = null;
+      let sheet: Sheet | null;
       try {
         sheet = makeSheet(face);
       } catch {
