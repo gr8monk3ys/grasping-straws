@@ -78,7 +78,7 @@ a shelf, and all of it persists across visits.
   prefers-reduced-motion gets a plain crossfade and silences the table's
   motion; no JavaScript leaves a readable notice and a link to the raw
   cards.json.
-- Terminology follows CONTEXT.md: card, draft, deck, cycle, bag, deal,
+- Terminology follows GLOSSARY.md: card, draft, deck, cycle, bag, deal,
   discard, reshuffle, face-up card, turn up, shelf, set aside, pile, share
   page.
 - The page that sells the decks is /get/: the box and cards drawn from the
