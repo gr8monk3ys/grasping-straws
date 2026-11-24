@@ -2,6 +2,9 @@
   "name": "grasping-straws",
   "private": true,
   "type": "module",
+  "engines": {
+    "node": "24.x"
+  },
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
@@ -26,7 +29,7 @@
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@total-typescript/ts-reset": "^0.6.1",
-    "astro": "^7.4.7",
+    "astro": "^7.4.13",
     "dependency-cruiser": "^18.8.0",
     "eslint": "^10.15.0",
     "lint-staged": "^17.6.2",
