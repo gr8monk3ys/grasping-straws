@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+# Fast gate that Claude Code runs before a session can finish: `npm run
+# verify:check` minus the Astro build, and without `verify:e2e` (no browser).
+# The full check before a PR is still `npm run verify`, the same as CI.
+set -euo pipefail
+cd "$(dirname "$0")/.."
+
+npm ci
+npm run validate
+npm run validate:rules
+npm run pnp:check
+npm run lint
+npm run lint:boundaries
+npm run check
+npm test
